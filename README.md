@@ -20,41 +20,159 @@ A framework for evaluating [Agent Skills](https://agentskills.io/specification) 
 - 📊 **Model Comparison** - Compare results across different models
 - 📡 **Runtime Telemetry** - Capture and analyze production metrics
 
+---
+
 ## Quick Start
 
+### 1. Installation
+
 ```bash
-# Install
+# Basic installation
 pip install skill-eval
 
-# Install with Copilot SDK for real integration tests
+# With LLM grading support (OpenAI/Anthropic)
+pip install skill-eval[llm]
+
+# With Copilot SDK for real integration tests
 pip install skill-eval[copilot]
 
-# Initialize eval suite for a skill
+# Full installation (all features)
+pip install skill-eval[all]
+```
+
+**From source (development):**
+```bash
+git clone https://github.com/spboyer/evals-for-skills.git
+cd evals-for-skills
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+### 2. Create Your First Eval
+
+```bash
+# Scaffold eval suite for your skill
 skill-eval init my-skill
 
-# Run evals (mock executor - fast, no API calls)
+# This creates:
+# my-skill/
+# ├── eval.yaml           # Main eval configuration
+# ├── trigger_tests.yaml  # Trigger accuracy tests
+# └── tasks/
+#     └── example-task.yaml
+```
+
+### 3. Configure the Eval
+
+Edit `my-skill/eval.yaml`:
+
+```yaml
+name: my-skill-eval
+skill: my-skill
+version: "1.0"
+
+config:
+  trials_per_task: 3        # Run each task 3 times for consistency
+  timeout_seconds: 300      # 5 minute timeout per task
+  executor: mock            # Use 'copilot-sdk' for real tests
+
+metrics:
+  - name: task_completion
+    weight: 0.4
+    threshold: 0.8          # 80% of tasks must complete
+
+  - name: trigger_accuracy
+    weight: 0.3
+    threshold: 0.9          # 90% trigger accuracy required
+
+  - name: behavior_quality
+    weight: 0.3
+    threshold: 0.7          # 70% behavior quality required
+
+tasks:
+  - "tasks/*.yaml"          # Include all task files
+```
+
+### 4. Run the Eval
+
+```bash
+# Run with mock executor (fast, no API calls)
 skill-eval run my-skill/eval.yaml
 
 # Run with specific model
-skill-eval run my-skill/eval.yaml --model claude-sonnet-4-20250514
+skill-eval run my-skill/eval.yaml --model gpt-4o
 
 # Run with real Copilot SDK (requires authentication)
 skill-eval run my-skill/eval.yaml --executor copilot-sdk
 
-# Compare results across models
-skill-eval compare results-gpt4o.json results-claude.json
+# Save results to file
+skill-eval run my-skill/eval.yaml -o results.json
 ```
+
+### 5. View Results
+
+```
+╭─────────────────── my-skill-eval ───────────────────╮
+│ ✅ PASSED                                           │
+│                                                     │
+│ Pass Rate: 100.0% (4/4)                            │
+│ Composite Score: 0.95                              │
+│ Duration: 1234ms                                   │
+╰─────────────────────────────────────────────────────╯
+
+                  Metrics                   
+┏━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┓
+┃ Metric           ┃ Score ┃ Threshold ┃ Status ┃
+┡━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━┩
+│ task_completion  │  1.00 │      0.80 │ ✅     │
+│ trigger_accuracy │  0.95 │      0.90 │ ✅     │
+│ behavior_quality │  0.88 │      0.70 │ ✅     │
+└──────────────────┴───────┴───────────┴────────┘
+```
+
+---
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| **[Tutorial](docs/TUTORIAL.md)** | Step-by-step guide to writing skill evals |
+| **[Grader Reference](docs/GRADERS.md)** | All 8 grader types with examples |
+| **[Integration Testing](docs/INTEGRATION-TESTING.md)** | Using Copilot SDK for real tests |
+| **[Telemetry Guide](docs/TELEMETRY.md)** | Capturing production metrics |
+| **[Demo Script](DEMO-SCRIPT.md)** | Video demo walkthrough |
+
+---
 
 ## CLI Commands
 
 | Command | Description |
 |---------|-------------|
-| `skill-eval run` | Run an evaluation suite |
-| `skill-eval init` | Scaffold a new eval suite |
-| `skill-eval compare` | Compare results across runs/models |
-| `skill-eval analyze` | Analyze runtime telemetry |
-| `skill-eval report` | Generate reports from results |
+| `skill-eval run <eval.yaml>` | Run an evaluation suite |
+| `skill-eval init <skill-name>` | Scaffold a new eval suite |
+| `skill-eval compare <files...>` | Compare results across runs/models |
+| `skill-eval analyze <telemetry>` | Analyze runtime telemetry |
+| `skill-eval report <results.json>` | Generate reports from results |
 | `skill-eval list-graders` | List available grader types |
+
+### Common Options
+
+```bash
+# Run options
+skill-eval run eval.yaml \
+  --executor mock|copilot-sdk \    # Execution engine
+  --model <model-name> \           # Model to use
+  --output results.json \          # Save results
+  --verbose                        # Detailed output
+
+# Init options
+skill-eval init my-skill \
+  --output-dir ./evals \           # Output directory
+  --template minimal|full          # Template type
+```
+
+---
 
 ## Concepts
 
@@ -69,9 +187,81 @@ This framework aligns with established agent evaluation patterns:
 | **Outcome** | Final state after skill execution |
 | **Eval Suite** | Collection of tasks for a specific skill |
 
+---
+
+## Writing Tasks
+
+Tasks define individual test cases. Create YAML files in your `tasks/` directory:
+
+```yaml
+# tasks/deploy-app.yaml
+id: deploy-app-001
+name: Deploy Container App
+description: Test deploying a container to Azure
+
+# What to send to the skill
+inputs:
+  prompt: "Deploy my app to Azure Container Apps"
+  context:
+    files: ["Dockerfile", "app.py"]
+    environment: production
+
+# What we expect to happen
+expected:
+  # Keywords that should appear in output
+  output_contains:
+    - "container"
+    - "deployed"
+  
+  # Required outcomes
+  outcomes:
+    - type: task_completed
+  
+  # Tool call requirements
+  tool_calls:
+    required:
+      - pattern: "az containerapp"
+    forbidden:
+      - pattern: "rm -rf"
+  
+  # Behavior constraints
+  behavior:
+    max_tool_calls: 10
+    max_response_time_ms: 30000
+
+# Task-specific graders (optional)
+graders:
+  - name: validates_deployment
+    type: code
+    config:
+      assertions:
+        - "'success' in output.lower()"
+```
+
+---
+
+## Grader Types
+
+8 built-in graders for different validation needs:
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| `code` | Python assertions | Exact validation logic |
+| `regex` | Pattern matching | Output format checking |
+| `semantic` | Embedding similarity | Meaning comparison |
+| `llm` | LLM-as-judge | Nuanced quality assessment |
+| `human` | Manual review | Complex judgments |
+| `rubric` | Multi-criteria scoring | Structured evaluation |
+| `tool-call` | Tool usage validation | Behavior checking |
+| `custom` | External script | Custom logic |
+
+See **[Grader Reference](docs/GRADERS.md)** for detailed examples.
+
+---
+
 ## Eval Specification
 
-Define evals in YAML:
+The main `eval.yaml` file configures your evaluation suite:
 
 ```yaml
 # eval.yaml
@@ -105,23 +295,43 @@ graders:
     rubric: graders/quality_rubric.md
 
 tasks:
-  - include: tasks/*.yaml
+  - "tasks/*.yaml"   # Glob pattern for task files
 ```
+
+---
 
 ## Executor Types
 
-| Executor | Use Case | Requires |
-|----------|----------|----------|
-| `mock` | Unit tests, CI/CD | Nothing |
-| `copilot-sdk` | Integration tests, benchmarking | Copilot auth |
+Choose how tasks are executed:
+
+| Executor | Use Case | Requires | Speed |
+|----------|----------|----------|-------|
+| `mock` | Unit tests, CI/CD, development | Nothing | ⚡ Fast |
+| `copilot-sdk` | Integration tests, benchmarking | Copilot auth | 🐢 Slower |
 
 ```bash
-# Fast mock execution (default)
+# Fast mock execution (default) - no API calls
 skill-eval run eval.yaml
 
-# Real Copilot SDK execution
+# Real Copilot SDK execution - actual LLM responses
 skill-eval run eval.yaml --executor copilot-sdk --model gpt-4o
 ```
+
+**Copilot SDK Setup:**
+```bash
+# Install with copilot support
+pip install skill-eval[copilot]
+
+# Authenticate (one-time)
+copilot auth login
+
+# Run integration tests
+skill-eval run eval.yaml --executor copilot-sdk
+```
+
+See **[Integration Testing Guide](docs/INTEGRATION-TESTING.md)** for details.
+
+---
 
 ## Model Comparison
 
@@ -150,30 +360,11 @@ Output:
 🏆 Best: gpt-4o (score: 0.98)
 ```
 
-## Task Definition
-
-```yaml
-# tasks/example-task.yaml
-id: example-001
-name: Example Task
-description: Test a specific skill capability
-
-inputs:
-  prompt: "Do something specific"
-  context:
-    files: [example.py]
-
-expected:
-  outcomes:
-    - type: task_completed
-  tool_calls:
-    required:
-      - pattern: "some_tool"
-    forbidden:
-      - pattern: "dangerous_operation"
-```
+---
 
 ## Results Format
+
+Results are saved as JSON for programmatic use:
 
 ```json
 {
@@ -198,6 +389,8 @@ expected:
 }
 ```
 
+---
+
 ## Runtime Telemetry
 
 Capture metrics from skills running in production:
@@ -212,28 +405,92 @@ skill-eval analyze telemetry/ --skill azure-deploy -o analysis.json
 
 See [Telemetry Guide](docs/TELEMETRY.md) for integration patterns.
 
+---
+
 ## GitHub Actions
 
+Add skill evals to your CI/CD pipeline:
+
 ```yaml
-- uses: your-org/skill-eval-action@v1
-  with:
-    eval-path: ./my-skill/eval.yaml
-    fail-on-threshold: true
+# .github/workflows/skill-eval.yaml
+name: Skill Evaluation
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'evals/**'
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install skill-eval
+        run: pip install skill-eval
+      
+      - name: Run evaluations
+        run: |
+          skill-eval run evals/my-skill/eval.yaml \
+            --output results.json
+      
+      - name: Check thresholds
+        run: |
+          # Fail if composite score < 0.8
+          python -c "
+          import json
+          r = json.load(open('results.json'))
+          score = r['summary']['composite_score']
+          assert score >= 0.8, f'Score {score} below threshold'
+          "
+      
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: results.json
 ```
 
-## Documentation
+---
 
-- [Tutorial: Writing Skill Evals](docs/TUTORIAL.md)
-- [Grader Reference](docs/GRADERS.md)
-- [Integration Testing with Copilot SDK](docs/INTEGRATION-TESTING.md)
-- [Runtime Telemetry](docs/TELEMETRY.md)
-- [Demo Script](DEMO-SCRIPT.md)
+## Examples
+
+The repository includes example eval suites:
+
+| Example | Description |
+|---------|-------------|
+| [`azure-deploy`](examples/azure-deploy/) | Azure deployment skill evaluation |
+| [`cli-session-recorder`](examples/cli-session-recorder/) | CLI recording skill evaluation |
+| [`code-explainer`](examples/code-explainer/) | Demo skill with 4 code explanation tasks |
+
+Run an example:
+```bash
+skill-eval run examples/code-explainer/eval.yaml
+```
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `pytest tests/`
+5. Submit a pull request
+
+---
 
 ## References
 
 - [Anthropic - Demystifying Evals for AI Agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)
 - [Agent Skills Specification](https://agentskills.io/specification)
 - [OpenAI Evals](https://github.com/openai/evals)
+- [Anthropic Skills Best Practices](https://support.anthropic.com/en/articles/12512198-how-to-create-custom-skills)
 
 ## License
 
