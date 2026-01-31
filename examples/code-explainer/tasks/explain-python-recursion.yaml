@@ -1,0 +1,53 @@
+# Task: Explain a Python recursive function
+# This tests the skill's ability to explain recursion concepts
+id: explain-python-recursion-001
+name: Explain Python Recursion
+description: |
+  Test explaining a recursive factorial function in Python.
+  The skill should identify the recursive pattern and base case.
+
+tags:
+  - python
+  - recursion
+  - beginner
+
+inputs:
+  prompt: |
+    Explain this code:
+    ```python
+    def factorial(n):
+        if n <= 1:
+            return 1
+        return n * factorial(n - 1)
+    ```
+  context:
+    language: python
+    complexity: beginner
+    concept: recursion
+
+expected:
+  # Keywords that should appear in a good explanation
+  output_contains:
+    - "recursive"
+    - "factorial"
+  # Alternative keywords (any of these is acceptable)
+  output_contains_any:
+    - "base case"
+    - "n <= 1"
+    - "termination"
+  outcomes:
+    - type: task_completed
+  behavior:
+    max_tool_calls: 5
+    max_response_time_ms: 30000
+
+# Task-specific graders (in addition to global graders)
+graders:
+  - name: explains_recursion
+    type: code
+    config:
+      assertions:
+        - "len(output) > 10"
+      # For real testing, use stricter assertions:
+      # - "'recurs' in output.lower()"
+      # - "'base case' in output.lower() or 'n <= 1' in output"

@@ -1,0 +1,392 @@
+"""Eval runner - orchestrates task execution and grading."""
+
+from __future__ import annotations
+
+import asyncio
+import glob
+import time
+import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Callable
+
+from skill_eval.graders.base import Grader, GraderContext, GraderRegistry
+from skill_eval.schemas.eval_spec import EvalSpec, GraderConfig, ExecutorType
+from skill_eval.schemas.task import Task
+from skill_eval.schemas.results import (
+    EvalResult,
+    EvalSummary,
+    TaskResult,
+    TrialResult,
+    GraderResult,
+    MetricResult,
+    TranscriptSummary,
+    EvalConfig as ResultEvalConfig,
+)
+from skill_eval.executors import BaseExecutor, MockExecutor, ExecutionResult
+
+
+class EvalRunner:
+    """Orchestrates evaluation execution."""
+
+    def __init__(
+        self,
+        spec: EvalSpec,
+        executor: BaseExecutor | Callable[[Task], tuple[str, list[dict], dict]] | None = None,
+        base_path: Path | None = None,
+    ):
+        """Initialize eval runner.
+        
+        Args:
+            spec: The eval specification
+            executor: Optional executor instance or legacy callable
+            base_path: Base path for resolving relative paths in spec
+        """
+        self.spec = spec
+        self._legacy_executor = None
+        self._executor: BaseExecutor | None = None
+        
+        # Handle different executor types
+        if executor is None:
+            # Create executor based on spec config
+            self._executor = self._create_executor()
+        elif isinstance(executor, BaseExecutor):
+            self._executor = executor
+        else:
+            # Legacy callable executor
+            self._legacy_executor = executor
+        
+        self.base_path = base_path or Path.cwd()
+        self._graders: dict[str, Grader] = {}
+        self._setup_graders()
+
+    def _create_executor(self) -> BaseExecutor:
+        """Create executor based on spec configuration."""
+        executor_type = self.spec.config.executor
+        model = self.spec.config.model
+        
+        if executor_type == ExecutorType.COPILOT_SDK:
+            # Try to import Copilot executor
+            try:
+                from skill_eval.executors.copilot import CopilotExecutor
+                return CopilotExecutor(
+                    model=model,
+                    skill_directories=self.spec.config.skill_directories,
+                    mcp_servers=self.spec.config.mcp_servers,
+                    timeout_seconds=self.spec.config.timeout_seconds,
+                )
+            except ImportError:
+                raise ImportError(
+                    "Copilot SDK executor requires copilot-sdk package. "
+                    "Install with: pip install skill-eval[copilot]"
+                )
+        else:
+            # Default to mock executor
+            return MockExecutor(model=model)
+
+    def _setup_graders(self) -> None:
+        """Initialize graders from spec."""
+        for grader_config in self.spec.graders:
+            grader = GraderRegistry.create(
+                grader_type=grader_config.type.value,
+                name=grader_config.name,
+                config={
+                    "script": grader_config.script,
+                    "rubric": grader_config.rubric,
+                    "model": grader_config.model,
+                    **grader_config.config,
+                },
+            )
+            self._graders[grader_config.name] = grader
+
+    def load_tasks(self) -> list[Task]:
+        """Load all tasks from spec patterns."""
+        tasks = []
+        
+        for pattern in self.spec.tasks:
+            if pattern.startswith("include:"):
+                pattern = pattern.replace("include:", "").strip()
+            
+            # Resolve glob pattern
+            task_files = glob.glob(str(self.base_path / pattern))
+            
+            for task_file in task_files:
+                task = Task.from_file(task_file)
+                if task.enabled:
+                    tasks.append(task)
+        
+        return tasks
+
+    def run(self, tasks: list[Task] | None = None) -> EvalResult:
+        """Run evaluation synchronously."""
+        return asyncio.run(self.run_async(tasks))
+
+    async def run_async(self, tasks: list[Task] | None = None) -> EvalResult:
+        """Run evaluation asynchronously."""
+        start_time = time.time()
+        
+        if tasks is None:
+            tasks = self.load_tasks()
+        
+        eval_id = f"{self.spec.name}-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}"
+        
+        # Run tasks
+        if self.spec.config.parallel:
+            task_results = await self._run_tasks_parallel(tasks)
+        else:
+            task_results = await self._run_tasks_sequential(tasks)
+        
+        # Compute metrics
+        metrics = self._compute_metrics(task_results)
+        
+        # Build summary
+        passed_count = sum(1 for t in task_results if t.status == "passed")
+        failed_count = sum(1 for t in task_results if t.status == "failed")
+        error_count = sum(1 for t in task_results if t.status == "error")
+        
+        # Composite score from weighted metrics
+        composite_score = self._compute_composite_score(metrics)
+        
+        summary = EvalSummary(
+            total_tasks=len(task_results),
+            passed=passed_count,
+            failed=failed_count,
+            errors=error_count,
+            skipped=0,
+            pass_rate=passed_count / len(task_results) if task_results else 0.0,
+            composite_score=composite_score,
+            duration_ms=int((time.time() - start_time) * 1000),
+        )
+
+        return EvalResult(
+            eval_id=eval_id,
+            skill=self.spec.skill,
+            eval_name=self.spec.name,
+            timestamp=datetime.utcnow(),
+            config=ResultEvalConfig(
+                trials_per_task=self.spec.config.trials_per_task,
+                model=self.spec.config.model,
+                executor=self.spec.config.executor.value,
+                timeout_seconds=self.spec.config.timeout_seconds,
+            ),
+            summary=summary,
+            metrics=metrics,
+            tasks=task_results,
+        )
+
+    async def _run_tasks_sequential(self, tasks: list[Task]) -> list[TaskResult]:
+        """Run tasks one at a time."""
+        results = []
+        for task in tasks:
+            result = await self._run_task(task)
+            results.append(result)
+            if self.spec.config.fail_fast and result.status == "failed":
+                break
+        return results
+
+    async def _run_tasks_parallel(self, tasks: list[Task]) -> list[TaskResult]:
+        """Run tasks in parallel."""
+        semaphore = asyncio.Semaphore(self.spec.config.max_workers)
+        
+        async def run_with_semaphore(task: Task) -> TaskResult:
+            async with semaphore:
+                return await self._run_task(task)
+        
+        return await asyncio.gather(*[run_with_semaphore(t) for t in tasks])
+
+    async def _run_task(self, task: Task) -> TaskResult:
+        """Run a single task with all trials."""
+        trials = []
+        
+        for trial_num in range(1, self.spec.config.trials_per_task + 1):
+            trial = await self._run_trial(task, trial_num)
+            trials.append(trial)
+        
+        # Determine overall status
+        passed_trials = sum(1 for t in trials if t.passed)
+        if passed_trials == len(trials):
+            status = "passed"
+        elif passed_trials > 0:
+            status = "partial"
+        else:
+            status = "failed"
+        
+        result = TaskResult(
+            id=task.id,
+            name=task.name,
+            status=status,
+            trials=trials,
+        )
+        result.compute_aggregate()
+        
+        return result
+
+    async def _run_trial(self, task: Task, trial_num: int) -> TrialResult:
+        """Run a single trial of a task."""
+        start_time = time.time()
+        
+        try:
+            # Execute the task
+            if self._legacy_executor:
+                # Legacy callable executor
+                output, transcript, outcome = self._legacy_executor(task)
+            elif self._executor:
+                # New executor interface
+                result = await self._executor.execute(
+                    prompt=task.inputs.prompt,
+                    context={"files": task.inputs.files} if task.inputs.files else None,
+                    skill_name=self.spec.skill,
+                )
+                output = result.output
+                transcript = [e.__dict__ for e in result.events] if result.events else []
+                outcome = {
+                    "status": "completed" if result.success else "failed",
+                    "error": result.error,
+                    "tool_calls": result.tool_calls,
+                }
+            else:
+                output, transcript, outcome = self._mock_execution(task)
+            
+            # Build grading context
+            context = GraderContext(
+                task=task.model_dump(),
+                transcript=transcript,
+                output=output,
+                outcome=outcome,
+                duration_ms=int((time.time() - start_time) * 1000),
+            )
+            
+            # Run all graders
+            grader_results = {}
+            for grader_name, grader in self._graders.items():
+                grader_results[grader_name] = grader.grade(context)
+            
+            # Also run task-specific graders
+            for task_grader in task.graders:
+                grader = GraderRegistry.create(
+                    grader_type=task_grader.type,
+                    name=task_grader.name,
+                    config={"assertions": task_grader.assertions, "rubric": task_grader.rubric},
+                )
+                grader_results[task_grader.name] = grader.grade(context)
+            
+            # Build transcript summary
+            tool_calls = [t for t in transcript if t.get("type") == "tool_call"]
+            transcript_summary = TranscriptSummary(
+                total_turns=len(transcript),
+                tool_calls=len(tool_calls),
+                tools_used=list(set(t.get("tool", "") for t in tool_calls)),
+            )
+            
+            # Determine trial status
+            all_passed = all(g.passed for g in grader_results.values()) if grader_results else True
+            
+            return TrialResult(
+                trial_id=trial_num,
+                status="passed" if all_passed else "failed",
+                duration_ms=int((time.time() - start_time) * 1000),
+                grader_results=grader_results,
+                transcript_summary=transcript_summary,
+                output=output,
+            )
+
+        except asyncio.TimeoutError:
+            return TrialResult(
+                trial_id=trial_num,
+                status="timeout",
+                duration_ms=int((time.time() - start_time) * 1000),
+                grader_results={},
+                error="Trial timed out",
+            )
+        except Exception as e:
+            return TrialResult(
+                trial_id=trial_num,
+                status="error",
+                duration_ms=int((time.time() - start_time) * 1000),
+                grader_results={},
+                error=str(e),
+            )
+
+    def _mock_execution(self, task: Task) -> tuple[str, list[dict], dict]:
+        """Mock execution for testing without a real executor."""
+        # Return simulated successful execution
+        return (
+            f"Mock output for task: {task.name}",
+            [
+                {"type": "tool_call", "tool": "mock_tool", "args": {}},
+                {"type": "response", "content": "Mock response"},
+            ],
+            {"status": "completed"},
+        )
+
+    def _compute_metrics(self, task_results: list[TaskResult]) -> dict[str, MetricResult]:
+        """Compute all configured metrics."""
+        metrics = {}
+        
+        for metric_config in self.spec.metrics:
+            if not metric_config.enabled:
+                continue
+            
+            # Calculate metric score based on task results
+            if metric_config.name == "task_completion":
+                score = self._calc_task_completion(task_results)
+            elif metric_config.name == "trigger_accuracy":
+                score = self._calc_trigger_accuracy(task_results)
+            elif metric_config.name == "behavior_quality":
+                score = self._calc_behavior_quality(task_results)
+            else:
+                # Default: use pass rate
+                score = sum(1 for t in task_results if t.status == "passed") / len(task_results) if task_results else 0.0
+            
+            metrics[metric_config.name] = MetricResult(
+                name=metric_config.name,
+                score=score,
+                threshold=metric_config.threshold,
+                passed=score >= metric_config.threshold,
+                weight=metric_config.weight,
+            )
+        
+        return metrics
+
+    def _calc_task_completion(self, task_results: list[TaskResult]) -> float:
+        """Calculate task completion metric."""
+        if not task_results:
+            return 0.0
+        
+        completed = sum(1 for t in task_results if t.status in ("passed", "partial"))
+        return completed / len(task_results)
+
+    def _calc_trigger_accuracy(self, task_results: list[TaskResult]) -> float:
+        """Calculate trigger accuracy metric (placeholder)."""
+        # This would be calculated from trigger test results
+        # For now, use pass rate as proxy
+        if not task_results:
+            return 0.0
+        return sum(1 for t in task_results if t.status == "passed") / len(task_results)
+
+    def _calc_behavior_quality(self, task_results: list[TaskResult]) -> float:
+        """Calculate behavior quality metric."""
+        if not task_results:
+            return 0.0
+        
+        # Average the grader scores across all trials
+        scores = []
+        for task in task_results:
+            for trial in task.trials:
+                if trial.grader_results:
+                    trial_score = sum(g.score for g in trial.grader_results.values()) / len(trial.grader_results)
+                    scores.append(trial_score)
+        
+        return sum(scores) / len(scores) if scores else 0.0
+
+    def _compute_composite_score(self, metrics: dict[str, MetricResult]) -> float:
+        """Compute weighted composite score from metrics."""
+        if not metrics:
+            return 0.0
+        
+        total_weight = sum(m.weight for m in metrics.values())
+        if total_weight == 0:
+            return 0.0
+        
+        weighted_sum = sum(m.score * m.weight for m in metrics.values())
+        return weighted_sum / total_weight

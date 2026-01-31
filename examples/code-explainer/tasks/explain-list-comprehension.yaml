@@ -1,0 +1,48 @@
+# Task: Explain a list comprehension
+# This tests the skill's ability to explain Pythonic patterns
+id: explain-list-comprehension-001
+name: Explain List Comprehension
+description: |
+  Test explaining Python list comprehension with filtering.
+  The skill should explain iteration, filtering, and transformation.
+
+tags:
+  - python
+  - comprehension
+  - beginner
+
+inputs:
+  prompt: |
+    Can you break down what this Python code does?
+    ```python
+    result = [x**2 for x in range(20) if x % 3 == 0]
+    ```
+  context:
+    language: python
+    complexity: beginner
+    concept: list-comprehension
+
+expected:
+  output_contains:
+    - "list"
+  output_contains_any:
+    - "square"
+    - "x**2"
+    - "power"
+    - "comprehension"
+  outcomes:
+    - type: task_completed
+  behavior:
+    # Simple explanation shouldn't need many tool calls
+    max_tool_calls: 3
+    max_response_time_ms: 20000
+
+graders:
+  - name: explains_comprehension
+    type: code
+    config:
+      assertions:
+        - "len(output) > 10"
+      # For real testing:
+      # - "'list' in output.lower() or 'comprehension' in output.lower()"
+      # - "'filter' in output.lower() or 'divisible' in output.lower()"

@@ -1,0 +1,72 @@
+# Trigger accuracy tests for code-explainer skill
+# These test whether the skill correctly identifies when to activate
+
+skill: code-explainer
+
+# Prompts that SHOULD trigger this skill
+should_trigger_prompts:
+  - prompt: "Explain this code to me"
+    reason: "Direct explanation request"
+    confidence: high
+
+  - prompt: "What does this function do?"
+    reason: "Asking about code functionality"
+    confidence: high
+
+  - prompt: "Can you break down this Python snippet?"
+    reason: "Request to break down code"
+    confidence: high
+
+  - prompt: "Help me understand this algorithm"
+    reason: "Understanding request for code"
+    confidence: high
+
+  - prompt: "Walk me through this JavaScript"
+    reason: "Step-by-step explanation request"
+    confidence: high
+
+  - prompt: "I don't understand what this code is doing"
+    reason: "Implicit explanation request"
+    confidence: medium
+
+  - prompt: "Can you clarify how this works?"
+    reason: "Clarification request about code"
+    confidence: medium
+
+  - prompt: "Explain the logic in lines 10-20"
+    reason: "Specific line range explanation"
+    confidence: high
+
+# Prompts that should NOT trigger this skill
+should_not_trigger_prompts:
+  - prompt: "Write me a function to sort a list"
+    reason: "Code writing request, not explaining existing code"
+    confidence: high
+
+  - prompt: "Deploy my app to Azure"
+    reason: "Deployment task, completely unrelated"
+    confidence: high
+
+  - prompt: "What's the weather like today?"
+    reason: "Completely unrelated question"
+    confidence: high
+
+  - prompt: "Fix the bug in my code"
+    reason: "Bug fixing requires action, not just explanation"
+    confidence: medium
+
+  - prompt: "Generate unit tests for this"
+    reason: "Test generation is a different task"
+    confidence: high
+
+  - prompt: "Refactor this to be more efficient"
+    reason: "Refactoring request, not explanation"
+    confidence: medium
+
+  - prompt: "Create a new React component"
+    reason: "Code creation, not explanation"
+    confidence: high
+
+  - prompt: "Convert this Python to JavaScript"
+    reason: "Code translation, not explanation"
+    confidence: high

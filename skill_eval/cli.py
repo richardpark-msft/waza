@@ -1,0 +1,583 @@
+"""CLI entrypoint for skill-eval."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+from typing import Optional
+
+import click
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from rich import print as rprint
+
+from skill_eval import __version__
+from skill_eval.schemas.eval_spec import EvalSpec
+from skill_eval.schemas.task import Task
+from skill_eval.runner import EvalRunner
+from skill_eval.reporters import JSONReporter, MarkdownReporter, GitHubReporter
+
+console = Console()
+
+
+@click.group()
+@click.version_option(version=__version__, prog_name="skill-eval")
+def main():
+    """Skill Eval - Evaluate Agent Skills like you evaluate AI Agents."""
+    pass
+
+
+@main.command()
+@click.argument("eval_path", type=click.Path(exists=True))
+@click.option("--task", "-t", multiple=True, help="Run specific task(s) by ID")
+@click.option("--output", "-o", type=click.Path(), help="Output file path")
+@click.option("--format", "-f", type=click.Choice(["json", "markdown", "github"]), default="json", help="Output format")
+@click.option("--trials", type=int, help="Override trials per task")
+@click.option("--parallel/--no-parallel", default=None, help="Run tasks in parallel")
+@click.option("--verbose", "-v", is_flag=True, help="Verbose output")
+@click.option("--fail-threshold", type=float, default=0.0, help="Fail if pass rate below threshold")
+@click.option("--model", "-m", type=str, help="Model to use for execution (e.g., claude-sonnet-4-20250514, gpt-4)")
+@click.option("--executor", "-e", type=click.Choice(["mock", "copilot-sdk"]), help="Executor type")
+def run(
+    eval_path: str,
+    task: tuple[str, ...],
+    output: Optional[str],
+    format: str,
+    trials: Optional[int],
+    parallel: Optional[bool],
+    verbose: bool,
+    fail_threshold: float,
+    model: Optional[str],
+    executor: Optional[str],
+):
+    """Run an evaluation suite.
+    
+    EVAL_PATH: Path to the eval.yaml file
+    """
+    console.print(f"[bold blue]skill-eval[/bold blue] v{__version__}")
+    console.print()
+
+    # Load spec
+    try:
+        spec = EvalSpec.from_file(eval_path)
+        console.print(f"[green]✓[/green] Loaded eval: [bold]{spec.name}[/bold]")
+        console.print(f"  Skill: {spec.skill}")
+    except Exception as e:
+        console.print(f"[red]✗ Failed to load eval spec:[/red] {e}")
+        sys.exit(1)
+
+    # Apply overrides
+    if trials:
+        spec.config.trials_per_task = trials
+    if parallel is not None:
+        spec.config.parallel = parallel
+    if model:
+        spec.config.model = model
+    if executor:
+        from skill_eval.schemas.eval_spec import ExecutorType
+        spec.config.executor = ExecutorType(executor)
+    spec.config.verbose = verbose
+
+    # Display executor/model info
+    console.print(f"  Executor: {spec.config.executor.value}")
+    console.print(f"  Model: {spec.config.model}")
+
+    # Create runner
+    base_path = Path(eval_path).parent
+    runner = EvalRunner(spec=spec, base_path=base_path)
+
+    # Load and filter tasks
+    try:
+        tasks = runner.load_tasks()
+        if task:
+            tasks = [t for t in tasks if t.id in task]
+        
+        if not tasks:
+            console.print("[yellow]⚠ No tasks to run[/yellow]")
+            sys.exit(0)
+        
+        console.print(f"  Tasks: {len(tasks)}")
+        console.print(f"  Trials per task: {spec.config.trials_per_task}")
+        console.print()
+    except Exception as e:
+        console.print(f"[red]✗ Failed to load tasks:[/red] {e}")
+        sys.exit(1)
+
+    # Run eval
+    with console.status("[bold green]Running evaluation..."):
+        result = runner.run(tasks)
+
+    # Display results
+    _display_results(result, verbose)
+
+    # Output to file
+    if output:
+        if format == "json":
+            reporter = JSONReporter()
+            reporter.report_to_file(result, output)
+        elif format == "markdown":
+            reporter = MarkdownReporter()
+            reporter.report_to_file(result, output)
+        elif format == "github":
+            reporter = GitHubReporter()
+            Path(output).write_text(reporter.report_summary(result))
+        
+        console.print(f"\n[green]✓[/green] Results written to: {output}")
+
+    # Check threshold
+    if result.summary.pass_rate < fail_threshold:
+        console.print(f"\n[red]✗ Pass rate {result.summary.pass_rate:.1%} below threshold {fail_threshold:.1%}[/red]")
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("skill_name")
+@click.option("--path", "-p", type=click.Path(), default=".", help="Output directory")
+def init(skill_name: str, path: str):
+    """Initialize a new eval suite for a skill.
+    
+    SKILL_NAME: Name of the skill to create evals for
+    """
+    output_dir = Path(path) / skill_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Create eval.yaml
+    eval_yaml = f"""# Eval specification for {skill_name}
+name: {skill_name}-eval
+description: Evaluation suite for the {skill_name} skill
+skill: {skill_name}
+version: "1.0"
+
+config:
+  trials_per_task: 3
+  timeout_seconds: 300
+  parallel: false
+
+metrics:
+  - name: task_completion
+    weight: 0.4
+    threshold: 0.8
+  - name: trigger_accuracy
+    weight: 0.3
+    threshold: 0.9
+  - name: behavior_quality
+    weight: 0.3
+    threshold: 0.7
+
+graders:
+  - type: code
+    name: output_validation
+    config:
+      assertions:
+        - "len(output) > 0"
+
+tasks:
+  - include: tasks/*.yaml
+"""
+    (output_dir / "eval.yaml").write_text(eval_yaml)
+    
+    # Create tasks directory
+    tasks_dir = output_dir / "tasks"
+    tasks_dir.mkdir(exist_ok=True)
+    
+    # Create example task
+    example_task = f"""# Example task for {skill_name}
+id: {skill_name}-example-001
+name: Example Task
+description: Example task to test {skill_name}
+
+inputs:
+  prompt: "Example prompt for the skill"
+  context: {{}}
+
+expected:
+  outcomes:
+    - type: task_completed
+  output_contains:
+    - "expected output"
+"""
+    (tasks_dir / "example-task.yaml").write_text(example_task)
+    
+    # Create graders directory
+    graders_dir = output_dir / "graders"
+    graders_dir.mkdir(exist_ok=True)
+    
+    # Create example grader script
+    grader_script = '''#!/usr/bin/env python3
+"""Example grader script for custom validation."""
+
+import json
+import sys
+
+
+def grade(context: dict) -> dict:
+    """Grade the skill execution.
+    
+    Args:
+        context: Grading context with task, output, transcript, etc.
+        
+    Returns:
+        dict with score, passed, message, and optional details
+    """
+    output = context.get("output", "")
+    
+    # Add your custom grading logic here
+    score = 1.0 if output else 0.0
+    
+    return {
+        "score": score,
+        "passed": score >= 0.5,
+        "message": "Custom grading complete",
+        "details": {
+            "output_length": len(output),
+        },
+    }
+
+
+if __name__ == "__main__":
+    # Read context from stdin
+    context = json.load(sys.stdin)
+    result = grade(context)
+    print(json.dumps(result))
+'''
+    (graders_dir / "custom_grader.py").write_text(grader_script)
+    
+    # Create trigger tests file
+    trigger_tests = f"""# Trigger accuracy tests for {skill_name}
+skill: {skill_name}
+
+should_trigger_prompts:
+  - prompt: "Use {skill_name} to do something"
+    reason: "Explicit skill mention"
+  - prompt: "Help me with [relevant task]"
+    reason: "Relevant task request"
+
+should_not_trigger_prompts:
+  - prompt: "What's the weather like?"
+    reason: "Unrelated question"
+  - prompt: "Help me with [unrelated task]"
+    reason: "Different domain"
+"""
+    (output_dir / "trigger_tests.yaml").write_text(trigger_tests)
+    
+    console.print(f"[green]✓[/green] Created eval suite at: [bold]{output_dir}[/bold]")
+    console.print()
+    console.print("Structure created:")
+    console.print(f"  {output_dir}/")
+    console.print(f"  ├── eval.yaml")
+    console.print(f"  ├── trigger_tests.yaml")
+    console.print(f"  ├── tasks/")
+    console.print(f"  │   └── example-task.yaml")
+    console.print(f"  └── graders/")
+    console.print(f"      └── custom_grader.py")
+    console.print()
+    console.print("Next steps:")
+    console.print(f"  1. Edit [bold]tasks/*.yaml[/bold] to add test cases")
+    console.print(f"  2. Edit [bold]trigger_tests.yaml[/bold] for trigger accuracy tests")
+    console.print(f"  3. Run: [bold]skill-eval run {output_dir}/eval.yaml[/bold]")
+
+
+@main.command()
+@click.argument("results_path", type=click.Path(exists=True))
+@click.option("--format", "-f", type=click.Choice(["json", "markdown", "github"]), default="markdown", help="Output format")
+def report(results_path: str, format: str):
+    """Generate a report from eval results.
+    
+    RESULTS_PATH: Path to results JSON file
+    """
+    from skill_eval.schemas.results import EvalResult
+    
+    result = EvalResult.from_file(results_path)
+    
+    if format == "json":
+        reporter = JSONReporter()
+        print(reporter.report(result))
+    elif format == "markdown":
+        reporter = MarkdownReporter()
+        print(reporter.report(result))
+    elif format == "github":
+        reporter = GitHubReporter()
+        print(reporter.report_summary(result))
+
+
+@main.command()
+def list_graders():
+    """List available grader types."""
+    from skill_eval.graders import GraderRegistry
+    
+    console.print("[bold]Available Grader Types[/bold]")
+    console.print()
+    
+    graders = {
+        "code": "Deterministic code-based assertions",
+        "regex": "Pattern matching against output",
+        "tool_calls": "Validate tool call patterns",
+        "script": "Run external Python script",
+        "llm": "LLM-as-judge with rubric",
+        "llm_comparison": "Compare output to reference using LLM",
+        "human": "Requires human review",
+        "human_calibration": "Human calibration for LLM graders",
+    }
+    
+    table = Table()
+    table.add_column("Type", style="cyan")
+    table.add_column("Description")
+    
+    for grader_type, description in graders.items():
+        table.add_row(grader_type, description)
+    
+    console.print(table)
+
+
+@main.command()
+@click.argument("results_files", nargs=-1, type=click.Path(exists=True), required=True)
+@click.option("--output", "-o", type=click.Path(), help="Output file path for comparison report")
+@click.option("--format", "-f", type=click.Choice(["markdown", "json"]), default="markdown", help="Output format")
+def compare(results_files: tuple[str, ...], output: Optional[str], format: str):
+    """Compare results across multiple eval runs.
+    
+    Useful for comparing different models, versions, or configurations.
+    
+    RESULTS_FILES: Two or more results JSON files to compare
+    """
+    from skill_eval.schemas.results import EvalResult
+    
+    if len(results_files) < 2:
+        console.print("[red]✗ Need at least 2 results files to compare[/red]")
+        sys.exit(1)
+    
+    # Load all results
+    results: list[EvalResult] = []
+    for path in results_files:
+        try:
+            results.append(EvalResult.from_file(path))
+        except Exception as e:
+            console.print(f"[red]✗ Failed to load {path}:[/red] {e}")
+            sys.exit(1)
+    
+    console.print(f"[bold blue]Model Comparison Report[/bold blue]")
+    console.print()
+    
+    # Summary comparison table
+    table = Table(title="Summary Comparison")
+    table.add_column("Metric")
+    for r in results:
+        label = r.config.model or r.eval_name
+        table.add_column(label[:20], justify="right")
+    
+    # Add rows
+    table.add_row(
+        "Pass Rate",
+        *[f"{r.summary.pass_rate:.1%}" for r in results]
+    )
+    table.add_row(
+        "Composite Score",
+        *[f"{r.summary.composite_score:.2f}" for r in results]
+    )
+    table.add_row(
+        "Tasks Passed",
+        *[f"{r.summary.passed}/{r.summary.total_tasks}" for r in results]
+    )
+    table.add_row(
+        "Duration",
+        *[f"{r.summary.duration_ms}ms" for r in results]
+    )
+    table.add_row(
+        "Executor",
+        *[r.config.executor for r in results]
+    )
+    
+    console.print(table)
+    
+    # Per-task comparison
+    console.print()
+    task_table = Table(title="Per-Task Comparison")
+    task_table.add_column("Task")
+    for r in results:
+        label = r.config.model or r.eval_name
+        task_table.add_column(label[:15], justify="center")
+    
+    # Get all task IDs
+    all_task_ids = set()
+    for r in results:
+        for t in r.tasks:
+            all_task_ids.add(t.id)
+    
+    for task_id in sorted(all_task_ids):
+        row = [task_id[:30]]
+        for r in results:
+            task = next((t for t in r.tasks if t.id == task_id), None)
+            if task:
+                icon = "✅" if task.status == "passed" else "❌"
+                score = task.aggregate.mean_score if task.aggregate else 0
+                row.append(f"{icon} {score:.2f}")
+            else:
+                row.append("-")
+        task_table.add_row(*row)
+    
+    console.print(task_table)
+    
+    # Identify winner
+    best_idx = max(range(len(results)), key=lambda i: results[i].summary.composite_score)
+    best = results[best_idx]
+    console.print()
+    console.print(f"[green]🏆 Best: {best.config.model or best.eval_name} (score: {best.summary.composite_score:.2f})[/green]")
+    
+    # Output to file
+    if output:
+        if format == "markdown":
+            report = _generate_comparison_markdown(results)
+            Path(output).write_text(report)
+        elif format == "json":
+            import json
+            comparison = {
+                "results": [r.model_dump() for r in results],
+                "best_model": best.config.model,
+                "best_score": best.summary.composite_score,
+            }
+            Path(output).write_text(json.dumps(comparison, indent=2, default=str))
+        console.print(f"\n[green]✓[/green] Comparison written to: {output}")
+
+
+@main.command()
+@click.argument("telemetry_path", type=click.Path(exists=True))
+@click.option("--output", "-o", type=click.Path(), help="Output file for analysis")
+@click.option("--skill", "-s", type=str, help="Filter to specific skill")
+def analyze(telemetry_path: str, output: Optional[str], skill: Optional[str]):
+    """Analyze runtime telemetry data.
+    
+    Convert captured session telemetry into eval-compatible format for analysis.
+    
+    TELEMETRY_PATH: Path to telemetry JSON file or directory
+    """
+    from skill_eval.telemetry import TelemetryAnalyzer
+    
+    try:
+        analyzer = TelemetryAnalyzer()
+        analysis = analyzer.analyze_file(telemetry_path, skill_filter=skill)
+        
+        console.print(f"[bold blue]Runtime Telemetry Analysis[/bold blue]")
+        console.print()
+        console.print(f"Sessions analyzed: {analysis.get('total_sessions', 0)}")
+        console.print(f"Skills invoked: {', '.join(analysis.get('skills', []))}")
+        console.print()
+        
+        # Show metrics
+        if "metrics" in analysis:
+            table = Table(title="Runtime Metrics")
+            table.add_column("Metric")
+            table.add_column("Value", justify="right")
+            
+            for name, value in analysis["metrics"].items():
+                table.add_row(name, str(value))
+            
+            console.print(table)
+        
+        if output:
+            import json
+            Path(output).write_text(json.dumps(analysis, indent=2, default=str))
+            console.print(f"\n[green]✓[/green] Analysis written to: {output}")
+            
+    except ImportError:
+        console.print("[yellow]⚠ Telemetry analysis requires additional setup[/yellow]")
+        console.print("See docs/TELEMETRY.md for configuration instructions")
+    except Exception as e:
+        console.print(f"[red]✗ Analysis failed:[/red] {e}")
+        sys.exit(1)
+
+
+def _generate_comparison_markdown(results: list) -> str:
+    """Generate markdown comparison report."""
+    lines = ["# Model Comparison Report", ""]
+    
+    # Summary table
+    lines.append("## Summary")
+    lines.append("")
+    headers = ["Metric"] + [r.config.model or r.eval_name for r in results]
+    lines.append("| " + " | ".join(headers) + " |")
+    lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
+    
+    lines.append("| Pass Rate | " + " | ".join([f"{r.summary.pass_rate:.1%}" for r in results]) + " |")
+    lines.append("| Composite Score | " + " | ".join([f"{r.summary.composite_score:.2f}" for r in results]) + " |")
+    lines.append("| Tasks Passed | " + " | ".join([f"{r.summary.passed}/{r.summary.total_tasks}" for r in results]) + " |")
+    lines.append("")
+    
+    # Per-task table
+    lines.append("## Per-Task Results")
+    lines.append("")
+    
+    all_task_ids = set()
+    for r in results:
+        for t in r.tasks:
+            all_task_ids.add(t.id)
+    
+    headers = ["Task"] + [r.config.model or r.eval_name for r in results]
+    lines.append("| " + " | ".join(headers) + " |")
+    lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
+    
+    for task_id in sorted(all_task_ids):
+        row = [task_id]
+        for r in results:
+            task = next((t for t in r.tasks if t.id == task_id), None)
+            if task:
+                icon = "✅" if task.status == "passed" else "❌"
+                row.append(icon)
+            else:
+                row.append("-")
+        lines.append("| " + " | ".join(row) + " |")
+    
+    return "\n".join(lines)
+
+
+def _display_results(result, verbose: bool = False):
+    """Display results in the console."""
+    # Summary panel
+    status = "✅ PASSED" if result.summary.pass_rate >= 0.8 else "❌ FAILED"
+    status_color = "green" if result.summary.pass_rate >= 0.8 else "red"
+    
+    summary_text = f"""[bold]{status}[/bold]
+
+Pass Rate: {result.summary.pass_rate:.1%} ({result.summary.passed}/{result.summary.total_tasks})
+Composite Score: {result.summary.composite_score:.2f}
+Duration: {result.summary.duration_ms}ms
+"""
+    
+    console.print(Panel(summary_text, title=f"[{status_color}]{result.eval_name}[/{status_color}]", border_style=status_color))
+
+    # Metrics table
+    if result.metrics:
+        console.print()
+        table = Table(title="Metrics")
+        table.add_column("Metric")
+        table.add_column("Score", justify="right")
+        table.add_column("Threshold", justify="right")
+        table.add_column("Status")
+        
+        for name, metric in result.metrics.items():
+            status = "✅" if metric.passed else "❌"
+            table.add_row(name, f"{metric.score:.2f}", f"{metric.threshold:.2f}", status)
+        
+        console.print(table)
+
+    # Task results table
+    console.print()
+    table = Table(title="Task Results")
+    table.add_column("Task")
+    table.add_column("Status")
+    table.add_column("Pass Rate", justify="right")
+    table.add_column("Score", justify="right")
+    
+    status_icons = {"passed": "✅", "failed": "❌", "partial": "⚠️", "error": "💥"}
+    
+    for task in result.tasks:
+        icon = status_icons.get(task.status, "❓")
+        pass_rate = f"{task.aggregate.pass_rate:.1%}" if task.aggregate else "-"
+        score = f"{task.aggregate.mean_score:.2f}" if task.aggregate else "-"
+        table.add_row(task.name[:40], icon, pass_rate, score)
+    
+    console.print(table)
+
+
+if __name__ == "__main__":
+    main()

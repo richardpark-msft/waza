@@ -1,0 +1,61 @@
+# Eval specification for code-explainer skill
+# This demonstrates a complete eval suite for a skill that explains code snippets
+name: code-explainer-eval
+description: |
+  Evaluation suite for the code-explainer skill.
+  Tests explanation quality across different:
+  - Programming languages (Python, JavaScript, SQL)
+  - Complexity levels (beginner, intermediate)
+  - Code patterns (recursion, async/await, comprehensions, joins)
+
+skill: code-explainer
+version: "1.0"
+
+config:
+  # Number of times to run each task (for consistency measurement)
+  trials_per_task: 3
+  # Maximum time for skill to respond
+  timeout_seconds: 300
+  # Run tasks sequentially for deterministic results
+  parallel: false
+  # Use mock executor for fast testing (switch to copilot-sdk for real tests)
+  executor: mock
+  # Default model to use
+  model: claude-sonnet-4-20250514
+
+# Metrics define how we measure overall skill quality
+metrics:
+  - name: task_completion
+    weight: 0.4
+    threshold: 0.8
+    description: Did the skill complete the explanation task?
+
+  - name: trigger_accuracy
+    weight: 0.3
+    threshold: 0.9
+    description: Does the skill trigger on appropriate prompts?
+
+  - name: behavior_quality
+    weight: 0.3
+    threshold: 0.7
+    description: Is the skill behavior appropriate (tool usage, response time)?
+
+# Global graders applied to all tasks
+graders:
+  # Check that we got meaningful output
+  - type: code
+    name: has_explanation
+    config:
+      assertions:
+        - "len(output) > 10"
+
+  # Check output doesn't contain error patterns
+  - type: regex
+    name: no_errors
+    config:
+      must_not_match:
+        - "(?i)fatal error|crashed|exception occurred"
+
+# Task files to include (glob pattern)
+tasks:
+  - "tasks/*.yaml"
