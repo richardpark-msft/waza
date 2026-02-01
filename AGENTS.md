@@ -38,7 +38,7 @@ When adding a new feature:
 skill_eval/
 ├── cli.py              # CLI entrypoint (click commands)
 ├── runner.py           # Eval orchestration
-├── generator.py        # SKILL.md → eval generation
+├── generator.py        # SKILL.md → eval generation (includes AssistedGenerator)
 ├── schemas/
 │   ├── eval_spec.py    # EvalSpec model
 │   └── task.py         # Task model
@@ -71,6 +71,16 @@ skill_eval/
 1. Update `BaseExecutor` interface if needed
 2. Implement in `CopilotExecutor` and `MockExecutor`
 3. Update `docs/INTEGRATION-TESTING.md`
+
+### LLM-Assisted Generation
+
+The `AssistedGenerator` class in `generator.py` uses Copilot SDK to generate better evals:
+
+1. `generate_tasks()` - Asks LLM to create realistic test tasks
+2. `generate_fixtures()` - Asks LLM for domain-appropriate fixture files  
+3. `suggest_graders()` - Asks LLM for relevant graders/assertions
+
+Falls back to pattern-based `EvalGenerator` if LLM fails.
 
 ## Testing
 

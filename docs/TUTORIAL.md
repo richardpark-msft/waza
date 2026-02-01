@@ -37,6 +37,25 @@ skill-eval generate ./path/to/SKILL.md -o ./my-skill-eval
 #     └── requirements.txt
 ```
 
+### Option A+ : LLM-Assisted Generation (Best Quality)
+
+For more realistic and comprehensive test cases, use LLM-assisted generation:
+
+```bash
+# Use --assist to have an LLM analyze the skill and generate better tests
+skill-eval generate ./SKILL.md -o ./my-skill-eval --assist
+
+# Specify a different model if desired
+skill-eval generate ./SKILL.md -o ./my-skill-eval --assist --model gpt-4o
+```
+
+LLM-assisted generation:
+- Creates more natural, realistic user prompts
+- Generates domain-appropriate fixture files
+- Suggests relevant graders and assertions
+- Produces 5 diverse tasks testing different scenarios
+- Falls back to pattern-based generation if LLM fails
+
 ### Option B: Blank Scaffold
 ```bash
 # Create eval scaffolding from scratch

@@ -560,7 +560,9 @@ def _generate_from_skill(source: str, output_dir: Path, skill_name: str):
 @click.argument("skill_source", type=str)
 @click.option("--output", "-o", type=click.Path(), help="Output directory (default: skill name)")
 @click.option("--force", "-f", is_flag=True, help="Overwrite existing files")
-def generate(skill_source: str, output: Optional[str], force: bool):
+@click.option("--assist", "-a", is_flag=True, help="Use LLM to generate better tasks and fixtures")
+@click.option("--model", "-m", type=str, default="claude-sonnet-4-20250514", help="Model for assisted generation")
+def generate(skill_source: str, output: Optional[str], force: bool, assist: bool, model: str):
     """Generate eval suite from a SKILL.md file.
     
     SKILL_SOURCE: Path or URL to SKILL.md file
@@ -569,9 +571,12 @@ def generate(skill_source: str, output: Optional[str], force: bool):
     
       skill-eval generate ./skills/azure-functions/SKILL.md
       
-      skill-eval generate https://github.com/microsoft/GitHub-Copilot-for-Azure/blob/main/plugin/skills/azure-functions/SKILL.md
+      skill-eval generate https://github.com/...azure-functions/SKILL.md
       
       skill-eval generate ./SKILL.md -o evals/my-skill
+      
+      # Use LLM-assisted generation for better tasks:
+      skill-eval generate ./SKILL.md --assist
     """
     from skill_eval.generator import SkillParser, EvalGenerator
     
@@ -623,12 +628,104 @@ def generate(skill_source: str, output: Optional[str], force: bool):
                 console.print("[yellow]Aborted.[/yellow]")
                 return
     
-    # Generate eval files
-    generator = EvalGenerator(skill)
-    
     output_dir.mkdir(parents=True, exist_ok=True)
     tasks_dir = output_dir / "tasks"
     tasks_dir.mkdir(exist_ok=True)
+    
+    # Use assisted generation if requested
+    if assist:
+        import asyncio
+        from skill_eval.generator import AssistedGenerator
+        
+        console.print(f"[cyan]Using LLM-assisted generation with {model}...[/cyan]")
+        console.print()
+        
+        async def run_assisted():
+            assisted = AssistedGenerator(skill, model=model, console=console)
+            try:
+                await assisted.setup()
+                return await assisted.generate_all()
+            finally:
+                await assisted.teardown()
+        
+        try:
+            result = asyncio.run(run_assisted())
+            tasks_data = result.get("tasks", [])
+            fixtures_data = result.get("fixtures", [])
+            graders_data = result.get("graders", [])
+            
+            console.print()
+            
+            if tasks_data:
+                # Write LLM-generated tasks
+                assisted_gen = AssistedGenerator(skill, model=model)
+                for i, task in enumerate(tasks_data):
+                    task_yaml = assisted_gen.format_task_yaml(task, graders_data)
+                    filename = f"task-{i+1:03d}.yaml"
+                    (tasks_dir / filename).write_text(task_yaml)
+                    console.print(f"[green]✓[/green] Created tasks/{filename} ({task.get('name', 'Task')})")
+            else:
+                console.print("[yellow]⚠ LLM returned no tasks, using pattern-based generation[/yellow]")
+                generator = EvalGenerator(skill)
+                tasks = generator.generate_example_tasks()
+                for filename, content in tasks:
+                    (tasks_dir / filename).write_text(content)
+                    console.print(f"[green]✓[/green] Created tasks/{filename}")
+            
+            if fixtures_data:
+                # Write LLM-generated fixtures
+                fixtures_dir = output_dir / "fixtures"
+                fixtures_dir.mkdir(exist_ok=True)
+                for filename, content in fixtures_data:
+                    file_path = fixtures_dir / filename
+                    file_path.parent.mkdir(parents=True, exist_ok=True)
+                    file_path.write_text(content)
+                    console.print(f"[green]✓[/green] Created fixtures/{filename}")
+            else:
+                console.print("[yellow]⚠ LLM returned no fixtures, using pattern-based generation[/yellow]")
+                generator = EvalGenerator(skill)
+                fixtures = generator.generate_fixtures()
+                if fixtures:
+                    fixtures_dir = output_dir / "fixtures"
+                    fixtures_dir.mkdir(exist_ok=True)
+                    for filename, content in fixtures:
+                        file_path = fixtures_dir / filename
+                        file_path.parent.mkdir(parents=True, exist_ok=True)
+                        file_path.write_text(content)
+                        console.print(f"[green]✓[/green] Created fixtures/{filename}")
+        
+        except ImportError as e:
+            console.print(f"[red]✗ Copilot SDK required for --assist:[/red] {e}")
+            console.print("[yellow]Falling back to pattern-based generation...[/yellow]")
+            assist = False  # Fall through to pattern-based
+        except Exception as e:
+            console.print(f"[red]✗ Assisted generation failed:[/red] {e}")
+            console.print("[yellow]Falling back to pattern-based generation...[/yellow]")
+            assist = False  # Fall through to pattern-based
+    
+    if not assist:
+        # Standard pattern-based generation
+        generator = EvalGenerator(skill)
+        
+        # Write example tasks
+        tasks = generator.generate_example_tasks()
+        for filename, content in tasks:
+            (tasks_dir / filename).write_text(content)
+            console.print(f"[green]✓[/green] Created tasks/{filename}")
+        
+        # Write fixtures (sample code files for testing context)
+        fixtures = generator.generate_fixtures()
+        if fixtures:
+            fixtures_dir = output_dir / "fixtures"
+            fixtures_dir.mkdir(exist_ok=True)
+            for filename, content in fixtures:
+                file_path = fixtures_dir / filename
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                file_path.write_text(content)
+                console.print(f"[green]✓[/green] Created fixtures/{filename}")
+    
+    # Always write eval.yaml and trigger_tests.yaml using pattern-based generator
+    generator = EvalGenerator(skill)
     
     # Write eval.yaml
     eval_yaml = generator.generate_eval_yaml()
@@ -639,24 +736,6 @@ def generate(skill_source: str, output: Optional[str], force: bool):
     trigger_tests = generator.generate_trigger_tests()
     (output_dir / "trigger_tests.yaml").write_text(trigger_tests)
     console.print(f"[green]✓[/green] Created trigger_tests.yaml")
-    
-    # Write example tasks
-    tasks = generator.generate_example_tasks()
-    for filename, content in tasks:
-        (tasks_dir / filename).write_text(content)
-        console.print(f"[green]✓[/green] Created tasks/{filename}")
-    
-    # Write fixtures (sample code files for testing context)
-    fixtures = generator.generate_fixtures()
-    if fixtures:
-        fixtures_dir = output_dir / "fixtures"
-        fixtures_dir.mkdir(exist_ok=True)
-        for filename, content in fixtures:
-            file_path = fixtures_dir / filename
-            # Create parent directories if needed (e.g., infra/main.bicep)
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.write_text(content)
-            console.print(f"[green]✓[/green] Created fixtures/{filename}")
     
     console.print()
     console.print(Panel(

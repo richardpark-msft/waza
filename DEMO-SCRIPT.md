@@ -135,6 +135,73 @@ azure-functions-eval/
 
 ---
 
+## Part 2b: LLM-Assisted Generation (2 min) ⭐ NEW
+
+### Talking Points
+
+> "For even better test cases, we can use the `--assist` flag to have an LLM analyze the SKILL.md and generate more realistic tasks and fixtures."
+
+### Generate with LLM Assistance
+
+```bash
+skill-eval generate https://raw.githubusercontent.com/microsoft/GitHub-Copilot-for-Azure/main/plugin/skills/azure-functions/SKILL.md \
+  -o azure-functions-eval-assisted \
+  --assist
+```
+
+**Expected Output:**
+```
+skill-eval v0.1.0
+
+Parsing: https://raw.githubusercontent.com/microsoft/...
+✓ Parsed skill: azure-functions
+  Description: Build and deploy serverless Azure Functions...
+
+Using LLM-assisted generation with claude-sonnet-4-20250514...
+
+⠋ Generating tasks...
+✓ Generated 5 tasks
+⠋ Generating fixtures...
+✓ Generated 4 fixtures
+⠋ Suggesting graders...
+✓ Suggested 3 graders
+
+✓ Created tasks/task-001.yaml (Deploy HTTP Trigger Function)
+✓ Created tasks/task-002.yaml (Create Timer-based Function)
+✓ Created tasks/task-003.yaml (Debug Cold Start Issues)
+✓ Created tasks/task-004.yaml (Configure Function App Settings)
+✓ Created tasks/task-005.yaml (Set Up CI/CD for Functions)
+✓ Created fixtures/function_app.py
+✓ Created fixtures/host.json
+✓ Created fixtures/local.settings.json
+✓ Created fixtures/requirements.txt
+✓ Created eval.yaml
+✓ Created trigger_tests.yaml
+
+╭────────────────────── ✓ Success ──────────────────────╮
+│ Generated eval suite at: azure-functions-eval-assisted │
+│                                                        │
+│ Run with:                                              │
+│   skill-eval run azure-functions-eval-assisted/eval.yaml │
+╰────────────────────────────────────────────────────────╯
+```
+
+### Compare the Tasks
+
+```bash
+# Pattern-based task
+cat azure-functions-eval/tasks/task-001.yaml
+
+# LLM-generated task (more realistic prompt)
+cat azure-functions-eval-assisted/tasks/task-001.yaml
+```
+
+> "Notice how the LLM-generated tasks have more natural, realistic prompts like 'Deploy my HTTP trigger function to Azure' instead of just 'Deploy my function to Azure'."
+
+> "The --assist flag is great for creating comprehensive test suites quickly."
+
+---
+
 ## Part 3: Initialize from Scratch (2 min)
 
 ### Talking Points

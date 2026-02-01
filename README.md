@@ -58,13 +58,17 @@ skill-eval init my-skill
 # Option B: Auto-generate from a SKILL.md file
 skill-eval generate https://raw.githubusercontent.com/org/repo/main/skills/my-skill/SKILL.md
 
-# Option C: Init with SKILL.md integration
+# Option C: LLM-assisted generation (recommended for better tasks)
+skill-eval generate ./SKILL.md --assist
+
+# Option D: Init with SKILL.md integration
 skill-eval init my-skill --from-skill ./path/to/SKILL.md
 
 # This creates:
 # my-skill/
 # ├── eval.yaml           # Main eval configuration
 # ├── trigger_tests.yaml  # Trigger accuracy tests
+# ├── fixtures/           # Sample project files for context
 # └── tasks/
 #     └── example-task.yaml
 ```
@@ -187,6 +191,8 @@ skill-eval init my-skill \
 skill-eval generate https://example.com/SKILL.md \
   --output ./my-skill-eval \          # Output directory
   --force                             # Overwrite existing files
+  --assist                            # Use LLM for better task/fixture generation
+  --model claude-sonnet-4-20250514    # Model for assisted generation
 ```
 
 ---

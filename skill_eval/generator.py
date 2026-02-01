@@ -834,3 +834,388 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     def _escape_yaml(self, s: str) -> str:
         """Escape string for YAML."""
         return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', ' ')
+
+
+class AssistedGenerator:
+    """LLM-assisted eval generation using Copilot SDK.
+    
+    Uses an LLM to analyze SKILL.md and generate more realistic,
+    comprehensive test tasks, fixtures, and graders.
+    """
+    
+    def __init__(
+        self,
+        skill: ParsedSkill,
+        model: str = "claude-sonnet-4-20250514",
+        console: Any = None,
+    ):
+        self.skill = skill
+        self.model = model
+        self.console = console
+        self._client = None
+        self._workspace = None
+    
+    async def setup(self) -> None:
+        """Initialize Copilot client."""
+        import tempfile
+        try:
+            from copilot import CopilotClient
+        except ImportError:
+            raise ImportError(
+                "Copilot SDK not installed. Install with: pip install github-copilot-sdk\n"
+                "Or run without --assist for pattern-based generation."
+            )
+        
+        self._workspace = tempfile.mkdtemp(prefix="skill-eval-assist-")
+        self._client = CopilotClient({
+            "cwd": self._workspace,
+            "log_level": "error",
+        })
+        await self._client.start()
+    
+    async def teardown(self) -> None:
+        """Clean up resources."""
+        import shutil
+        if self._client:
+            await self._client.stop()
+        if self._workspace:
+            shutil.rmtree(self._workspace, ignore_errors=True)
+    
+    async def _call_llm(self, prompt: str) -> str:
+        """Send prompt to LLM and get response."""
+        import asyncio
+        
+        if not self._client:
+            raise RuntimeError("Client not initialized. Call setup() first.")
+        
+        # Create a session
+        session = await self._client.create_session({
+            "model": self.model,
+            "streaming": True,
+        })
+        
+        output_parts: list[str] = []
+        done_event = asyncio.Event()
+        
+        def handle_event(event) -> None:
+            event_type = event.type.value if hasattr(event.type, 'value') else str(event.type)
+            
+            # Collect assistant messages
+            if event_type == "assistant.message":
+                if hasattr(event.data, 'content') and event.data.content:
+                    output_parts.append(event.data.content)
+            elif event_type == "assistant.message_delta":
+                if hasattr(event.data, 'delta_content') and event.data.delta_content:
+                    output_parts.append(event.data.delta_content)
+            
+            # Check for completion
+            if event_type == "session.idle":
+                done_event.set()
+            elif event_type == "session.error":
+                done_event.set()
+        
+        # Register event handler
+        session.on(handle_event)
+        
+        # Send prompt
+        await session.send({"prompt": prompt})
+        
+        # Wait for completion
+        try:
+            await asyncio.wait_for(done_event.wait(), timeout=120)
+        except asyncio.TimeoutError:
+            pass
+        
+        # Cleanup
+        try:
+            await session.destroy()
+        except Exception:
+            pass
+        
+        return "".join(output_parts)
+    
+    def _parse_json_response(self, response: str) -> Any:
+        """Extract and parse JSON from LLM response."""
+        import json
+        
+        # Try to find JSON in code blocks
+        if "```json" in response:
+            start = response.find("```json") + 7
+            end = response.find("```", start)
+            if end > start:
+                response = response[start:end].strip()
+        elif "```" in response:
+            start = response.find("```") + 3
+            end = response.find("```", start)
+            if end > start:
+                response = response[start:end].strip()
+        
+        # Try to find JSON array or object
+        for start_char, end_char in [('[', ']'), ('{', '}')]:
+            start = response.find(start_char)
+            if start >= 0:
+                # Find matching end
+                depth = 0
+                for i, c in enumerate(response[start:], start):
+                    if c == start_char:
+                        depth += 1
+                    elif c == end_char:
+                        depth -= 1
+                        if depth == 0:
+                            try:
+                                return json.loads(response[start:i+1])
+                            except json.JSONDecodeError:
+                                pass
+                            break
+        
+        # Try parsing entire response
+        try:
+            return json.loads(response.strip())
+        except json.JSONDecodeError:
+            return None
+    
+    async def generate_tasks(self) -> list[dict[str, Any]]:
+        """Use LLM to generate realistic test tasks."""
+        prompt = f"""Analyze this SKILL.md and generate 5 realistic test tasks for evaluating this skill.
+
+SKILL.md Content:
+---
+{self.skill.raw_content[:4000]}
+---
+
+Skill Name: {self.skill.name}
+Description: {self.skill.description}
+Triggers: {', '.join(self.skill.triggers[:5])}
+
+Generate 5 diverse test tasks that:
+1. Use natural language prompts (as a real user would ask)
+2. Test different capabilities of the skill
+3. Range from simple to complex scenarios
+4. Include edge cases
+
+Return ONLY a JSON array with this structure:
+[
+  {{
+    "id": "task-001",
+    "name": "Short descriptive name",
+    "prompt": "The user's natural language request",
+    "description": "What this task tests",
+    "expected_keywords": ["keyword1", "keyword2"],
+    "difficulty": "easy|medium|hard"
+  }}
+]
+
+Return ONLY the JSON array, no explanation."""
+
+        response = await self._call_llm(prompt)
+        tasks = self._parse_json_response(response)
+        
+        if not tasks or not isinstance(tasks, list):
+            return []
+        
+        # Validate and clean tasks
+        valid_tasks = []
+        for i, task in enumerate(tasks[:5]):
+            if isinstance(task, dict) and "prompt" in task:
+                valid_tasks.append({
+                    "id": task.get("id", f"{self._safe_name()}-{i+1:03d}"),
+                    "name": task.get("name", f"Task {i+1}"),
+                    "prompt": task.get("prompt", ""),
+                    "description": task.get("description", ""),
+                    "expected_keywords": task.get("expected_keywords", []),
+                    "difficulty": task.get("difficulty", "medium"),
+                })
+        
+        return valid_tasks
+    
+    async def generate_fixtures(self) -> list[tuple[str, str]]:
+        """Use LLM to generate appropriate fixture files."""
+        prompt = f"""Based on this skill, generate realistic project files that a user would have when using this skill.
+
+Skill: {self.skill.name}
+Description: {self.skill.description}
+Triggers: {', '.join(self.skill.triggers[:5])}
+
+Content preview:
+{self.skill.raw_content[:2000]}
+
+Generate 3-5 realistic project files that would be in a user's workspace.
+Files should be appropriate for the skill's domain (e.g., Azure config files, code files, etc.)
+
+Return ONLY a JSON array with this structure:
+[
+  {{
+    "filename": "path/to/file.ext",
+    "content": "file content here",
+    "purpose": "why this file is relevant"
+  }}
+]
+
+Keep files realistic but concise (under 50 lines each).
+Return ONLY the JSON array, no explanation."""
+
+        response = await self._call_llm(prompt)
+        files = self._parse_json_response(response)
+        
+        if not files or not isinstance(files, list):
+            return []
+        
+        fixtures = []
+        for f in files[:5]:
+            if isinstance(f, dict) and "filename" in f and "content" in f:
+                fixtures.append((f["filename"], f["content"]))
+        
+        return fixtures
+    
+    async def suggest_graders(self, tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Use LLM to suggest appropriate graders for tasks."""
+        task_summary = "\n".join([
+            f"- {t.get('name', 'Task')}: {t.get('prompt', '')[:100]}"
+            for t in tasks[:5]
+        ])
+        
+        prompt = f"""For these test tasks, suggest appropriate graders/assertions to validate the skill's behavior.
+
+Skill: {self.skill.name}
+Tasks:
+{task_summary}
+
+Suggest graders that check:
+1. Output contains expected content
+2. No dangerous commands were executed
+3. Appropriate tools/APIs were used
+4. Response quality and completeness
+
+Return ONLY a JSON array with grader configs:
+[
+  {{
+    "name": "grader_name",
+    "type": "code|llm|regex|tool_use",
+    "assertions": ["assertion1", "assertion2"],
+    "description": "what this grader checks"
+  }}
+]
+
+Focus on 3-5 key graders that would catch real issues.
+Return ONLY the JSON array, no explanation."""
+
+        response = await self._call_llm(prompt)
+        graders = self._parse_json_response(response)
+        
+        if not graders or not isinstance(graders, list):
+            return self._default_graders()
+        
+        valid_graders = []
+        for g in graders[:5]:
+            if isinstance(g, dict) and "name" in g:
+                valid_graders.append({
+                    "name": g.get("name", "check"),
+                    "type": g.get("type", "code"),
+                    "assertions": g.get("assertions", []),
+                    "description": g.get("description", ""),
+                })
+        
+        return valid_graders if valid_graders else self._default_graders()
+    
+    def _default_graders(self) -> list[dict[str, Any]]:
+        """Return default graders if LLM fails."""
+        return [
+            {
+                "name": "output_check",
+                "type": "code",
+                "assertions": ["len(output) > 0"],
+                "description": "Basic output validation",
+            },
+            {
+                "name": "no_dangerous_commands",
+                "type": "code",
+                "assertions": [
+                    "'rm -rf /' not in output",
+                    "'drop database' not in output.lower()",
+                ],
+                "description": "Safety check",
+            },
+        ]
+    
+    def _safe_name(self) -> str:
+        """Convert skill name to safe identifier."""
+        return re.sub(r'[^a-zA-Z0-9-]', '-', self.skill.name.lower()).strip('-')
+    
+    def format_task_yaml(self, task: dict[str, Any], graders: list[dict[str, Any]]) -> str:
+        """Format a task dict as YAML."""
+        # Escape and truncate prompt
+        prompt = task.get("prompt", "").replace('"', '\\"').replace('\n', ' ')
+        if len(prompt) > 60:
+            prompt = prompt[:57] + "..."
+        
+        keywords = task.get("expected_keywords", [])[:5]
+        keywords_yaml = "\n".join(f'    - "{k}"' for k in keywords) if keywords else '    - "{}"'.format(self.skill.name.lower())
+        
+        graders_yaml = ""
+        for g in graders[:3]:
+            graders_yaml += f"""
+  - name: {g.get('name', 'check')}
+    type: {g.get('type', 'code')}
+    assertions:"""
+            for a in g.get("assertions", ["len(output) > 0"])[:3]:
+                graders_yaml += f'\n      - "{a}"'
+        
+        return f"""---
+# {task.get('name', 'Task')}
+# LLM-generated task - review and customize
+id: {task.get('id', 'task-001')}
+name: "{task.get('name', 'Task')}"
+description: "{task.get('description', '')[:60]}"
+
+inputs:
+  prompt: "{prompt}"
+  context: {{}}
+
+expected:
+  outcomes:
+    - type: task_completed
+  output_contains:
+{keywords_yaml}
+
+  behavior:
+    max_tool_calls: 20
+    max_iterations: 10
+
+graders:{graders_yaml}
+"""
+    
+    async def generate_all(self) -> dict[str, Any]:
+        """Generate all eval components using LLM assistance.
+        
+        Returns:
+            Dict with 'tasks', 'fixtures', 'graders' keys
+        """
+        if self.console:
+            from rich.progress import Progress, SpinnerColumn, TextColumn
+            
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=self.console,
+            ) as progress:
+                task1 = progress.add_task("[cyan]Generating tasks...", total=None)
+                tasks = await self.generate_tasks()
+                progress.update(task1, description=f"[green]✓ Generated {len(tasks)} tasks")
+                
+                task2 = progress.add_task("[cyan]Generating fixtures...", total=None)
+                fixtures = await self.generate_fixtures()
+                progress.update(task2, description=f"[green]✓ Generated {len(fixtures)} fixtures")
+                
+                task3 = progress.add_task("[cyan]Suggesting graders...", total=None)
+                graders = await self.suggest_graders(tasks)
+                progress.update(task3, description=f"[green]✓ Suggested {len(graders)} graders")
+        else:
+            tasks = await self.generate_tasks()
+            fixtures = await self.generate_fixtures()
+            graders = await self.suggest_graders(tasks)
+        
+        return {
+            "tasks": tasks,
+            "fixtures": fixtures,
+            "graders": graders,
+        }
