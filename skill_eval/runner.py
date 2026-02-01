@@ -54,6 +54,7 @@ class EvalRunner:
         executor: BaseExecutor | Callable[[Task], tuple[str, list[dict], dict]] | None = None,
         base_path: Path | None = None,
         progress_callback: ProgressCallback | None = None,
+        context_dir: str | None = None,
     ):
         """Initialize eval runner.
         
@@ -62,11 +63,13 @@ class EvalRunner:
             executor: Optional executor instance or legacy callable
             base_path: Base path for resolving relative paths in spec
             progress_callback: Optional callback for progress updates
+            context_dir: Optional directory with project files to use as context
         """
         self.spec = spec
         self._legacy_executor = None
         self._executor: BaseExecutor | None = None
         self._progress_callback = progress_callback
+        self._context_dir = context_dir
         
         # Handle different executor types
         if executor is None:
@@ -316,6 +319,37 @@ class EvalRunner:
         start_time = time.time()
         
         try:
+            # Build context including context_dir files if provided
+            exec_context = {}
+            if task.inputs.files:
+                exec_context["files"] = task.inputs.files
+            if self._context_dir:
+                exec_context["context_dir"] = self._context_dir
+                # Read actual files from context_dir for richer context
+                context_path = Path(self._context_dir)
+                if context_path.exists():
+                    project_files = []
+                    for ext in ["*.py", "*.js", "*.ts", "*.json", "*.yaml", "*.yml", "*.md"]:
+                        for f in context_path.glob(f"**/{ext}"):
+                            if f.is_file() and f.stat().st_size < 50000:  # Skip large files
+                                try:
+                                    project_files.append({
+                                        "path": str(f.relative_to(context_path)),
+                                        "content": f.read_text()[:5000],  # Truncate
+                                    })
+                                except Exception:
+                                    pass
+                    if project_files:
+                        exec_context["project_files"] = project_files[:20]  # Limit files
+            
+            # Emit user message event
+            self._report_progress(
+                "message",
+                task_name=task.name,
+                trial_num=trial_num,
+                details={"role": "user", "content": task.inputs.prompt},
+            )
+            
             # Execute the task
             if self._legacy_executor:
                 # Legacy callable executor
@@ -324,7 +358,7 @@ class EvalRunner:
                 # New executor interface
                 result = await self._executor.execute(
                     prompt=task.inputs.prompt,
-                    context={"files": task.inputs.files} if task.inputs.files else None,
+                    context=exec_context if exec_context else None,
                     skill_name=self.spec.skill,
                 )
                 output = result.output
@@ -334,8 +368,36 @@ class EvalRunner:
                     "error": result.error,
                     "tool_calls": result.tool_calls,
                 }
+                
+                # Emit message events for real-time display
+                for event in result.events or []:
+                    if event.type == "assistant.message":
+                        self._report_progress(
+                            "message",
+                            task_name=task.name,
+                            trial_num=trial_num,
+                            details={"role": "assistant", "content": event.data.get("content", "")},
+                        )
+                    elif event.type.startswith("tool."):
+                        self._report_progress(
+                            "message",
+                            task_name=task.name,
+                            trial_num=trial_num,
+                            details={
+                                "role": "tool", 
+                                "name": event.data.get("toolName", "tool"),
+                                "content": str(event.data.get("arguments", ""))[:200],
+                            },
+                        )
             else:
                 output, transcript, outcome = self._mock_execution(task)
+                # Emit mock response event
+                self._report_progress(
+                    "message",
+                    task_name=task.name,
+                    trial_num=trial_num,
+                    details={"role": "assistant", "content": output[:200]},
+                )
             
             # Build grading context
             context = GraderContext(

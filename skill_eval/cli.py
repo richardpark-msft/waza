@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -36,10 +37,12 @@ def main():
 @click.option("--format", "-f", type=click.Choice(["json", "markdown", "github"]), default="json", help="Output format")
 @click.option("--trials", type=int, help="Override trials per task")
 @click.option("--parallel/--no-parallel", default=None, help="Run tasks in parallel")
-@click.option("--verbose", "-v", is_flag=True, help="Verbose output")
+@click.option("--verbose", "-v", is_flag=True, help="Verbose output with conversation details")
 @click.option("--fail-threshold", type=float, default=0.0, help="Fail if pass rate below threshold")
 @click.option("--model", "-m", type=str, help="Model to use for execution (e.g., claude-sonnet-4-20250514, gpt-4)")
 @click.option("--executor", "-e", type=click.Choice(["mock", "copilot-sdk"]), help="Executor type")
+@click.option("--log", "-l", type=click.Path(), help="Save full conversation transcript to JSON file")
+@click.option("--context-dir", "-c", type=click.Path(exists=True), help="Directory with project files to use as context")
 def run(
     eval_path: str,
     task: tuple[str, ...],
@@ -51,6 +54,8 @@ def run(
     fail_threshold: float,
     model: Optional[str],
     executor: Optional[str],
+    log: Optional[str],
+    context_dir: Optional[str],
 ):
     """Run an evaluation suite.
     
@@ -119,7 +124,11 @@ def run(
         "total_trials": spec.config.trials_per_task,
         "completed_tasks": [],
         "status": "running",
+        "live_messages": [],  # For real-time verbose output
     }
+    
+    # Transcript log for --log option
+    transcript_log = []
     
     def make_progress_table() -> Table:
         """Create the progress display table."""
@@ -159,6 +168,19 @@ def run(
                 f"{icon} {last['name'][:35]} ({last['duration_ms']}ms)"
             )
         
+        # Show live messages in verbose mode (last 3)
+        if verbose and progress_state["live_messages"]:
+            for msg in progress_state["live_messages"][-3:]:
+                role = msg.get("role", "")
+                content = msg.get("content", "")[:80]
+                if role == "user":
+                    table.add_row("[dim]Prompt:[/dim]", f"[cyan]{content}...[/cyan]")
+                elif role == "assistant":
+                    table.add_row("[dim]Response:[/dim]", f"[green]{content}...[/green]")
+                elif role == "tool":
+                    tool_name = msg.get("name", "tool")
+                    table.add_row("[dim]Tool:[/dim]", f"[yellow]{tool_name}[/yellow]")
+        
         return table
     
     def progress_callback(
@@ -177,9 +199,30 @@ def run(
             progress_state["current_task"] = task_name or ""
             progress_state["current_task_num"] = task_num or 0
             progress_state["current_trial"] = 1
+            progress_state["live_messages"] = []  # Clear for new task
         elif event == "trial_start":
             progress_state["current_trial"] = trial_num or 1
             progress_state["total_trials"] = total_trials or 1
+            progress_state["live_messages"] = []  # Clear for new trial
+        elif event == "message":
+            # Real-time message from conversation
+            if details:
+                msg = {
+                    "role": details.get("role", "unknown"),
+                    "content": details.get("content", ""),
+                    "name": details.get("name"),
+                    "task": task_name,
+                    "trial": trial_num,
+                }
+                progress_state["live_messages"].append(msg)
+                # Log for --log option
+                if log:
+                    transcript_log.append({
+                        "timestamp": datetime.now().isoformat(),
+                        "task": task_name,
+                        "trial": trial_num,
+                        **msg,
+                    })
         elif event == "task_complete":
             progress_state["completed_tasks"].append({
                 "name": task_name,
@@ -188,9 +231,15 @@ def run(
                 "score": details.get("score", 0) if details else 0,
             })
             progress_state["current_task"] = ""
+            progress_state["live_messages"] = []
     
-    # Create runner with progress callback
-    runner = EvalRunner(spec=spec, base_path=base_path, progress_callback=progress_callback)
+    # Create runner with progress callback and context_dir
+    runner = EvalRunner(
+        spec=spec, 
+        base_path=base_path, 
+        progress_callback=progress_callback,
+        context_dir=context_dir,
+    )
 
     # Run with live progress display
     with Live(make_progress_table(), console=console, refresh_per_second=4) as live:
@@ -218,6 +267,20 @@ def run(
 
     # Display results
     _display_results(result, verbose)
+    
+    # Save transcript log if --log specified
+    if log:
+        import json
+        log_data = {
+            "eval_name": result.eval_name,
+            "skill": result.skill,
+            "timestamp": result.timestamp.isoformat(),
+            "config": result.config.model_dump(),
+            "transcript": transcript_log,
+            "tasks": [t.model_dump() for t in result.tasks],
+        }
+        Path(log).write_text(json.dumps(log_data, indent=2, default=str))
+        console.print(f"[green]✓[/green] Transcript logged to: {log}")
 
     # Output to file
     if output:
