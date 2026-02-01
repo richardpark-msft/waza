@@ -80,3 +80,4 @@ logs/
 *.pem
 *.key
 secrets.yaml
+azure-functions-eval/
