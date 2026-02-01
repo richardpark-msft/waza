@@ -3,7 +3,7 @@
 Waza (技) means "technique" or "skill" in Japanese.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.3.1"
 
 from waza.executors import BaseExecutor, ExecutionResult, MockExecutor
 from waza.graders.base import Grader, GraderType
