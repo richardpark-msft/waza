@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any
 
-from skill_eval.graders.base import Grader, GraderContext, GraderType, GraderRegistry
+from skill_eval.graders.base import Grader, GraderContext, GraderRegistry, GraderType
 from skill_eval.schemas.results import GraderResult
 
 
@@ -21,7 +20,7 @@ class CodeGrader(Grader):
     def grade(self, context: GraderContext) -> GraderResult:
         """Grade using configured assertions."""
         start_time = time.time()
-        
+
         assertions = self.config.get("assertions", [])
         if not assertions:
             return GraderResult(
@@ -35,7 +34,7 @@ class CodeGrader(Grader):
 
         passed_count = 0
         failed_assertions = []
-        
+
         # Build evaluation context
         # Note: transcript entries use 'role' not 'type', and tool calls have role='tool' with 'name'
         eval_context = {
@@ -98,10 +97,10 @@ class RegexGrader(Grader):
     def grade(self, context: GraderContext) -> GraderResult:
         """Grade using regex pattern matching."""
         start_time = time.time()
-        
+
         must_match = self.config.get("must_match", [])
         must_not_match = self.config.get("must_not_match", [])
-        
+
         failures = []
         output = context.output
 
@@ -143,17 +142,17 @@ class ToolCallGrader(Grader):
     def grade(self, context: GraderContext) -> GraderResult:
         """Grade based on tool call requirements."""
         start_time = time.time()
-        
+
         required = self.config.get("required", [])
         forbidden = self.config.get("forbidden", [])
         max_calls = self.config.get("max_calls")
-        
+
         # Extract tool calls from transcript
         tool_calls = []
         for entry in context.transcript:
             if entry.get("type") == "tool_call":
                 tool_calls.append(entry.get("tool", "") + " " + str(entry.get("args", "")))
-        
+
         tool_call_str = "\n".join(tool_calls)
         failures = []
 
@@ -205,12 +204,12 @@ class ScriptGrader(Grader):
 
     def grade(self, context: GraderContext) -> GraderResult:
         """Grade by running an external script."""
-        import subprocess
         import json
-        
+        import subprocess
+
         start_time = time.time()
         script_path = self.config.get("script")
-        
+
         if not script_path:
             return GraderResult(
                 name=self.name,

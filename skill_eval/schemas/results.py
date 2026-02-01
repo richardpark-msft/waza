@@ -89,11 +89,11 @@ class TaskResult(BaseModel):
         """Compute aggregate statistics from trials."""
         if not self.trials:
             return
-        
+
         scores = [t.score for t in self.trials]
         passed_count = sum(1 for t in self.trials if t.passed)
         durations = [t.duration_ms for t in self.trials]
-        
+
         self.aggregate = TaskAggregate(
             pass_rate=passed_count / len(self.trials),
             mean_score=sum(scores) / len(scores),

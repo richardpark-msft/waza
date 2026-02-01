@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import time
-from typing import Any
 
-from skill_eval.graders.base import Grader, GraderContext, GraderType, GraderRegistry
+from skill_eval.graders.base import Grader, GraderContext, GraderRegistry, GraderType
 from skill_eval.schemas.results import GraderResult
 
 
@@ -20,10 +19,10 @@ class HumanGrader(Grader):
     def grade(self, context: GraderContext) -> GraderResult:
         """Mark for human review - returns pending status."""
         start_time = time.time()
-        
+
         instructions = self.config.get("instructions", "Review the output for correctness.")
         criteria = self.config.get("criteria", [])
-        
+
         return GraderResult(
             name=self.name,
             type=self.grader_type.value,
@@ -76,11 +75,11 @@ class HumanCalibrationGrader(Grader):
     def grade(self, context: GraderContext) -> GraderResult:
         """Generate calibration request."""
         start_time = time.time()
-        
+
         # This grader is used alongside LLM graders to collect
         # human labels for calibration purposes
         llm_grader_name = self.config.get("calibrate_grader")
-        
+
         return GraderResult(
             name=self.name,
             type=self.grader_type.value,

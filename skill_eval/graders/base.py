@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from skill_eval.schemas.task import Task
     from skill_eval.schemas.results import GraderResult
 
 
@@ -39,7 +38,7 @@ class Grader(ABC):
 
     def __init__(self, name: str, config: dict[str, Any] | None = None):
         """Initialize grader.
-        
+
         Args:
             name: Unique name for this grader instance
             config: Optional configuration dictionary
@@ -54,12 +53,12 @@ class Grader(ABC):
         ...
 
     @abstractmethod
-    def grade(self, context: GraderContext) -> "GraderResult":
+    def grade(self, context: GraderContext) -> GraderResult:
         """Grade the skill execution.
-        
+
         Args:
             context: The grading context with transcript, output, etc.
-            
+
         Returns:
             GraderResult with score, passed status, and details
         """

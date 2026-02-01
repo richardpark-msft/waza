@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from skill_eval.schemas.results import MetricResult
 
 
@@ -14,7 +12,7 @@ class CompositeMetric:
 
     def __init__(self, threshold: float = 0.7):
         """Initialize composite metric.
-        
+
         Args:
             threshold: Pass/fail threshold for composite score
         """
@@ -22,10 +20,10 @@ class CompositeMetric:
 
     def calculate(self, metrics: dict[str, MetricResult]) -> MetricResult:
         """Calculate weighted composite score from individual metrics.
-        
+
         Args:
             metrics: Dictionary of metric name -> MetricResult
-            
+
         Returns:
             MetricResult with composite score
         """
@@ -79,28 +77,28 @@ class CompositeMetric:
         gate_metrics: list[str] | None = None,
     ) -> MetricResult:
         """Calculate composite with hard gates.
-        
+
         Gate metrics must pass for the overall eval to pass,
         regardless of composite score.
-        
+
         Args:
             metrics: Dictionary of metric name -> MetricResult
             gate_metrics: List of metric names that act as hard gates
-            
+
         Returns:
             MetricResult with composite score
         """
         result = self.calculate(metrics)
-        
+
         if gate_metrics:
             gates_passed = all(
                 metrics.get(name, MetricResult(name=name, score=0, threshold=0, passed=False, weight=0)).passed
                 for name in gate_metrics
             )
-            
+
             result.details["gate_metrics"] = gate_metrics
             result.details["gates_passed"] = gates_passed
-            
+
             if not gates_passed:
                 result.passed = False
                 result.details["failure_reason"] = "Gate metric(s) failed"

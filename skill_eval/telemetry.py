@@ -18,13 +18,13 @@ from typing import Any
 @dataclass
 class TelemetryEvent:
     """A single telemetry event from skill execution."""
-    
+
     timestamp: datetime
     event_type: str
     skill_name: str | None = None
     data: dict[str, Any] = field(default_factory=dict)
     session_id: str | None = None
-    
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -33,7 +33,7 @@ class TelemetryEvent:
             "data": self.data,
             "session_id": self.session_id,
         }
-    
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> TelemetryEvent:
         return cls(
@@ -48,7 +48,7 @@ class TelemetryEvent:
 @dataclass
 class SessionTelemetry:
     """Telemetry for a complete skill session."""
-    
+
     session_id: str
     start_time: datetime
     end_time: datetime | None = None
@@ -60,13 +60,13 @@ class SessionTelemetry:
     success: bool = True
     error: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     @property
     def duration_ms(self) -> int:
         if self.end_time and self.start_time:
             return int((self.end_time - self.start_time).total_seconds() * 1000)
         return 0
-    
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "session_id": self.session_id,
@@ -82,7 +82,7 @@ class SessionTelemetry:
             "duration_ms": self.duration_ms,
             "metadata": self.metadata,
         }
-    
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> SessionTelemetry:
         return cls(
@@ -102,28 +102,28 @@ class SessionTelemetry:
 
 class RuntimeCollector:
     """Collects telemetry during live skill execution.
-    
+
     Usage:
         collector = RuntimeCollector()
-        
+
         # Start session
         session_id = collector.start_session(prompt="Deploy to Azure")
-        
+
         # Record events as they happen
         collector.record_event(session_id, "skill.invoked", skill_name="azure-deploy")
         collector.record_event(session_id, "tool.called", data={"tool": "az"})
-        
+
         # End session
         collector.end_session(session_id, output="Deployed successfully", success=True)
-        
+
         # Export for analysis
         collector.export_to_file("telemetry.json")
     """
-    
+
     def __init__(self):
         self._sessions: dict[str, SessionTelemetry] = {}
         self._completed: list[SessionTelemetry] = []
-    
+
     def start_session(
         self,
         prompt: str,
@@ -132,19 +132,19 @@ class RuntimeCollector:
     ) -> str:
         """Start a new telemetry session."""
         import uuid
-        
+
         session_id = session_id or str(uuid.uuid4())
-        
+
         session = SessionTelemetry(
             session_id=session_id,
             start_time=datetime.utcnow(),
             prompt=prompt,
             metadata=metadata or {},
         )
-        
+
         self._sessions[session_id] = session
         return session_id
-    
+
     def record_event(
         self,
         session_id: str,
@@ -155,9 +155,9 @@ class RuntimeCollector:
         """Record an event in the session."""
         if session_id not in self._sessions:
             return
-        
+
         session = self._sessions[session_id]
-        
+
         event = TelemetryEvent(
             timestamp=datetime.utcnow(),
             event_type=event_type,
@@ -165,17 +165,17 @@ class RuntimeCollector:
             data=data or {},
             session_id=session_id,
         )
-        
+
         session.events.append(event)
-        
+
         # Track skill if provided
         if skill_name and not session.skill_name:
             session.skill_name = skill_name
-        
+
         # Track tool calls
         if event_type == "tool.called" and data:
             session.tool_calls.append(data)
-    
+
     def end_session(
         self,
         session_id: str,
@@ -186,22 +186,22 @@ class RuntimeCollector:
         """End a session and return the completed telemetry."""
         if session_id not in self._sessions:
             return None
-        
+
         session = self._sessions.pop(session_id)
         session.end_time = datetime.utcnow()
         session.output = output
         session.success = success
         session.error = error
-        
+
         self._completed.append(session)
         return session
-    
+
     def get_session(self, session_id: str) -> SessionTelemetry | None:
         """Get a session by ID."""
         return self._sessions.get(session_id) or next(
             (s for s in self._completed if s.session_id == session_id), None
         )
-    
+
     def export_to_file(self, path: str) -> None:
         """Export all completed sessions to a JSON file."""
         data = {
@@ -209,7 +209,7 @@ class RuntimeCollector:
             "sessions": [s.to_dict() for s in self._completed],
         }
         Path(path).write_text(json.dumps(data, indent=2))
-    
+
     @classmethod
     def load_from_file(cls, path: str) -> list[SessionTelemetry]:
         """Load sessions from an exported file."""
@@ -219,7 +219,7 @@ class RuntimeCollector:
 
 class TelemetryAnalyzer:
     """Analyzes telemetry data and converts to eval format."""
-    
+
     def analyze_file(
         self,
         path: str,
@@ -228,7 +228,7 @@ class TelemetryAnalyzer:
         """Analyze a telemetry file."""
         sessions = RuntimeCollector.load_from_file(path)
         return self.analyze_sessions(sessions, skill_filter)
-    
+
     def analyze_sessions(
         self,
         sessions: list[SessionTelemetry],
@@ -238,20 +238,20 @@ class TelemetryAnalyzer:
         # Filter by skill if specified
         if skill_filter:
             sessions = [s for s in sessions if s.skill_name == skill_filter]
-        
+
         if not sessions:
             return {
                 "total_sessions": 0,
                 "skills": [],
                 "metrics": {},
             }
-        
+
         # Aggregate metrics
-        skills = list(set(s.skill_name for s in sessions if s.skill_name))
+        skills = list({s.skill_name for s in sessions if s.skill_name})
         success_count = sum(1 for s in sessions if s.success)
         total_duration = sum(s.duration_ms for s in sessions)
         total_tool_calls = sum(len(s.tool_calls) for s in sessions)
-        
+
         # Per-skill breakdown
         skill_stats: dict[str, dict[str, Any]] = {}
         for skill in skills:
@@ -262,7 +262,7 @@ class TelemetryAnalyzer:
                 "avg_duration_ms": sum(s.duration_ms for s in skill_sessions) / len(skill_sessions),
                 "total_tool_calls": sum(len(s.tool_calls) for s in skill_sessions),
             }
-        
+
         return {
             "total_sessions": len(sessions),
             "skills": skills,
@@ -278,7 +278,7 @@ class TelemetryAnalyzer:
                 "end": max(s.end_time for s in sessions if s.end_time).isoformat() if any(s.end_time for s in sessions) else None,
             },
         }
-    
+
     def to_eval_input(
         self,
         session: SessionTelemetry,

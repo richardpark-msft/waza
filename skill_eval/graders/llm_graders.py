@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from skill_eval.graders.base import Grader, GraderContext, GraderType, GraderRegistry
+from skill_eval.graders.base import Grader, GraderContext, GraderRegistry, GraderType
 from skill_eval.schemas.results import GraderResult
 
 
@@ -21,13 +21,13 @@ class LLMGrader(Grader):
     def _load_rubric(self) -> str:
         """Load rubric from file or config."""
         rubric = self.config.get("rubric", "")
-        
+
         # If rubric is a file path, load it
         if rubric and not rubric.startswith("Score"):
             rubric_path = Path(rubric)
             if rubric_path.exists():
                 rubric = rubric_path.read_text()
-        
+
         return rubric or self._default_rubric()
 
     def _default_rubric(self) -> str:
@@ -46,13 +46,13 @@ Return a JSON object with:
     def grade(self, context: GraderContext) -> GraderResult:
         """Grade using an LLM judge."""
         start_time = time.time()
-        
+
         model = self.config.get("model", "gpt-4o-mini")
         rubric = self._load_rubric()
-        
+
         # Build the prompt for the LLM judge
         prompt = self._build_judge_prompt(context, rubric)
-        
+
         try:
             # Try to use OpenAI
             result = self._call_openai(prompt, model)
@@ -73,7 +73,7 @@ Return a JSON object with:
         raw_score = result.get("score", 3)
         normalized_score = (raw_score - 1) / 4  # 1->0, 5->1
         threshold = self.config.get("threshold", 0.75)  # Default: score >= 4
-        
+
         return GraderResult(
             name=self.name,
             type=self.grader_type.value,
@@ -111,8 +111,9 @@ Respond with a JSON object containing "score" (1-5), "reasoning", and "passed" (
     def _call_openai(self, prompt: str, model: str) -> dict[str, Any]:
         """Call OpenAI API for grading."""
         import json
+
         from openai import OpenAI
-        
+
         client = OpenAI()
         response = client.chat.completions.create(
             model=model,
@@ -120,7 +121,7 @@ Respond with a JSON object containing "score" (1-5), "reasoning", and "passed" (
             response_format={"type": "json_object"},
             temperature=0.0,
         )
-        
+
         return json.loads(response.choices[0].message.content)
 
     def _mock_result(self) -> dict[str, Any]:
@@ -143,10 +144,10 @@ class LLMComparisonGrader(Grader):
     def grade(self, context: GraderContext) -> GraderResult:
         """Grade by comparing output to reference."""
         start_time = time.time()
-        
+
         reference = self.config.get("reference", "")
         model = self.config.get("model", "gpt-4o-mini")
-        
+
         if not reference:
             return GraderResult(
                 name=self.name,
@@ -172,9 +173,10 @@ Respond with JSON: {{"score": N, "reasoning": "...", "passed": true/false}}
 """
 
         try:
-            from openai import OpenAI
             import json
-            
+
+            from openai import OpenAI
+
             client = OpenAI()
             response = client.chat.completions.create(
                 model=model,
@@ -188,7 +190,7 @@ Respond with JSON: {{"score": N, "reasoning": "...", "passed": true/false}}
 
         raw_score = result.get("score", 3)
         normalized_score = (raw_score - 1) / 4
-        
+
         return GraderResult(
             name=self.name,
             type=self.grader_type.value,

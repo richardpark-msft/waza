@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from skill_eval.schemas.task import TriggerTestSuite, TriggerTestCase
 from skill_eval.schemas.results import MetricResult
+from skill_eval.schemas.task import TriggerTestCase, TriggerTestSuite
 
 
 class TriggerAccuracyMetric:
@@ -15,7 +13,7 @@ class TriggerAccuracyMetric:
 
     def __init__(self, threshold: float = 0.9, weight: float = 1.0):
         """Initialize metric.
-        
+
         Args:
             threshold: Pass/fail threshold (0-1)
             weight: Weight in composite score
@@ -29,11 +27,11 @@ class TriggerAccuracyMetric:
         trigger_results: list[tuple[TriggerTestCase, bool]],
     ) -> MetricResult:
         """Calculate trigger accuracy score.
-        
+
         Args:
             test_suite: The trigger test suite
             trigger_results: List of (test_case, actual_triggered) tuples
-            
+
         Returns:
             MetricResult with accuracy score
         """
@@ -111,32 +109,32 @@ class TriggerAccuracyMetric:
         should_not_trigger_results: list[bool],
     ) -> MetricResult:
         """Calculate from simple boolean lists.
-        
+
         Args:
             should_trigger_results: Results for prompts that should trigger (True = triggered)
             should_not_trigger_results: Results for prompts that should not trigger (True = triggered)
-            
+
         Returns:
             MetricResult with accuracy score
         """
         # Build test cases and results
         trigger_results = []
-        
+
         for triggered in should_trigger_results:
             test_case = TriggerTestCase(
                 prompt="",  # Placeholder
                 should_trigger=True,
             )
             trigger_results.append((test_case, triggered))
-        
+
         for triggered in should_not_trigger_results:
             test_case = TriggerTestCase(
                 prompt="",
                 should_trigger=False,
             )
             trigger_results.append((test_case, triggered))
-        
+
         # Create minimal test suite
         test_suite = TriggerTestSuite(skill="unknown")
-        
+
         return self.calculate(test_suite, trigger_results)

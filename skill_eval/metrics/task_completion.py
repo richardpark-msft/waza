@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from skill_eval.schemas.results import TaskResult, MetricResult
+from skill_eval.schemas.results import MetricResult, TaskResult
 
 
 class TaskCompletionMetric:
@@ -14,7 +12,7 @@ class TaskCompletionMetric:
 
     def __init__(self, threshold: float = 0.8, weight: float = 1.0):
         """Initialize metric.
-        
+
         Args:
             threshold: Pass/fail threshold (0-1)
             weight: Weight in composite score
@@ -24,10 +22,10 @@ class TaskCompletionMetric:
 
     def calculate(self, task_results: list[TaskResult]) -> MetricResult:
         """Calculate task completion score.
-        
+
         Args:
             task_results: Results from all tasks
-            
+
         Returns:
             MetricResult with completion score
         """
@@ -43,17 +41,17 @@ class TaskCompletionMetric:
 
         # Count tasks that completed (passed or partial)
         completed = sum(
-            1 for t in task_results 
+            1 for t in task_results
             if t.status in ("passed", "partial")
         )
-        
+
         # Full pass count
         fully_passed = sum(1 for t in task_results if t.status == "passed")
-        
+
         # Calculate score (weight partial completions at 0.5)
         partial_count = completed - fully_passed
         weighted_score = (fully_passed + 0.5 * partial_count) / len(task_results)
-        
+
         return MetricResult(
             name=self.name,
             score=weighted_score,

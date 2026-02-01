@@ -57,7 +57,7 @@ class EvalConfig(BaseModel):
     max_workers: int = Field(default=4, ge=1, description="Max parallel workers")
     fail_fast: bool = Field(default=False, description="Stop on first failure")
     verbose: bool = Field(default=False, description="Verbose output")
-    
+
     # Executor configuration
     executor: ExecutorType = Field(default=ExecutorType.MOCK, description="Executor type")
     model: str = Field(default="claude-sonnet-4-20250514", description="Model for LLM-based execution")

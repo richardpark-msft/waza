@@ -1,9 +1,9 @@
 """Reporters package for skill-eval."""
 
 from skill_eval.reporters.json_reporter import (
+    GitHubReporter,
     JSONReporter,
     MarkdownReporter,
-    GitHubReporter,
 )
 
 __all__ = [

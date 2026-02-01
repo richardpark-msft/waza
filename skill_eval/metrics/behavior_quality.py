@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from skill_eval.schemas.results import TaskResult, TrialResult, MetricResult
+from skill_eval.schemas.results import MetricResult, TaskResult, TrialResult
 
 
 class BehaviorQualityMetric:
@@ -21,7 +19,7 @@ class BehaviorQualityMetric:
         required_tools: list[str] | None = None,
     ):
         """Initialize metric.
-        
+
         Args:
             threshold: Pass/fail threshold (0-1)
             weight: Weight in composite score
@@ -37,10 +35,10 @@ class BehaviorQualityMetric:
 
     def calculate(self, task_results: list[TaskResult]) -> MetricResult:
         """Calculate behavior quality score.
-        
+
         Args:
             task_results: Results from all tasks
-            
+
         Returns:
             MetricResult with quality score
         """
@@ -82,7 +80,7 @@ class BehaviorQualityMetric:
             "error_rate": 0.25,
             "grader_avg": 0.25,
         }
-        
+
         overall_score = (
             efficiency_score * component_weights["efficiency"]
             + tool_usage_score * component_weights["tool_usage"]
@@ -114,7 +112,7 @@ class BehaviorQualityMetric:
         scores = []
         for trial in trials:
             summary = trial.transcript_summary
-            
+
             # Score based on tool calls (if max configured)
             if self.max_tool_calls:
                 tool_ratio = min(1.0, summary.tool_calls / self.max_tool_calls)
@@ -122,14 +120,14 @@ class BehaviorQualityMetric:
                 tool_score = max(0.0, 1.0 - (tool_ratio - 0.5) * 2) if tool_ratio > 0.5 else 1.0
             else:
                 tool_score = 1.0
-            
+
             # Score based on turns (if max configured)
             if self.max_iterations:
                 turn_ratio = min(1.0, summary.total_turns / self.max_iterations)
                 turn_score = max(0.0, 1.0 - (turn_ratio - 0.5) * 2) if turn_ratio > 0.5 else 1.0
             else:
                 turn_score = 1.0
-            
+
             scores.append((tool_score + turn_score) / 2)
 
         return sum(scores) / len(scores)
@@ -143,11 +141,11 @@ class BehaviorQualityMetric:
         for trial in trials:
             tools_used = set(trial.transcript_summary.tools_used)
             required = set(self.required_tools)
-            
+
             if not required:
                 scores.append(1.0)
                 continue
-            
+
             # Score based on coverage of required tools
             covered = len(tools_used & required)
             score = covered / len(required)
@@ -161,10 +159,10 @@ class BehaviorQualityMetric:
             return 0.0
 
         error_count = sum(
-            1 for t in trials 
+            1 for t in trials
             if t.status == "error" or t.transcript_summary.errors
         )
-        
+
         error_rate = error_count / len(trials)
         # Invert: 0 errors = 1.0 score, 100% errors = 0.0 score
         return 1.0 - error_rate
@@ -176,5 +174,5 @@ class BehaviorQualityMetric:
             if trial.grader_results:
                 trial_avg = sum(g.score for g in trial.grader_results.values()) / len(trial.grader_results)
                 scores.append(trial_avg)
-        
+
         return sum(scores) / len(scores) if scores else 0.5  # Default to middle score
