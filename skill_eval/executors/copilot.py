@@ -219,8 +219,21 @@ class CopilotExecutor(BaseExecutor):
         if not self._workspace:
             return
         
+        # Handle task-level files
         files = context.get("files", [])
         for file_info in files:
+            path = file_info.get("path", "")
+            content = file_info.get("content", "")
+            
+            if path and content:
+                full_path = os.path.join(self._workspace, path)
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                with open(full_path, "w") as f:
+                    f.write(content)
+        
+        # Handle project_files from --context-dir
+        project_files = context.get("project_files", [])
+        for file_info in project_files:
             path = file_info.get("path", "")
             content = file_info.get("content", "")
             
