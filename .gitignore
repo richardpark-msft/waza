@@ -84,3 +84,4 @@ azure-functions-eval/
 transcript.json
 azure-validate-eval/
 azure-validate-transcript.json
+tmp/
