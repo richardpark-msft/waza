@@ -399,8 +399,10 @@ skill-eval v0.1.0
 ### Run with Project Context
 
 ```bash
-# Use fixtures (generated code files) as context
-skill-eval run azure-functions-eval/eval.yaml --context-dir azure-functions-eval/fixtures -v
+# Use fixtures (code files) as context
+skill-eval run examples/code-explainer/eval.yaml \
+  --context-dir examples/code-explainer/fixtures \
+  -v
 ```
 
 > "The --context-dir option provides real project files to the skill, so it has something to work with."
@@ -408,8 +410,8 @@ skill-eval run azure-functions-eval/eval.yaml --context-dir azure-functions-eval
 ### Save Conversation Transcript
 
 ```bash
-skill-eval run azure-functions-eval/eval.yaml \
-  --context-dir azure-functions-eval/fixtures \
+skill-eval run examples/code-explainer/eval.yaml \
+  --context-dir examples/code-explainer/fixtures \
   --log transcript.json \
   --output results.json
 ```
@@ -427,17 +429,17 @@ cat transcript.json | python -m json.tool | head -30
 [
   {
     "timestamp": "2025-01-20T10:30:00Z",
-    "task": "deploy-function-001",
+    "task": "explain-python-recursion-001",
     "trial": 1,
     "role": "user",
-    "content": "Help me create an Azure Function..."
+    "content": "Explain this code to me"
   },
   {
     "timestamp": "2025-01-20T10:30:01Z",
-    "task": "deploy-function-001",
+    "task": "explain-python-recursion-001",
     "trial": 1,
     "role": "assistant", 
-    "content": "I'll help you create an Azure Function..."
+    "content": "This Python function calculates the factorial..."
   }
 ]
 ```
@@ -624,18 +626,20 @@ Model Comparison Report
 ┡━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
 │ Pass Rate       │ 100.0% │          100.0% │
 │ Composite Score │   1.00 │            1.00 │
-│ Tasks Passed    │    2/2 │             2/2 │
-│ Duration        │  203ms │           202ms │
+│ Tasks Passed    │    4/4 │             4/4 │
+│ Duration        │  403ms │           401ms │
 │ Executor        │   mock │            mock │
 └─────────────────┴────────┴─────────────────┘
 
-                  Per-Task Comparison                   
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
-┃ Task                     ┃ gpt-4o  ┃ claude-sonnet-4 ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
-│ deploy-container-app-001 │ ✅ 1.00 │     ✅ 1.00     │
-│ deploy-function-app-001  │ ✅ 1.00 │     ✅ 1.00     │
-└──────────────────────────┴─────────┴─────────────────┘
+                      Per-Task Comparison                       
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ Task                           ┃ gpt-4o  ┃ claude-sonnet-4 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ Explain SQL JOIN Query         │ ✅ 1.00 │     ✅ 1.00     │
+│ Explain List Comprehension     │ ✅ 1.00 │     ✅ 1.00     │
+│ Explain JavaScript Async/Await │ ✅ 1.00 │     ✅ 1.00     │
+│ Explain Python Recursion       │ ✅ 1.00 │     ✅ 1.00     │
+└────────────────────────────────┴─────────┴─────────────────┘
 
 🏆 Best: gpt-4o (score: 1.00)
 ```
@@ -762,7 +766,7 @@ skill-eval run my-skill/eval.yaml --executor copilot-sdk
 skill-eval compare results-gpt4o.json results-claude.json -o comparison.md
 
 # Analyze runtime telemetry
-skill-eval analyze telemetry.json --skill azure-deploy
+skill-eval analyze telemetry.json --skill code-explainer
 
 # Generate report from results
 skill-eval report results.json --format markdown
