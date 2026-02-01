@@ -258,6 +258,22 @@ cat code-reviewer/eval.yaml
 
 > "Tasks are individual test cases. Let's create a real task for our code reviewer skill."
 
+### Create a Fixture File First
+
+```bash
+# Create fixtures directory
+mkdir -p code-reviewer/fixtures
+
+# Create a code file to review
+cat > code-reviewer/fixtures/example.py << 'EOF'
+def calculate_total(items):
+    total = 0
+    for i in range(len(items)):
+        total = total + items[i]['price']
+    return total
+EOF
+```
+
 ### Create a Task File
 
 ```bash
@@ -273,12 +289,6 @@ inputs:
     language: "python"
   files:
     - path: example.py
-      content: |
-        def calculate_total(items):
-            total = 0
-            for i in range(len(items)):
-                total = total + items[i]['price']
-            return total
 
 expected:
   output_contains:
@@ -290,9 +300,10 @@ expected:
 graders:
   - name: found_issues
     type: code
-    assertions:
-      - "len(output) > 50"
-      - "'improve' in output.lower() or 'suggest' in output.lower() or 'issue' in output.lower()"
+    config:
+      assertions:
+        - "len(output) > 50"
+        - "'improve' in output.lower() or 'suggest' in output.lower() or 'issue' in output.lower()"
 EOF
 ```
 
@@ -303,9 +314,11 @@ cat code-reviewer/tasks/review-python-code.yaml
 ```
 
 **Highlight:**
-- `inputs`: The prompt and context
+- `inputs.files`: References fixture file (not inline content)
 - `expected`: What success looks like
 - `graders`: How to score the result
+
+> "The task references `example.py` from fixtures. Run with `--context-dir code-reviewer/fixtures` to provide these files."
 
 ---
 
