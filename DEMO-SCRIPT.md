@@ -496,22 +496,93 @@ Available Grader Types
 
 ---
 
-## Part 7: Run an Existing Example (1 min)
+## Part 7: Run the Built-in Example (1 min)
 
 ### Talking Points
 
-> "Let me show you a more complete example — evaluating the azure-deploy skill."
+> "Let me show you a complete example — the code-explainer eval."
 
-### Run Azure Deploy Eval
+### Run Code Explainer Eval
 
 ```bash
-# Clone the examples (or copy from repo)
+# From the evals-for-skills repo
 cd /path/to/evals-for-skills
 
-skill-eval run examples/azure-deploy/eval.yaml
+# Run with mock executor and fixtures
+skill-eval run examples/code-explainer/eval.yaml \
+  --executor mock \
+  --context-dir examples/code-explainer/fixtures \
+  -v
 ```
 
-**Show the output with real tasks.**
+**Expected Output:**
+```
+skill-eval v0.0.2
+
+✓ Loaded eval: code-explainer-eval
+  Skill: code-explainer
+  Context: examples/code-explainer/fixtures (4 files)
+  Executor: mock
+  Model: claude-sonnet-4-20250514
+  Tasks: 4
+  Trials per task: 3
+
+   Progress: ██████████████████████████████ 4/4 (100%)
+
+╭──────────────────────── code-explainer-eval ────────────────────────╮
+│ ✅ PASSED                                                           │
+│                                                                     │
+│ Pass Rate: 100.0% (4/4)                                             │
+│ Composite Score: 1.00                                               │
+│ Duration: 1230ms                                                    │
+╰─────────────────────────────────────────────────────────────────────╯
+
+                         Metrics                          
+┏━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┓
+┃ Metric           ┃ Score ┃ Threshold ┃ Weight ┃ Status ┃
+┡━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━┩
+│ task_completion  │  1.00 │      0.80 │    0.4 │ ✅     │
+│ trigger_accuracy │  1.00 │      0.90 │    0.3 │ ✅     │
+│ behavior_quality │  1.00 │      0.70 │    0.3 │ ✅     │
+└──────────────────┴───────┴───────────┴────────┴────────┘
+
+                               Task Results                                
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Task                           ┃ Status ┃ Score ┃ Duration ┃ Tool Calls ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━┩
+│ Explain SQL JOIN Query         │ ✅     │  1.00 │    101ms │          2 │
+│ Explain List Comprehension     │ ✅     │  1.00 │    102ms │          2 │
+│ Explain JavaScript Async/Await │ ✅     │  1.00 │    102ms │          2 │
+│ Explain Python Recursion       │ ✅     │  1.00 │    102ms │          2 │
+└────────────────────────────────┴────────┴───────┴──────────┴────────────┘
+```
+
+### Explore the Example Structure
+
+```bash
+tree examples/code-explainer
+```
+
+**Structure:**
+```
+code-explainer/
+├── eval.yaml                # Main eval config
+├── fixtures/                # Code files the skill will explain
+│   ├── factorial.py         # Python recursion
+│   ├── fetch_user.js        # JavaScript async/await
+│   ├── squares.py           # List comprehension
+│   └── user_orders.sql      # SQL JOIN
+├── tasks/                   # Test tasks
+│   ├── explain-python-recursion.yaml
+│   ├── explain-js-async.yaml
+│   ├── explain-list-comprehension.yaml
+│   └── explain-sql-join.yaml
+├── graders/
+│   └── explanation_quality.py  # Custom grader
+└── trigger_tests.yaml       # Trigger accuracy tests
+```
+
+> "Notice the fixtures directory — these are real code files the skill has context for."
 
 ---
 
@@ -525,10 +596,16 @@ skill-eval run examples/azure-deploy/eval.yaml
 
 ```bash
 # Run with GPT-4o
-skill-eval run examples/azure-deploy/eval.yaml --model gpt-4o -o results-gpt4o.json
+skill-eval run examples/code-explainer/eval.yaml \
+  --context-dir examples/code-explainer/fixtures \
+  --model gpt-4o \
+  -o results-gpt4o.json
 
 # Run with Claude
-skill-eval run examples/azure-deploy/eval.yaml --model claude-sonnet-4-20250514 -o results-claude.json
+skill-eval run examples/code-explainer/eval.yaml \
+  --context-dir examples/code-explainer/fixtures \
+  --model claude-sonnet-4-20250514 \
+  -o results-claude.json
 ```
 
 ### Compare Results
@@ -583,9 +660,11 @@ skill-eval run --help | grep executor
 
 ```bash
 # This uses real Copilot SDK - requires authentication
-skill-eval run examples/azure-deploy/eval.yaml \
+skill-eval run examples/code-explainer/eval.yaml \
   --executor copilot-sdk \
-  --model claude-sonnet-4-20250514
+  --context-dir examples/code-explainer/fixtures \
+  --model claude-sonnet-4-20250514 \
+  -v
 ```
 
 > "The mock executor is perfect for CI/CD and fast iteration. The copilot-sdk executor is for real integration testing."
