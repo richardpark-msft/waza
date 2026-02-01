@@ -48,6 +48,14 @@ class CodeGrader(Grader):
             "any": any,
             "all": all,
             "re": re,
+            "str": str,
+            "int": int,
+            "float": float,
+            "bool": bool,
+            "list": list,
+            "dict": dict,
+            "True": True,
+            "False": False,
         }
 
         for assertion in assertions:

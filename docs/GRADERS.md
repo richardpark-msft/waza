@@ -92,6 +92,9 @@ Evaluates Python expressions against the execution context.
 | `errors` | list | Errors from transcript |
 | `duration_ms` | int | Execution duration |
 
+**Available Functions:**
+`len`, `any`, `all`, `str`, `int`, `float`, `bool`, `list`, `dict`, `re` (regex module)
+
 **Scoring:** `passed_assertions / total_assertions`
 
 **⚠️ Important:** Do NOT use generator expressions in assertions. They don't work with Python's `eval()` in restricted scope.
