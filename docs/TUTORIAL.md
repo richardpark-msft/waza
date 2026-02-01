@@ -47,6 +47,8 @@ skill-eval generate ./SKILL.md -o ./my-skill-eval --assist
 
 # Specify a different model if desired
 skill-eval generate ./SKILL.md -o ./my-skill-eval --assist --model gpt-4o
+
+# Available models: claude-sonnet-4-20250514 (default), claude-opus-4.5, gpt-4o, gpt-5
 ```
 
 LLM-assisted generation:

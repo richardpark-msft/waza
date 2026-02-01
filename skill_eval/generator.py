@@ -1154,10 +1154,8 @@ Return ONLY the JSON array, no explanation."""
     
     def format_task_yaml(self, task: dict[str, Any], graders: list[dict[str, Any]]) -> str:
         """Format a task dict as YAML."""
-        # Escape and truncate prompt
+        # Escape prompt (don't truncate - full prompt is needed!)
         prompt = task.get("prompt", "").replace('\\', '\\\\').replace('"', '\\"').replace('\n', ' ')
-        if len(prompt) > 60:
-            prompt = prompt[:57] + "..."
         
         keywords = task.get("expected_keywords", [])[:5]
         keywords_yaml = "\n".join(f'    - "{k}"' for k in keywords) if keywords else '    - "{}"'.format(self.skill.name.lower())

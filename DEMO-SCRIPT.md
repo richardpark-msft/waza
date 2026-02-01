@@ -147,6 +147,9 @@ azure-functions-eval/
 skill-eval generate https://raw.githubusercontent.com/microsoft/GitHub-Copilot-for-Azure/main/plugin/skills/azure-functions/SKILL.md \
   -o azure-functions-eval-assisted \
   --assist
+
+# Use a different model (claude-opus-4.5, gpt-4o, gpt-5)
+skill-eval generate ./SKILL.md -o ./my-eval --assist --model claude-opus-4.5
 ```
 
 **Expected Output:**

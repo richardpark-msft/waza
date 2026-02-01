@@ -383,13 +383,14 @@ class EvalRunner:
                             details={"role": "assistant", "content": event.data.get("content", "")},
                         )
                     elif event.type.startswith("tool."):
+                        tool_name = event.data.get("toolName") or event.data.get("tool_name") or event.data.get("name") or "tool"
                         self._report_progress(
                             "message",
                             task_name=task.name,
                             trial_num=trial_num,
                             details={
                                 "role": "tool", 
-                                "name": event.data.get("toolName", "tool"),
+                                "name": tool_name,
                                 "content": str(event.data.get("arguments", ""))[:200],
                             },
                         )
@@ -444,7 +445,8 @@ class EvalRunner:
                 elif event_type == "assistant.message":
                     conversation.append({"role": "assistant", "content": data.get("content", "")})
                 elif event_type.startswith("tool."):
-                    tool_name = data.get("toolName", "tool")
+                    # Try both camelCase and snake_case for tool name
+                    tool_name = data.get("toolName") or data.get("tool_name") or data.get("name") or "tool"
                     conversation.append({"role": "tool", "name": tool_name, "content": str(data.get("arguments", data))[:500]})
             
             # Determine trial status

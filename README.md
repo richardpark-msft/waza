@@ -193,6 +193,12 @@ skill-eval generate https://example.com/SKILL.md \
   --force                             # Overwrite existing files
   --assist                            # Use LLM for better task/fixture generation
   --model claude-sonnet-4-20250514    # Model for assisted generation
+
+# Available models for --assist:
+#   claude-sonnet-4-20250514 (default)
+#   claude-opus-4.5
+#   gpt-4o
+#   gpt-5
 ```
 
 ---
