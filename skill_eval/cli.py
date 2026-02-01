@@ -170,36 +170,59 @@ def run(
         )
 
         if progress_state["current_task"]:
-            task_name = progress_state["current_task"][:40]
+            task_name = progress_state["current_task"][:50]
             trial_info = ""
             if progress_state["total_trials"] > 1:
-                trial_info = f" (trial {progress_state['current_trial']}/{progress_state['total_trials']})"
+                trial_info = f" [dim](trial {progress_state['current_trial']}/{progress_state['total_trials']})[/dim]"
             table.add_row(
-                "[bold]Running:[/bold]",
+                "[bold]Task:[/bold]",
                 f"[cyan]{task_name}[/cyan]{trial_info}"
             )
 
-        # Show last completed task in verbose mode
-        if verbose and progress_state["completed_tasks"]:
+        # Show activity indicator from live messages
+        if progress_state["live_messages"]:
+            messages = progress_state["live_messages"]
+            # Count tools used
+            tool_calls = [m for m in messages if m.get("role") == "tool"]
+            tool_count = len(tool_calls)
+
+            # Get current activity
+            last_msg = messages[-1]
+            role = last_msg.get("role", "")
+
+            if role == "user":
+                activity = "[cyan]→ Sending prompt...[/cyan]"
+            elif role == "tool":
+                tool_name = last_msg.get("name", "tool")
+                activity = f"[yellow]⚙ {tool_name}[/yellow] [dim]({tool_count} tools)[/dim]"
+            elif role == "assistant":
+                content = last_msg.get("content", "")[:60]
+                if tool_count > 0:
+                    activity = f"[green]✓ Response[/green] [dim]({tool_count} tools used)[/dim]"
+                else:
+                    activity = f"[green]✓ {content}...[/green]" if content else "[green]✓ Generating response...[/green]"
+            else:
+                activity = "[dim]Processing...[/dim]"
+
+            table.add_row("[bold]Status:[/bold]", activity)
+
+        # Show last completed task
+        if progress_state["completed_tasks"]:
             last = progress_state["completed_tasks"][-1]
             icon = "✅" if last["status"] == "passed" else "❌"
+            duration = f"{last['duration_ms'] / 1000:.1f}s" if last['duration_ms'] >= 1000 else f"{last['duration_ms']}ms"
             table.add_row(
                 "[bold]Last:[/bold]",
-                f"{icon} {last['name'][:35]} ({last['duration_ms']}ms)"
+                f"{icon} {last['name'][:40]} [dim]({duration})[/dim]"
             )
 
-        # Show live messages in verbose mode (last 3)
+        # In verbose mode, show the actual prompt being sent
         if verbose and progress_state["live_messages"]:
-            for msg in progress_state["live_messages"][-3:]:
-                role = msg.get("role", "")
-                content = msg.get("content", "")[:80]
-                if role == "user":
-                    table.add_row("[dim]Prompt:[/dim]", f"[cyan]{content}...[/cyan]")
-                elif role == "assistant":
-                    table.add_row("[dim]Response:[/dim]", f"[green]{content}...[/green]")
-                elif role == "tool":
-                    tool_name = msg.get("name", "tool")
-                    table.add_row("[dim]Tool:[/dim]", f"[yellow]{tool_name}[/yellow]")
+            for msg in progress_state["live_messages"]:
+                if msg.get("role") == "user":
+                    prompt_preview = msg.get("content", "")[:70]
+                    table.add_row("[dim]Prompt:[/dim]", f"[dim italic]{prompt_preview}...[/dim italic]")
+                    break
 
         return table
 
