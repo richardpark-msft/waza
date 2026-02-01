@@ -43,6 +43,7 @@ def main():
 @click.option("--executor", "-e", type=click.Choice(["mock", "copilot-sdk"]), help="Executor type")
 @click.option("--log", "-l", type=click.Path(), help="Save full conversation transcript to JSON file")
 @click.option("--context-dir", "-c", type=click.Path(exists=True), help="Directory with project files to use as context")
+@click.option("--suggestions", "-s", is_flag=True, help="Generate LLM-powered improvement suggestions for failed tasks")
 def run(
     eval_path: str,
     task: tuple[str, ...],
@@ -56,6 +57,7 @@ def run(
     executor: Optional[str],
     log: Optional[str],
     context_dir: Optional[str],
+    suggestions: bool,
 ):
     """Run an evaluation suite.
     
@@ -321,6 +323,15 @@ def run(
             Path(output).write_text(reporter.report_summary(result))
         
         console.print(f"\n[green]✓[/green] Results written to: {output}")
+
+    # Generate suggestions for failed tasks if requested
+    failed_tasks = [t for t in result.tasks if t.status == "failed"]
+    if suggestions and failed_tasks:
+        console.print()
+        _generate_suggestions(result, spec, model or spec.config.model, console)
+    elif failed_tasks and not suggestions:
+        console.print()
+        console.print("[dim]💡 Tip: Use --suggestions to get LLM-powered improvement recommendations for failed tasks[/dim]")
 
     # Check threshold
     if result.summary.pass_rate < fail_threshold:
@@ -1003,6 +1014,103 @@ def _generate_comparison_markdown(results: list) -> str:
         lines.append("| " + " | ".join(row) + " |")
     
     return "\n".join(lines)
+
+
+def _generate_suggestions(result, spec, model: str, console):
+    """Generate LLM-powered improvement suggestions for failed tasks."""
+    from rich.panel import Panel
+    from rich.progress import Progress, SpinnerColumn, TextColumn
+    
+    failed_tasks = [t for t in result.tasks if t.status == "failed"]
+    if not failed_tasks:
+        return
+    
+    console.print("[bold]💡 Generating Improvement Suggestions[/bold]")
+    console.print()
+    
+    try:
+        from copilot_sdk import create_session
+        import asyncio
+        
+        async def get_suggestions():
+            suggestions = {}
+            
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                task = progress.add_task("Analyzing failed tasks...", total=len(failed_tasks))
+                
+                for failed_task in failed_tasks:
+                    progress.update(task, description=f"Analyzing: {failed_task.name[:30]}...")
+                    
+                    # Build context about what failed
+                    grader_failures = []
+                    for trial in failed_task.trials:
+                        for name, gr in trial.grader_results.items():
+                            if not gr.passed:
+                                grader_failures.append(f"- {name}: {gr.message[:100]}")
+                    
+                    output_sample = ""
+                    if failed_task.trials and failed_task.trials[0].output:
+                        output_sample = failed_task.trials[0].output[:500]
+                    
+                    prompt = f"""Analyze this failed skill evaluation task and suggest improvements for the SKILL being tested.
+
+Skill: {spec.skill}
+Task: {failed_task.name}
+Task ID: {failed_task.id}
+
+What failed:
+{chr(10).join(grader_failures) if grader_failures else "Unknown failures"}
+
+Skill output (sample):
+{output_sample}
+
+Based on this failure, suggest 2-3 specific improvements the skill author could make to handle this case better.
+Focus on:
+1. What the skill should have done differently
+2. Edge cases or scenarios the skill might not handle well
+3. Specific code or behavior changes that would help
+
+Keep suggestions concise and actionable (1-2 sentences each)."""
+
+                    session = await create_session(model=model)
+                    response_text = ""
+                    
+                    async for event in session.send(prompt):
+                        if event.type == "assistant.message":
+                            response_text = event.data.get("content", "")
+                        elif event.type == "assistant.message_delta":
+                            response_text += event.data.get("delta", "")
+                        elif event.type == "session.idle":
+                            break
+                    
+                    suggestions[failed_task.id] = {
+                        "name": failed_task.name,
+                        "suggestions": response_text.strip() if response_text else "Unable to generate suggestions.",
+                    }
+                    
+                    progress.advance(task)
+            
+            return suggestions
+        
+        suggestions = asyncio.run(get_suggestions())
+        
+        # Display suggestions
+        for task_id, data in suggestions.items():
+            console.print(Panel(
+                data["suggestions"],
+                title=f"[bold]{data['name']}[/bold]",
+                border_style="yellow",
+            ))
+            console.print()
+        
+    except ImportError:
+        console.print("[yellow]⚠ Copilot SDK not available. Install with: pip install copilot-sdk[/yellow]")
+    except Exception as e:
+        console.print(f"[yellow]⚠ Could not generate suggestions: {e}[/yellow]")
 
 
 def _display_results(result, verbose: bool = False):
