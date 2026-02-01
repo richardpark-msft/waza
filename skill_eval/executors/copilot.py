@@ -118,12 +118,15 @@ class CopilotExecutor(BaseExecutor):
         context: dict[str, Any] | None = None,
         skill_name: str | None = None,
     ) -> ExecutionResult:
-        """Execute a prompt using Copilot SDK."""
-        # For each execution, we need a fresh workspace with context files
-        # So we teardown any existing client and create new one with files already present
+        """Execute a prompt using Copilot SDK.
+
+        Each execution gets a fresh temp workspace with context files copied in.
+        This ensures task isolation - modifications to files don't affect other tasks.
+        """
+        # Teardown any existing client and workspace to ensure clean state
         await self.teardown()
 
-        # Create temp workspace first
+        # Create fresh temp workspace for this task
         self._workspace = tempfile.mkdtemp(prefix="skill-eval-")
 
         # Write context files BEFORE initializing client

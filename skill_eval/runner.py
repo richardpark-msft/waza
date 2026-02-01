@@ -332,7 +332,9 @@ class EvalRunner:
 
             if effective_context_dir:
                 exec_context["context_dir"] = effective_context_dir
-                # Read actual files from context_dir for richer context
+                # Read actual files FRESH from context_dir for each task
+                # This ensures isolation - each task sees the original fixtures,
+                # not modifications made by previous tasks (which are in temp workspaces)
                 context_path = Path(effective_context_dir)
                 if context_path.exists():
                     project_files = []
