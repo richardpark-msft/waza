@@ -511,7 +511,7 @@ skill-eval generate ./my-skill/SKILL.md -o ./evals/my-skill
 When running evals, provide real project files for more realistic testing:
 
 ```bash
-# Use generated fixtures
+# Use generated fixtures as default for all tasks
 skill-eval run ./my-eval/eval.yaml --context-dir ./my-eval/fixtures
 
 # Use your own project
@@ -522,6 +522,17 @@ skill-eval run ./my-eval/eval.yaml --context-dir ./fixtures -v
 
 # Save conversation transcript for debugging
 skill-eval run ./my-eval/eval.yaml --log ./transcript.json
+```
+
+Tasks can also specify their own `context_dir` to override the global setting:
+
+```yaml
+# tasks/deploy-functions.yaml
+id: deploy-functions-001
+context_dir: ./fixtures/functions-project  # Task-specific override
+
+inputs:
+  prompt: "Deploy my Azure Function"
 ```
 
 ---
