@@ -1085,11 +1085,19 @@ Skill: {self.skill.name}
 Tasks:
 {task_summary}
 
+IMPORTANT CONTEXT about available variables:
+- `output` = the final assistant text response (usually a summary/explanation, NOT code)
+- `transcript` = list of all conversation turns including tool calls
+- `tool_calls` = list of tool calls made (each has 'tool_name' and 'arguments')
+
+For skills that EDIT CODE, the code changes are in tool_calls, NOT in output.
+To check if code was written, use: "any('edit' in str(t) for t in tool_calls)" or check transcript.
+
 Suggest graders that check:
-1. Output contains expected content
-2. No dangerous commands were executed
-3. Appropriate tools/APIs were used
-4. Response quality and completeness
+1. Output contains relevant explanation/summary
+2. No dangerous commands were executed  
+3. Appropriate tools were used
+4. Response addresses the user's request
 
 Return ONLY a JSON array with grader configs:
 [
@@ -1104,14 +1112,14 @@ Return ONLY a JSON array with grader configs:
 IMPORTANT: Only use "type": "code" - assertions must be valid Python expressions.
 Examples of good assertions:
 - "len(output) > 0"
-- "'azure' in output.lower()"
-- "'rm -rf' not in output"
-- "'express' in output.lower() or 'node' in output.lower()"
+- "'azure' in output.lower() or 'container' in output.lower()"
+- "len(tool_calls) > 0"
+- "'rm -rf' not in str(transcript)"
 
 DO NOT use generator expressions like any(x for x in ...) - they won't work in eval context.
 Use explicit 'or' chains instead: "'a' in output or 'b' in output"
 
-Focus on 3-5 key graders that would catch real issues.
+Focus on 2-3 simple graders. Keep assertions simple and likely to pass if the skill works.
 Return ONLY the JSON array, no explanation."""
 
         response = await self._call_llm(prompt)
