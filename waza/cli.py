@@ -760,6 +760,7 @@ def _generate_single_skill(
 @click.option("--assist", "-a", is_flag=True, help="Use LLM to generate better tasks and fixtures")
 @click.option("--model", "-m", type=str, default="claude-sonnet-4-20250514", help="Model for assisted generation")
 @click.option("--repo", type=str, help="Scan GitHub repo for skills (e.g., microsoft/GitHub-Copilot-for-Azure)")
+@click.option("--skill", type=str, help="Filter to specific skill by name (use with --repo or --scan)")
 @click.option("--scan", is_flag=True, help="Scan current directory for skills")
 @click.option("--all", "generate_all", is_flag=True, help="Generate evals for all discovered skills (no prompts)")
 def generate(
@@ -769,6 +770,7 @@ def generate(
     assist: bool,
     model: str,
     repo: str | None,
+    skill: str | None,
     scan: bool,
     generate_all: bool,
 ):
@@ -785,6 +787,9 @@ def generate(
 
       # Scan a GitHub repo (interactive):
       waza generate --repo microsoft/GitHub-Copilot-for-Azure
+
+      # Generate eval for a specific skill in a repo:
+      waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions
 
       # Scan and generate all (CI-friendly):
       waza generate --repo microsoft/GitHub-Copilot-for-Azure --all --output ./evals
@@ -830,6 +835,24 @@ def generate(
         if not discovered_skills:
             console.print("[yellow]No skills found.[/yellow]")
             sys.exit(0)
+
+        # Filter by skill name if --skill provided
+        if skill:
+            skill_lower = skill.lower()
+            matching = [s for s in discovered_skills if skill_lower in s.name.lower() or skill_lower in s.path.lower()]
+            if not matching:
+                console.print(f"[red]✗ No skill matching '{skill}' found.[/red]")
+                console.print("Available skills:")
+                for s in discovered_skills:
+                    console.print(f"  - {s.name}")
+                sys.exit(1)
+            if len(matching) == 1:
+                discovered_skills = matching
+                generate_all = True  # Skip prompts for single skill
+            else:
+                # Multiple matches, let user pick
+                console.print(f"[yellow]Multiple skills match '{skill}':[/yellow]")
+                discovered_skills = matching
 
         console.print(f"[green]✓[/green] Found {len(discovered_skills)} skill(s)")
         console.print()
