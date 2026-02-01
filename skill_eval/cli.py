@@ -652,7 +652,10 @@ def generate(skill_source: str, output: Optional[str], force: bool):
         fixtures_dir = output_dir / "fixtures"
         fixtures_dir.mkdir(exist_ok=True)
         for filename, content in fixtures:
-            (fixtures_dir / filename).write_text(content)
+            file_path = fixtures_dir / filename
+            # Create parent directories if needed (e.g., infra/main.bicep)
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text(content)
             console.print(f"[green]✓[/green] Created fixtures/{filename}")
     
     console.print()

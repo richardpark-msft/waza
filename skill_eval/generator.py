@@ -574,6 +574,10 @@ graders:
         if 'function' in skill_lower or 'azure-functions' in skill_lower:
             fixtures.extend(self._generate_azure_function_fixtures())
         
+        # Azure Validate fixtures
+        elif 'validate' in skill_lower or 'preflight' in skill_lower:
+            fixtures.extend(self._generate_azure_validate_fixtures())
+        
         # Deploy/Container fixtures
         elif 'deploy' in skill_lower or 'container' in skill_lower:
             fixtures.extend(self._generate_deploy_fixtures())
@@ -651,6 +655,95 @@ def hello_http(req: func.HttpRequest) -> func.HttpResponse:
     "FUNCTIONS_WORKER_RUNTIME": "python"
   }
 }
+'''),
+        ]
+    
+    def _generate_azure_validate_fixtures(self) -> list[tuple[str, str]]:
+        """Generate Azure validation sample files."""
+        return [
+            ("azure.yaml", '''name: my-web-app
+metadata:
+  template: my-web-app@0.0.1
+services:
+  web:
+    project: ./src
+    language: python
+    host: containerapp
+'''),
+            ("infra/main.bicep", '''targetScope = 'subscription'
+
+@minLength(1)
+@maxLength(64)
+@description('Name of the environment')
+param environmentName string
+
+@minLength(1)
+@description('Primary location for all resources')
+param location string
+
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
+  name: 'rg-${environmentName}'
+  location: location
+}
+
+module web 'resources.bicep' = {
+  name: 'web'
+  scope: rg
+  params: {
+    location: location
+    environmentName: environmentName
+  }
+}
+'''),
+            ("infra/resources.bicep", '''param location string
+param environmentName string
+
+resource containerAppEnv 'Microsoft.App/managedEnvironments@2023-05-01' = {
+  name: 'cae-${environmentName}'
+  location: location
+  properties: {
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+    }
+  }
+}
+
+resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
+  name: 'ca-${environmentName}'
+  location: location
+  properties: {
+    managedEnvironmentId: containerAppEnv.id
+    configuration: {
+      ingress: {
+        external: true
+        targetPort: 8000
+      }
+    }
+    template: {
+      containers: [
+        {
+          name: 'main'
+          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld'
+        }
+      ]
+    }
+  }
+}
+'''),
+            ("src/main.py", '''from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello from Azure!"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+'''),
+            ("src/requirements.txt", '''fastapi
+uvicorn
 '''),
         ]
     
