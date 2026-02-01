@@ -20,8 +20,11 @@ mkdir skill-eval-demo && cd skill-eval-demo
 # Create a virtual environment
 uv venv && source .venv/bin/activate
 
-# Install skill-eval (with Copilot SDK support for advanced demo)
-uv pip install skill-eval[copilot]
+# Install skill-eval from GitHub release (with Copilot SDK support)
+uv pip install "https://github.com/spboyer/evals-for-skills/releases/latest/download/skill_eval-0.0.2-py3-none-any.whl"
+
+# Or from PyPI when available:
+# uv pip install skill-eval[copilot]
 ```
 
 ---

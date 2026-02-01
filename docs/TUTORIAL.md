@@ -5,7 +5,14 @@ This tutorial walks you through creating evaluations for your Agent Skills.
 ## Prerequisites
 
 - Python 3.11+
-- `skill-eval` installed (`pip install skill-eval`)
+- `skill-eval` installed:
+  ```bash
+  # From GitHub releases (recommended)
+  pip install https://github.com/spboyer/evals-for-skills/releases/latest/download/skill_eval-0.0.2-py3-none-any.whl
+  
+  # Or from PyPI when available
+  pip install skill-eval
+  ```
 - An existing skill to evaluate
 
 ## Step 1: Initialize Your Eval Suite

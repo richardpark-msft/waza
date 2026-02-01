@@ -26,6 +26,16 @@ A framework for evaluating [Agent Skills](https://agentskills.io/specification) 
 
 ### 1. Installation
 
+**From GitHub Releases (recommended):**
+```bash
+# Download and install the latest release
+pip install https://github.com/spboyer/evals-for-skills/releases/latest/download/skill_eval-0.0.2-py3-none-any.whl
+
+# Or install a specific version
+pip install https://github.com/spboyer/evals-for-skills/releases/download/v0.0.2/skill_eval-0.0.2-py3-none-any.whl
+```
+
+**From PyPI (when available):**
 ```bash
 # Basic installation
 pip install skill-eval
