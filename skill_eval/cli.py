@@ -624,13 +624,22 @@ def generate(skill_source: str, output: Optional[str], force: bool):
         (tasks_dir / filename).write_text(content)
         console.print(f"[green]✓[/green] Created tasks/{filename}")
     
+    # Write fixtures (sample code files for testing context)
+    fixtures = generator.generate_fixtures()
+    if fixtures:
+        fixtures_dir = output_dir / "fixtures"
+        fixtures_dir.mkdir(exist_ok=True)
+        for filename, content in fixtures:
+            (fixtures_dir / filename).write_text(content)
+            console.print(f"[green]✓[/green] Created fixtures/{filename}")
+    
     console.print()
     console.print(Panel(
         f"Generated eval suite at: [bold]{output_dir}[/bold]\n\n"
         f"Run with:\n"
         f"  [bold]skill-eval run {output_dir}/eval.yaml[/bold]\n\n"
-        f"Or with real LLM:\n"
-        f"  [bold]skill-eval run {output_dir}/eval.yaml --executor copilot-sdk[/bold]",
+        f"Or with real LLM and project context:\n"
+        f"  [bold]skill-eval run {output_dir}/eval.yaml --executor copilot-sdk --context-dir {output_dir}/fixtures[/bold]",
         title="[green]✓ Success[/green]",
         border_style="green"
     ))

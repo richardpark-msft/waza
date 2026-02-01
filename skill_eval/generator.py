@@ -558,6 +558,254 @@ graders:
         prefix = " " * indent
         return "\n".join(f'{prefix}- pattern: "{self._escape_yaml(p)}"' for p in patterns)
     
+    def generate_fixtures(self) -> list[tuple[str, str]]:
+        """Generate sample fixture files based on skill type."""
+        fixtures = []
+        skill_lower = self.skill.name.lower()
+        
+        # Azure Functions fixtures
+        if 'function' in skill_lower or 'azure-functions' in skill_lower:
+            fixtures.extend(self._generate_azure_function_fixtures())
+        
+        # Deploy/Container fixtures
+        elif 'deploy' in skill_lower or 'container' in skill_lower:
+            fixtures.extend(self._generate_deploy_fixtures())
+        
+        # Code/Explainer fixtures
+        elif 'code' in skill_lower or 'explain' in skill_lower:
+            fixtures.extend(self._generate_code_fixtures())
+        
+        # Generic Python fixtures
+        elif 'python' in skill_lower:
+            fixtures.extend(self._generate_python_fixtures())
+        
+        # Generic JavaScript/TypeScript fixtures  
+        elif 'javascript' in skill_lower or 'typescript' in skill_lower or 'node' in skill_lower:
+            fixtures.extend(self._generate_js_fixtures())
+        
+        # Default: minimal generic fixtures
+        if not fixtures:
+            fixtures.extend(self._generate_generic_fixtures())
+        
+        return fixtures
+    
+    def _generate_azure_function_fixtures(self) -> list[tuple[str, str]]:
+        """Generate Azure Functions sample files."""
+        return [
+            ("function_app.py", '''import azure.functions as func
+import logging
+
+app = func.FunctionApp()
+
+@app.function_name(name="HttpTrigger")
+@app.route(route="hello", auth_level=func.AuthLevel.ANONYMOUS)
+def hello_http(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+    
+    name = req.params.get('name')
+    if not name:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            pass
+        else:
+            name = req_body.get('name')
+    
+    if name:
+        return func.HttpResponse(f"Hello, {name}!")
+    else:
+        return func.HttpResponse(
+            "Please pass a name on the query string or in the request body",
+            status_code=400
+        )
+'''),
+            ("host.json", '''{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      }
+    }
+  },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[4.*, 5.0.0)"
+  }
+}
+'''),
+            ("requirements.txt", '''azure-functions
+'''),
+            ("local.settings.json", '''{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python"
+  }
+}
+'''),
+        ]
+    
+    def _generate_deploy_fixtures(self) -> list[tuple[str, str]]:
+        """Generate deployment sample files."""
+        return [
+            ("Dockerfile", '''FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+'''),
+            ("main.py", '''from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello, World!"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+'''),
+            ("requirements.txt", '''fastapi
+uvicorn
+'''),
+        ]
+    
+    def _generate_code_fixtures(self) -> list[tuple[str, str]]:
+        """Generate code sample files for code explainer skills."""
+        return [
+            ("sample_python.py", '''def fibonacci(n: int) -> list[int]:
+    """Generate Fibonacci sequence up to n terms."""
+    if n <= 0:
+        return []
+    elif n == 1:
+        return [0]
+    
+    sequence = [0, 1]
+    while len(sequence) < n:
+        sequence.append(sequence[-1] + sequence[-2])
+    return sequence
+
+
+def binary_search(arr: list[int], target: int) -> int:
+    """Binary search for target in sorted array. Returns index or -1."""
+    left, right = 0, len(arr) - 1
+    
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    
+    return -1
+'''),
+            ("sample_javascript.js", '''// Async function to fetch data with retry
+async function fetchWithRetry(url, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(r => setTimeout(r, 1000 * attempt));
+    }
+  }
+}
+
+// Debounce utility function
+function debounce(fn, delay) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+'''),
+        ]
+    
+    def _generate_python_fixtures(self) -> list[tuple[str, str]]:
+        """Generate Python project fixtures."""
+        return [
+            ("main.py", '''"""Main application entry point."""
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def main():
+    logger.info("Application starting...")
+    # Your application logic here
+    logger.info("Application finished.")
+
+
+if __name__ == "__main__":
+    main()
+'''),
+            ("requirements.txt", '''# Add your dependencies here
+'''),
+        ]
+    
+    def _generate_js_fixtures(self) -> list[tuple[str, str]]:
+        """Generate JavaScript/Node.js project fixtures."""
+        return [
+            ("index.js", '''const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.json({ message: 'Hello, World!' });
+});
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+'''),
+            ("package.json", '''{
+  "name": "sample-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+'''),
+        ]
+    
+    def _generate_generic_fixtures(self) -> list[tuple[str, str]]:
+        """Generate minimal generic fixtures."""
+        return [
+            ("README.md", f'''# Sample Project
+
+This is a sample project for testing the {self.skill.name} skill.
+
+## Getting Started
+
+Add your project files here to provide context for the skill evaluation.
+'''),
+        ]
+    
     def _safe_name(self, name: str) -> str:
         """Convert name to safe identifier."""
         return re.sub(r'[^a-zA-Z0-9-]', '-', name.lower()).strip('-')
