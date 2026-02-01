@@ -23,7 +23,7 @@ console = Console()
 @click.group()
 @click.version_option(version=__version__, prog_name="waza")
 def main():
-    """waza (技) - Evaluate Agent Skills with precision."""
+    """waza - Evaluate Agent Skills with precision."""
     pass
 
 
