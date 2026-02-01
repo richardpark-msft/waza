@@ -168,15 +168,14 @@ class SkillScanner:
             SkillInfo if successful, None otherwise
         """
         try:
-            # Fetch file content using gh CLI
+            # Fetch file content using gh CLI (raw content directly)
             result = subprocess.run(
                 [
                     "gh",
                     "api",
                     f"/repos/{repo}/contents/{path}",
-                    "--jq=.content",
                     "-H",
-                    "Accept: application/vnd.github.raw",
+                    "Accept: application/vnd.github.raw+json",
                 ],
                 capture_output=True,
                 text=True,
