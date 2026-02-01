@@ -81,3 +81,4 @@ logs/
 *.key
 secrets.yaml
 azure-functions-eval/
+transcript.json
