@@ -7,6 +7,11 @@ Example eval suite for a hypothetical "code-explainer" skill that explains code 
 ```
 code-explainer/
 ├── eval.yaml                    # Main eval configuration
+├── fixtures/                    # Code files to explain
+│   ├── factorial.py             # Python recursion example
+│   ├── fetch_user.js            # JavaScript async example
+│   ├── squares.py               # Python list comprehension
+│   └── user_orders.sql          # SQL JOIN example
 ├── tasks/                       # Individual test tasks
 │   ├── explain-python-recursion.yaml
 │   ├── explain-js-async.yaml
@@ -21,10 +26,10 @@ code-explainer/
 
 ```bash
 # Quick test with mock executor
-skill-eval run examples/code-explainer/eval.yaml --executor mock -v
+skill-eval run examples/code-explainer/eval.yaml --executor mock --context-dir examples/code-explainer/fixtures -v
 
 # Full test with Copilot SDK
-skill-eval run examples/code-explainer/eval.yaml --executor copilot-sdk -v
+skill-eval run examples/code-explainer/eval.yaml --executor copilot-sdk --context-dir examples/code-explainer/fixtures -v
 ```
 
 ## What It Tests
