@@ -61,18 +61,20 @@ waza --help
 
 > "The fastest way to create an eval is to generate it from an existing SKILL.md file. Let's try it with Azure Functions."
 
-### Generate from URL
+### Generate from a Skill in a Repo
 
 ```bash
-waza generate https://raw.githubusercontent.com/microsoft/GitHub-Copilot-for-Azure/main/plugin/skills/azure-functions/SKILL.md \
-  -o azure-functions-eval
+waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./azure-functions-eval
 ```
 
 **Expected Output:**
 ```
-waza v0.1.0
+waza v0.3.0
 
-Parsing: https://raw.githubusercontent.com/microsoft/...
+Scanning GitHub repository: microsoft/GitHub-Copilot-for-Azure
+✓ Found 15 skill(s)
+
+Parsing: azure-functions
 ✓ Parsed skill: azure-functions
   Description: Build and deploy serverless Azure Functions...
   Triggers extracted: 15
@@ -132,19 +134,22 @@ azure-functions-eval/
 ### Generate with LLM Assistance
 
 ```bash
-waza generate https://raw.githubusercontent.com/microsoft/GitHub-Copilot-for-Azure/main/plugin/skills/azure-functions/SKILL.md \
-  -o azure-functions-eval-assisted \
+waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions \
+  -o ./azure-functions-eval-assisted \
   --assist
 
 # Use a different model (claude-opus-4.5, gpt-4o, gpt-5)
-waza generate ./SKILL.md -o ./my-eval --assist --model claude-opus-4.5
+waza generate --repo org/repo --skill my-skill -o ./my-eval --assist --model claude-opus-4.5
 ```
 
 **Expected Output:**
 ```
-waza v0.1.0
+waza v0.3.0
 
-Parsing: https://raw.githubusercontent.com/microsoft/...
+Scanning GitHub repository: microsoft/GitHub-Copilot-for-Azure
+✓ Found 15 skill(s)
+
+Parsing: azure-functions
 ✓ Parsed skill: azure-functions
   Description: Build and deploy serverless Azure Functions...
 
@@ -844,23 +849,23 @@ cat .github/workflows/waza.yaml
 # Initialize new eval suite
 waza init my-skill
 
-# Generate eval from SKILL.md
-waza generate https://example.com/skills/SKILL.md -o ./my-eval
+# Generate eval for a specific skill in a repo (recommended)
+waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./eval
 
 # Generate with LLM assistance (better tasks/fixtures)
-waza generate https://example.com/skills/SKILL.md -o ./my-eval --assist --model claude-opus-4.5
+waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./eval --assist
 
 # Discover skills in a GitHub repo (interactive)
 waza generate --repo microsoft/GitHub-Copilot-for-Azure
-
-# Generate eval for a specific skill (recommended - no long URLs!)
-waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./eval
 
 # Discover and generate all skills (CI-friendly)
 waza generate --repo microsoft/GitHub-Copilot-for-Azure --all --output ./evals
 
 # Scan local directory for skills
 waza generate --scan
+
+# Generate from local SKILL.md file
+waza generate ./path/to/SKILL.md -o ./my-eval
 
 # Run evaluation (basic)
 waza run my-skill/eval.yaml

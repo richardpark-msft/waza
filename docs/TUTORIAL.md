@@ -21,11 +21,11 @@ You have several options to create your eval suite:
 
 ### Option A: Auto-Generate from SKILL.md (Recommended)
 
-The fastest way to get started is to generate from an existing SKILL.md:
+The fastest way to get started is to generate from a skill in a GitHub repo:
 
 ```bash
-# Generate eval from a SKILL.md URL
-waza generate https://raw.githubusercontent.com/microsoft/GitHub-Copilot-for-Azure/main/plugin/skills/azure-functions/SKILL.md -o ./azure-functions-eval
+# Generate eval for a specific skill in a repo (recommended)
+waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./azure-functions-eval
 
 # Or from a local file
 waza generate ./path/to/SKILL.md -o ./my-waza

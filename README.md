@@ -65,11 +65,11 @@ pip install -e ".[dev]"
 # Option A: Scaffold a blank eval suite
 waza init my-skill
 
-# Option B: Auto-generate from a SKILL.md file
-waza generate https://raw.githubusercontent.com/org/repo/main/skills/my-skill/SKILL.md
+# Option B: Generate from a specific skill in a repo (recommended)
+waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./azure-functions-eval
 
 # Option C: LLM-assisted generation (recommended for better tasks)
-waza generate ./SKILL.md --assist
+waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./eval --assist
 
 # Option D: Init with SKILL.md integration
 waza init my-skill --from-skill ./path/to/SKILL.md
@@ -203,8 +203,8 @@ waza init my-skill \
   --path ./evals \                    # Output directory
   --from-skill <SKILL.md>             # Generate from SKILL.md file or URL
 
-# Generate options (auto-generate eval from SKILL.md)
-waza generate https://example.com/SKILL.md \
+# Generate options (from specific skill in a repo - recommended)
+waza generate --repo org/repo --skill skill-name \
   --output ./my-eval \                # Output directory
   --force                             # Overwrite existing files
   --assist                            # Use LLM for better task/fixture generation
@@ -527,8 +527,8 @@ waza run examples/code-explainer/eval.yaml
 You can auto-generate eval suites from any skill that follows the [Agent Skills specification](https://agentskills.io/specification):
 
 ```bash
-# Generate from a URL (e.g., GitHub raw file)
-waza generate https://raw.githubusercontent.com/microsoft/GitHub-Copilot-for-Azure/main/plugin/skills/azure-functions/SKILL.md
+# Generate from a specific skill in a GitHub repo (recommended)
+waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./eval
 
 # Generate from a local file  
 waza generate ./my-skill/SKILL.md -o ./evals/my-skill
