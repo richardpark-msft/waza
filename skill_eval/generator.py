@@ -566,204 +566,168 @@ graders:
         return "\n".join(f'{prefix}- pattern: "{self._escape_yaml(p)}"' for p in patterns)
     
     def generate_fixtures(self) -> list[tuple[str, str]]:
-        """Generate sample fixture files based on skill type."""
+        """Generate sample fixture files dynamically based on SKILL.md content."""
         fixtures = []
-        skill_lower = self.skill.name.lower()
+        content_lower = self.skill.raw_content.lower()
+        desc_lower = self.skill.description.lower() if self.skill.description else ""
+        keywords_lower = ' '.join(self.skill.keywords).lower()
+        all_text = f"{content_lower} {desc_lower} {keywords_lower}"
         
-        # Azure Functions fixtures
-        if 'function' in skill_lower or 'azure-functions' in skill_lower:
-            fixtures.extend(self._generate_azure_function_fixtures())
+        # Detect file types mentioned in the skill
+        file_patterns = {
+            # Azure/Infrastructure
+            'azure.yaml': 'azd' in all_text or 'azure developer cli' in all_text or 'azure.yaml' in all_text,
+            'bicep': 'bicep' in all_text or 'infrastructure' in all_text or '.bicep' in all_text,
+            'terraform': 'terraform' in all_text or '.tf' in all_text,
+            # Containers
+            'dockerfile': 'docker' in all_text or 'container' in all_text or 'dockerfile' in all_text,
+            # Python
+            'python': 'python' in all_text or '.py' in all_text or 'pip' in all_text,
+            # JavaScript/TypeScript
+            'javascript': 'javascript' in all_text or 'node' in all_text or '.js' in all_text,
+            'typescript': 'typescript' in all_text or '.ts' in all_text,
+            # Azure Functions
+            'functions': 'function' in all_text and 'azure' in all_text,
+            # Web/API
+            'webapp': 'web app' in all_text or 'webapp' in all_text or 'fastapi' in all_text or 'flask' in all_text,
+            # Config files
+            'yaml_config': 'yaml' in all_text or 'yml' in all_text,
+            'json_config': 'json' in all_text and ('config' in all_text or 'settings' in all_text),
+        }
         
-        # Azure Validate fixtures
-        elif 'validate' in skill_lower or 'preflight' in skill_lower:
-            fixtures.extend(self._generate_azure_validate_fixtures())
+        # Generate fixtures based on detected patterns
+        if file_patterns['azure.yaml']:
+            fixtures.append(("azure.yaml", self._azure_yaml_template()))
         
-        # Deploy/Container fixtures
-        elif 'deploy' in skill_lower or 'container' in skill_lower:
-            fixtures.extend(self._generate_deploy_fixtures())
+        if file_patterns['bicep']:
+            fixtures.append(("infra/main.bicep", self._bicep_template()))
         
-        # Code/Explainer fixtures
-        elif 'code' in skill_lower or 'explain' in skill_lower:
-            fixtures.extend(self._generate_code_fixtures())
+        if file_patterns['terraform']:
+            fixtures.append(("main.tf", self._terraform_template()))
         
-        # Generic Python fixtures
-        elif 'python' in skill_lower:
-            fixtures.extend(self._generate_python_fixtures())
+        if file_patterns['dockerfile']:
+            fixtures.append(("Dockerfile", self._dockerfile_template()))
         
-        # Generic JavaScript/TypeScript fixtures  
-        elif 'javascript' in skill_lower or 'typescript' in skill_lower or 'node' in skill_lower:
-            fixtures.extend(self._generate_js_fixtures())
+        if file_patterns['functions']:
+            fixtures.append(("function_app.py", self._azure_function_template()))
+            fixtures.append(("host.json", self._host_json_template()))
         
-        # Default: minimal generic fixtures
+        if file_patterns['python'] or file_patterns['webapp']:
+            if not file_patterns['functions']:  # Don't duplicate if functions
+                fixtures.append(("main.py", self._python_app_template()))
+            fixtures.append(("requirements.txt", self._requirements_template()))
+        
+        if file_patterns['javascript']:
+            fixtures.append(("index.js", self._js_template()))
+            fixtures.append(("package.json", self._package_json_template()))
+        
+        if file_patterns['typescript']:
+            fixtures.append(("src/index.ts", self._ts_template()))
+            fixtures.append(("package.json", self._package_json_template(typescript=True)))
+            fixtures.append(("tsconfig.json", self._tsconfig_template()))
+        
+        # Always include at least a README if nothing else matched
         if not fixtures:
-            fixtures.extend(self._generate_generic_fixtures())
+            fixtures.append(("README.md", f"# Sample Project\\n\\nThis is a sample project for testing the {self.skill.name} skill.\\n"))
+            fixtures.append(("main.py", self._python_app_template()))
+            fixtures.append(("requirements.txt", "# Add your dependencies here\\n"))
         
         return fixtures
     
-    def _generate_azure_function_fixtures(self) -> list[tuple[str, str]]:
-        """Generate Azure Functions sample files."""
-        return [
-            ("function_app.py", '''import azure.functions as func
+    # Template methods - simple, generic templates
+    def _azure_yaml_template(self) -> str:
+        return '''name: sample-app
+metadata:
+  template: sample@0.0.1
+services:
+  api:
+    project: ./src
+    language: python
+    host: containerapp
+'''
+
+    def _bicep_template(self) -> str:
+        return '''targetScope = 'subscription'
+
+@description('Name of the environment')
+param environmentName string
+
+@description('Location for resources')
+param location string = 'eastus'
+
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
+  name: 'rg-${environmentName}'
+  location: location
+}
+'''
+
+    def _terraform_template(self) -> str:
+        return '''terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "main" {
+  name     = var.resource_group_name
+  location = var.location
+}
+
+variable "resource_group_name" {
+  default = "rg-sample"
+}
+
+variable "location" {
+  default = "eastus"
+}
+'''
+
+    def _dockerfile_template(self) -> str:
+        return '''FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+
+EXPOSE 8000
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0"]
+'''
+
+    def _azure_function_template(self) -> str:
+        return '''import azure.functions as func
 import logging
 
 app = func.FunctionApp()
 
 @app.function_name(name="HttpTrigger")
 @app.route(route="hello", auth_level=func.AuthLevel.ANONYMOUS)
-def hello_http(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-    
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
-    
-    if name:
-        return func.HttpResponse(f"Hello, {name}!")
-    else:
-        return func.HttpResponse(
-            "Please pass a name on the query string or in the request body",
-            status_code=400
-        )
-'''),
-            ("host.json", '''{
+def hello(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('HTTP trigger function processed a request.')
+    name = req.params.get('name', 'World')
+    return func.HttpResponse(f"Hello, {name}!")
+'''
+
+    def _host_json_template(self) -> str:
+        return '''{
   "version": "2.0",
   "logging": {
     "applicationInsights": {
-      "samplingSettings": {
-        "isEnabled": true,
-        "excludedTypes": "Request"
-      }
-    }
-  },
-  "extensionBundle": {
-    "id": "Microsoft.Azure.Functions.ExtensionBundle",
-    "version": "[4.*, 5.0.0)"
-  }
-}
-'''),
-            ("requirements.txt", '''azure-functions
-'''),
-            ("local.settings.json", '''{
-  "IsEncrypted": false,
-  "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "python"
-  }
-}
-'''),
-        ]
-    
-    def _generate_azure_validate_fixtures(self) -> list[tuple[str, str]]:
-        """Generate Azure validation sample files."""
-        return [
-            ("azure.yaml", '''name: my-web-app
-metadata:
-  template: my-web-app@0.0.1
-services:
-  web:
-    project: ./src
-    language: python
-    host: containerapp
-'''),
-            ("infra/main.bicep", '''targetScope = 'subscription'
-
-@minLength(1)
-@maxLength(64)
-@description('Name of the environment')
-param environmentName string
-
-@minLength(1)
-@description('Primary location for all resources')
-param location string
-
-resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
-  name: 'rg-${environmentName}'
-  location: location
-}
-
-module web 'resources.bicep' = {
-  name: 'web'
-  scope: rg
-  params: {
-    location: location
-    environmentName: environmentName
-  }
-}
-'''),
-            ("infra/resources.bicep", '''param location string
-param environmentName string
-
-resource containerAppEnv 'Microsoft.App/managedEnvironments@2023-05-01' = {
-  name: 'cae-${environmentName}'
-  location: location
-  properties: {
-    appLogsConfiguration: {
-      destination: 'log-analytics'
+      "samplingSettings": { "isEnabled": true }
     }
   }
 }
+'''
 
-resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
-  name: 'ca-${environmentName}'
-  location: location
-  properties: {
-    managedEnvironmentId: containerAppEnv.id
-    configuration: {
-      ingress: {
-        external: true
-        targetPort: 8000
-      }
-    }
-    template: {
-      containers: [
-        {
-          name: 'main'
-          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld'
-        }
-      ]
-    }
-  }
-}
-'''),
-            ("src/main.py", '''from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/")
-def read_root():
-    return {"message": "Hello from Azure!"}
-
-@app.get("/health")
-def health():
-    return {"status": "healthy"}
-'''),
-            ("src/requirements.txt", '''fastapi
-uvicorn
-'''),
-        ]
-    
-    def _generate_deploy_fixtures(self) -> list[tuple[str, str]]:
-        """Generate deployment sample files."""
-        return [
-            ("Dockerfile", '''FROM python:3.11-slim
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-EXPOSE 8000
-
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-'''),
-            ("main.py", '''from fastapi import FastAPI
+    def _python_app_template(self) -> str:
+        return '''from fastapi import FastAPI
 
 app = FastAPI()
 
@@ -772,139 +736,96 @@ def read_root():
     return {"message": "Hello, World!"}
 
 @app.get("/health")
-def health_check():
+def health():
     return {"status": "healthy"}
-'''),
-            ("requirements.txt", '''fastapi
+'''
+
+    def _requirements_template(self) -> str:
+        return '''fastapi
 uvicorn
-'''),
-        ]
-    
-    def _generate_code_fixtures(self) -> list[tuple[str, str]]:
-        """Generate code sample files for code explainer skills."""
-        return [
-            ("sample_python.py", '''def fibonacci(n: int) -> list[int]:
-    """Generate Fibonacci sequence up to n terms."""
-    if n <= 0:
-        return []
-    elif n == 1:
-        return [0]
-    
-    sequence = [0, 1]
-    while len(sequence) < n:
-        sequence.append(sequence[-1] + sequence[-2])
-    return sequence
+'''
 
-
-def binary_search(arr: list[int], target: int) -> int:
-    """Binary search for target in sorted array. Returns index or -1."""
-    left, right = 0, len(arr) - 1
-    
-    while left <= right:
-        mid = (left + right) // 2
-        if arr[mid] == target:
-            return mid
-        elif arr[mid] < target:
-            left = mid + 1
-        else:
-            right = mid - 1
-    
-    return -1
-'''),
-            ("sample_javascript.js", '''// Async function to fetch data with retry
-async function fetchWithRetry(url, maxRetries = 3) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      await new Promise(r => setTimeout(r, 1000 * attempt));
-    }
-  }
-}
-
-// Debounce utility function
-function debounce(fn, delay) {
-  let timeoutId;
-  return function(...args) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn.apply(this, args), delay);
-  };
-}
-'''),
-        ]
-    
-    def _generate_python_fixtures(self) -> list[tuple[str, str]]:
-        """Generate Python project fixtures."""
-        return [
-            ("main.py", '''"""Main application entry point."""
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
-def main():
-    logger.info("Application starting...")
-    # Your application logic here
-    logger.info("Application finished.")
-
-
-if __name__ == "__main__":
-    main()
-'''),
-            ("requirements.txt", '''# Add your dependencies here
-'''),
-        ]
-    
-    def _generate_js_fixtures(self) -> list[tuple[str, str]]:
-        """Generate JavaScript/Node.js project fixtures."""
-        return [
-            ("index.js", '''const express = require('express');
+    def _js_template(self) -> str:
+        return '''const express = require('express');
 const app = express();
-const port = process.env.PORT || 3000;
-
-app.use(express.json());
 
 app.get('/', (req, res) => {
   res.json({ message: 'Hello, World!' });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy' });
 });
-'''),
-            ("package.json", '''{
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+'''
+
+    def _package_json_template(self, typescript: bool = False) -> str:
+        if typescript:
+            return '''{
+  "name": "sample-app",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.4.5",
+    "typescript": "^5.1.6",
+    "ts-node": "^10.9.1"
+  }
+}
+'''
+        return '''{
   "name": "sample-app",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2"
   }
 }
-'''),
-        ]
-    
-    def _generate_generic_fixtures(self) -> list[tuple[str, str]]:
-        """Generate minimal generic fixtures."""
-        return [
-            ("README.md", f'''# Sample Project
+'''
 
-This is a sample project for testing the {self.skill.name} skill.
+    def _ts_template(self) -> str:
+        return '''import express from 'express';
 
-## Getting Started
+const app = express();
 
-Add your project files here to provide context for the skill evaluation.
-'''),
-        ]
+app.get('/', (req, res) => {
+  res.json({ message: 'Hello, World!' });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy' });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+'''
+
+    def _tsconfig_template(self) -> str:
+        return '''{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*"]
+}
+'''
     
     def _safe_name(self, name: str) -> str:
         """Convert name to safe identifier."""
