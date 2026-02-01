@@ -283,6 +283,10 @@ def run(
                 live.update(make_progress_table())
                 await asyncio.sleep(0.1)
             
+            # Final update to show 100% completion
+            progress_state["current_task"] = ""
+            live.update(make_progress_table())
+            
             return await eval_task
         
         result = asyncio.run(main_loop())
@@ -1047,7 +1051,6 @@ Duration: {result.summary.duration_ms}ms
     table.add_column("Duration", justify="right")
     if verbose:
         table.add_column("Tool Calls", justify="right")
-        table.add_column("Tokens", justify="right")
     
     status_icons = {"passed": "✅", "failed": "❌", "partial": "⚠️", "error": "💥"}
     
@@ -1057,15 +1060,13 @@ Duration: {result.summary.duration_ms}ms
         duration = f"{task.aggregate.mean_duration_ms}ms" if task.aggregate else "-"
         
         if verbose:
-            # Get tool calls and tokens from first trial
+            # Get tool calls from first trial
             tool_calls = "-"
-            tokens = "-"
             if task.trials:
                 trial = task.trials[0]
                 if trial.transcript_summary:
                     tool_calls = str(trial.transcript_summary.tool_calls)
-                    tokens = str(trial.transcript_summary.tokens_total) if trial.transcript_summary.tokens_total else "-"
-            table.add_row(task.name[:35], icon, score, duration, tool_calls, tokens)
+            table.add_row(task.name[:35], icon, score, duration, tool_calls)
         else:
             table.add_row(task.name[:40], icon, score, duration)
     
