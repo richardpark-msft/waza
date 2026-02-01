@@ -4,6 +4,103 @@
 
 This repository contains `skill-eval`, a CLI tool for evaluating Agent Skills. When making changes, follow these guidelines to maintain consistency and quality.
 
+## Copilot SDK Usage
+
+**IMPORTANT:** The GitHub Copilot SDK package is `copilot`, NOT `copilot_sdk`.
+
+### Correct Import Pattern
+
+```python
+# ✅ CORRECT - Use this pattern
+from copilot import CopilotClient
+
+# ❌ WRONG - This package doesn't exist
+from copilot_sdk import create_session
+```
+
+### Standard SDK Usage Pattern
+
+When using the Copilot SDK for LLM calls, follow this pattern (used in `generator.py`, `executors/copilot.py`, and `cli.py`):
+
+```python
+import asyncio
+import contextlib
+import tempfile
+from copilot import CopilotClient
+
+async def call_llm(prompt: str, model: str = "claude-sonnet-4-20250514") -> str:
+    """Standard pattern for Copilot SDK LLM calls."""
+    # Create temp workspace (required by SDK)
+    workspace = tempfile.mkdtemp(prefix="skill-eval-")
+    
+    # Initialize client
+    client = CopilotClient({
+        "cwd": workspace,
+        "log_level": "error",
+    })
+    await client.start()
+    
+    try:
+        # Create session
+        session = await client.create_session({
+            "model": model,
+            "streaming": True,
+        })
+        
+        # Collect response
+        output_parts: list[str] = []
+        done_event = asyncio.Event()
+        
+        def handle_event(event) -> None:
+            event_type = event.type.value if hasattr(event.type, 'value') else str(event.type)
+            if event_type == "assistant.message":
+                if hasattr(event.data, 'content') and event.data.content:
+                    output_parts.append(event.data.content)
+            elif event_type == "assistant.message_delta" and hasattr(event.data, 'delta_content') and event.data.delta_content:
+                output_parts.append(event.data.delta_content)
+            if event_type in ("session.idle", "session.error"):
+                done_event.set()
+        
+        session.on(handle_event)
+        await session.send({"prompt": prompt})
+        
+        # Wait for completion
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(done_event.wait(), timeout=120)
+        
+        # Cleanup session
+        with contextlib.suppress(Exception):
+            await session.destroy()
+        
+        return "".join(output_parts)
+    finally:
+        # Always cleanup client and workspace
+        await client.stop()
+        import shutil
+        shutil.rmtree(workspace, ignore_errors=True)
+```
+
+### Key SDK Concepts
+
+1. **CopilotClient** requires a `cwd` (working directory) - use temp directories
+2. **Sessions** are created per-conversation with model config
+3. **Events** are streamed - use event handlers to collect responses
+4. **Event types**: `assistant.message`, `assistant.message_delta`, `session.idle`, `session.error`
+5. **Always cleanup**: Stop client, destroy sessions, remove temp directories
+
+### Fixture Isolation
+
+Each task execution gets a **fresh temp workspace** with fixtures copied in:
+
+1. Runner reads files from original `--context-dir` (fixtures folder)
+2. Executor creates new temp workspace (e.g., `/tmp/skill-eval-abc123/`)
+3. Files copied into temp workspace
+4. Agent works in temp workspace (edits happen here)
+5. Temp workspace destroyed after task
+6. Next task starts fresh with original fixtures
+
+**The original fixtures directory is never modified.** This ensures task isolation.
+
 ## Documentation Requirements
 
 **Always update documentation when making changes.** The following files must be kept in sync:
