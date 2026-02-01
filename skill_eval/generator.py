@@ -499,9 +499,14 @@ graders:
         graders = []
         
         # Output validation grader
+        # Note: We use explicit 'or' checks instead of generator expressions
+        # because Python's eval() with restricted builtins doesn't allow
+        # generator expressions to access outer scope variables
         keywords = self.skill.keywords[:3] if self.skill.keywords else []
         if keywords:
-            assertions = [f"any(kw in output.lower() for kw in {keywords})"]
+            # Build explicit 'or' chain: "'kw1' in output.lower() or 'kw2' in ..."
+            checks = [f"'{kw.lower()}' in output.lower()" for kw in keywords]
+            assertions = [" or ".join(checks)]
         else:
             assertions = ["len(output) > 0"]
         
@@ -1101,6 +1106,10 @@ Examples of good assertions:
 - "len(output) > 0"
 - "'azure' in output.lower()"
 - "'rm -rf' not in output"
+- "'express' in output.lower() or 'node' in output.lower()"
+
+DO NOT use generator expressions like any(x for x in ...) - they won't work in eval context.
+Use explicit 'or' chains instead: "'a' in output or 'b' in output"
 
 Focus on 3-5 key graders that would catch real issues.
 Return ONLY the JSON array, no explanation."""
