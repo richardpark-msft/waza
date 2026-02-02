@@ -325,7 +325,11 @@ class EvalRunner:
             # Build context including context_dir files if provided
             exec_context = {}
             if task.inputs.files:
-                exec_context["files"] = task.inputs.files
+                # Convert FileContext objects to dicts for executor
+                exec_context["files"] = [
+                    f.model_dump() if hasattr(f, 'model_dump') else {"path": f} if isinstance(f, str) else f
+                    for f in task.inputs.files
+                ]
 
             # Determine context_dir: task-specific overrides global
             effective_context_dir = task.context_dir or self._context_dir
