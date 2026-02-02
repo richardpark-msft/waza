@@ -85,3 +85,5 @@ transcript.json
 azure-validate-eval/
 azure-validate-transcript.json
 tmp/
+waza-demo.sh
+suggesstions.mdsuggestions.md
