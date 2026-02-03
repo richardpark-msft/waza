@@ -33,7 +33,7 @@ from typing import TYPE_CHECKING, Any
 from waza.executors.base import BaseExecutor, ExecutionResult, SessionEvent
 
 if TYPE_CHECKING:
-    from copilot import CopilotClient as CopilotClientType, SessionEvent as SessionEventType
+    from copilot import CopilotClient as CopilotClientType
 
 # Lazy import for optional dependency
 _CopilotClientClass: type[CopilotClientType] | None = None
@@ -43,7 +43,7 @@ def _get_copilot_client() -> type[CopilotClientType]:
     global _CopilotClientClass
     if _CopilotClientClass is None:
         try:
-            from copilot import CopilotClient
+            from waza.executors.copilot_executor import CopilotClient
             _CopilotClientClass = CopilotClient
         except ImportError as e:
             raise ImportError(
@@ -159,9 +159,8 @@ class CopilotExecutor(BaseExecutor):
             # Set up event collection
             done_event = asyncio.Event()
 
-            print("Event collection!")
-
-            def handle_event(event: type[SessionEventType]) -> None:
+            def handle_event(event: Any) -> None:
+                print("Event received:", event)
                 # Convert SDK event to our SessionEvent format
                 event_type = event.type.value if hasattr(event.type, 'value') else str(event.type)
                 session_event = SessionEvent(
@@ -211,6 +210,7 @@ class CopilotExecutor(BaseExecutor):
         output = "".join(output_parts)
 
         # Extract tool calls from events
+        # RP: we should have tool calls here, so we can do more with them.
         tool_calls = [
             {"name": getattr(e.data, 'tool_name', ''), "arguments": getattr(e.data, 'arguments', {})}
             for e in events
