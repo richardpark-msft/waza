@@ -33,7 +33,8 @@ from typing import TYPE_CHECKING, Any
 from waza.executors.base import BaseExecutor, ExecutionResult, SessionEvent
 
 if TYPE_CHECKING:
-    from copilot import CopilotClient as CopilotClientType, SessionEvent as SessionEventType
+    from copilot import CopilotClient as CopilotClientType
+    from copilot import SessionEvent as SessionEventType
 
 # Lazy import for optional dependency
 _CopilotClientClass: type[CopilotClientType] | None = None
