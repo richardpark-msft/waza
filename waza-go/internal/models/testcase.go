@@ -79,14 +79,9 @@ func LoadTestCase(path string) (*TestCase, error) {
 		return nil, err
 	}
 
-	// Default Active to true if not specified
-	if tc.Active == nil {
-		tc.Active = boolPtr(true)
-	}
+	// Note: Active field defaults to nil when not specified in YAML.
+	// The runner treats nil as true (enabled by default).
+	// Only explicitly set "enabled: false" will disable a test.
 
 	return &tc, nil
-}
-
-func boolPtr(b bool) *bool {
-	return &b
 }
