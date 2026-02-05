@@ -64,25 +64,10 @@ func (b *CopilotEngineBuilder) Build() *CopilotEngine {
 }
 
 // Initialize sets up the Copilot client
+// Note: workspace is created per-Execute call for test isolation
 func (e *CopilotEngine) Initialize(ctx context.Context) error {
-	// Create temporary workspace
-	tmpDir, err := os.MkdirTemp("", "waza-go-*")
-	if err != nil {
-		return fmt.Errorf("failed to create temp workspace: %w", err)
-	}
-	e.workspace = tmpDir
-
-	// Initialize Copilot client with new API
-	client := copilot.NewClient(&copilot.ClientOptions{
-		Cwd:      e.workspace,
-		LogLevel: "error",
-	})
-
-	if err := client.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start copilot client: %w", err)
-	}
-
-	e.client = client
+	// Client initialization is deferred to Execute() for better isolation
+	// Each test execution gets a fresh workspace
 	return nil
 }
 
