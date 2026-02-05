@@ -93,7 +93,9 @@ func evaluateAssertion(assertion string, ctx *ValidationContext) bool {
 	// len(output) > N
 	if matches := regexp.MustCompile(`len\(output\)\s*>\s*(\d+)`).FindStringSubmatch(assertion); len(matches) > 1 {
 		threshold := 0
-		fmt.Sscanf(matches[1], "%d", &threshold)
+		if _, err := fmt.Sscanf(matches[1], "%d", &threshold); err != nil {
+			return false // Parsing failed
+		}
 		return len(ctx.Output) > threshold
 	}
 
