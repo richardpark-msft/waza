@@ -142,15 +142,25 @@ func (v *RegexValidator) Validate(ctx *ValidationContext) *models.ValidationOut 
 		var failures []string
 
 		for _, pattern := range v.mustMatch {
-			matched, _ := regexp.MatchString(pattern, ctx.Output)
-			if !matched {
+			re, err := regexp.Compile(pattern)
+			if err != nil {
+				failures = append(failures, fmt.Sprintf("Invalid must_match regex pattern %q: %v", pattern, err))
+				continue
+			}
+
+			if !re.MatchString(ctx.Output) {
 				failures = append(failures, fmt.Sprintf("Missing expected pattern: %s", pattern))
 			}
 		}
 
 		for _, pattern := range v.mustNotMatch {
-			matched, _ := regexp.MatchString(pattern, ctx.Output)
-			if matched {
+			re, err := regexp.Compile(pattern)
+			if err != nil {
+				failures = append(failures, fmt.Sprintf("Invalid must_not_match regex pattern %q: %v", pattern, err))
+				continue
+			}
+
+			if re.MatchString(ctx.Output) {
 				failures = append(failures, fmt.Sprintf("Found forbidden pattern: %s", pattern))
 			}
 		}
