@@ -82,9 +82,9 @@ func (v *NoOpValidator) Validate(ctx *ValidationContext) *models.ValidationOut {
 	return &models.ValidationOut{
 		Identifier: v.identifier,
 		Kind:       v.category,
-		Score:      1.0,
-		Passed:     true,
-		Feedback:   "No-op validator",
+		Score:      0.0,
+		Passed:     false,
+		Feedback:   "Unknown validator category: " + v.category + " for identifier: " + v.identifier + "; no validation executed",
 		DurationMs: 0,
 	}
 }
