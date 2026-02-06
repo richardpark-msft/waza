@@ -186,7 +186,7 @@ Package waza as an Azure Developer CLI extension.
 ### Directory Structure
 
 ```
-waza-go/
+/
 ├── cmd/waza/           # CLI entrypoint
 ├── internal/
 │   ├── config/         # Configuration loading
