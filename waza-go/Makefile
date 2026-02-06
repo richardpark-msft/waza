@@ -29,7 +29,7 @@ lint:
 		golangci-lint run ./...; \
 	else \
 		echo "golangci-lint not installed, skipping..."; \
-		echo "Install: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$$(go env GOPATH)/bin v1.55.2"; \
+		echo "Install: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$$(go env GOPATH)/bin v1.64.8"; \
 	fi
 
 # Format code
