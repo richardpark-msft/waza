@@ -225,7 +225,7 @@ Falls back to pattern-based `EvalGenerator` if LLM fails.
 
 The `.github/CODEOWNERS` file automatically assigns reviewers to PRs based on changed files:
 
-- **Go implementation** (`waza-go/`, `*.go`, `go.mod`, `go.sum`) → @richardpark-msft
+- **Go implementation** (`./`, `*.go`, `go.mod`, `go.sum`) → @richardpark-msft
 
 When you create a PR that modifies files matching these patterns, GitHub automatically:
 1. Requests review from the specified code owner
@@ -241,10 +241,7 @@ To add new code owners:
 
 ```bash
 # Run tests
-pytest tests/
-
-# Run with coverage
-pytest tests/ --cov=waza
+go test -v ./...
 
 # Test CLI manually
 waza --help
