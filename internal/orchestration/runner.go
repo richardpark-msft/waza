@@ -721,8 +721,9 @@ func (r *TestRunner) buildOutcome(testOutcomes []models.TestOutcome, startTime t
 		successRate = float64(succeeded) / float64(totalTests)
 	}
 
-	// Compute aggregate score
+	// Compute aggregate score, min, max, and stddev across tests
 	aggregateScore := r.computeAggregateScore(testOutcomes)
+	digestMin, digestMax, digestStdDev := r.computeDigestScoreStats(testOutcomes)
 
 	return &models.EvaluationOutcome{
 		RunID:       fmt.Sprintf("run-%d", time.Now().Unix()),
@@ -743,6 +744,9 @@ func (r *TestRunner) buildOutcome(testOutcomes []models.TestOutcome, startTime t
 			Skipped:        0,
 			SuccessRate:    successRate,
 			AggregateScore: aggregateScore,
+			MinScore:       digestMin,
+			MaxScore:       digestMax,
+			StdDev:         digestStdDev,
 			DurationMs:     time.Since(startTime).Milliseconds(),
 		},
 		Measures:     make(map[string]models.MeasureResult),
@@ -766,4 +770,31 @@ func (r *TestRunner) computeAggregateScore(testOutcomes []models.TestOutcome) fl
 	}
 
 	return totalScore / float64(len(testOutcomes))
+}
+
+// computeDigestScoreStats returns min, max, and stddev of per-test average scores.
+func (r *TestRunner) computeDigestScoreStats(testOutcomes []models.TestOutcome) (float64, float64, float64) {
+	if len(testOutcomes) == 0 {
+		return 0.0, 0.0, 0.0
+	}
+
+	scores := make([]float64, 0, len(testOutcomes))
+	minScore := 1.0
+	maxScore := 0.0
+
+	for _, to := range testOutcomes {
+		s := 0.0
+		if to.Stats != nil {
+			s = to.Stats.AvgScore
+		}
+		scores = append(scores, s)
+		if s < minScore {
+			minScore = s
+		}
+		if s > maxScore {
+			maxScore = s
+		}
+	}
+
+	return minScore, maxScore, models.ComputeStdDev(scores)
 }
