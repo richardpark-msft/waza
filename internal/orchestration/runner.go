@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -41,6 +42,9 @@ const (
 	EventTestComplete      EventType = "test_complete"
 	EventRunStart          EventType = "run_start"
 	EventRunComplete       EventType = "run_complete"
+	EventAgentPrompt       EventType = "agent_prompt"
+	EventAgentResponse     EventType = "agent_response"
+	EventGraderResult      EventType = "grader_result"
 )
 
 // ProgressEvent represents a progress update
@@ -336,6 +340,15 @@ func (r *TestRunner) executeRun(ctx context.Context, tc *models.TestCase, runNum
 	// Prepare execution request
 	req := r.buildExecutionRequest(tc)
 
+	// Emit agent prompt event before execution
+	if r.verbose {
+		r.notifyProgress(ProgressEvent{
+			EventType: EventAgentPrompt,
+			TestName:  tc.DisplayName,
+			Details:   map[string]any{"message": req.Message},
+		})
+	}
+
 	// Execute
 	resp, err := r.engine.Execute(ctx, req)
 	if err != nil {
@@ -345,6 +358,19 @@ func (r *TestRunner) executeRun(ctx context.Context, tc *models.TestCase, runNum
 			DurationMs: time.Since(startTime).Milliseconds(),
 			ErrorMsg:   err.Error(),
 		}
+	}
+
+	// Emit agent response event after execution
+	if r.verbose {
+		r.notifyProgress(ProgressEvent{
+			EventType: EventAgentResponse,
+			TestName:  tc.DisplayName,
+			Details: map[string]any{
+				"output":     resp.FinalOutput,
+				"transcript": r.buildTranscript(resp),
+				"tool_calls": len(resp.ToolCalls),
+			},
+		})
 	}
 
 	// Build validation context
@@ -358,6 +384,30 @@ func (r *TestRunner) executeRun(ctx context.Context, tc *models.TestCase, runNum
 			Status:     "error",
 			DurationMs: time.Since(startTime).Milliseconds(),
 			ErrorMsg:   err.Error(),
+		}
+	}
+
+	// Emit grader result events for verbose mode (sorted for stable output)
+	if r.verbose {
+		graderNames := make([]string, 0, len(gradersResults))
+		for name := range gradersResults {
+			graderNames = append(graderNames, name)
+		}
+		sort.Strings(graderNames)
+		for _, name := range graderNames {
+			gr := gradersResults[name]
+			r.notifyProgress(ProgressEvent{
+				EventType:  EventGraderResult,
+				TestName:   tc.DisplayName,
+				DurationMs: gr.DurationMs,
+				Details: map[string]any{
+					"grader":   name,
+					"type":     gr.Type,
+					"passed":   gr.Passed,
+					"score":    gr.Score,
+					"feedback": gr.Feedback,
+				},
+			})
 		}
 	}
 

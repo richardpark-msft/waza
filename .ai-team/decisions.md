@@ -2,6 +2,7 @@
 
 > Shared brain — all agents read this before starting work.
 
+<!-- Scribe merges decisions from .ai-team/decisions/inbox/ into this file. -->
 ### 2026-02-09: Proper git workflow required
 **By:** Shayne Boyer (via Copilot)
 **What:** All issues must follow: feature branch → commit → push → PR with `Closes #N` → @copilot review → address feedback → merge. No direct commits to main.
