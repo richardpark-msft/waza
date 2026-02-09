@@ -21,6 +21,7 @@ var (
 	outputPath    string
 	verbose       bool
 	transcriptDir string
+	taskFilters   []string
 )
 
 func newRunCommand() *cobra.Command {
@@ -39,6 +40,7 @@ Resources are loaded from the context directory (defaults to ./fixtures).`,
 	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output JSON file for results")
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output with detailed progress")
 	cmd.Flags().StringVar(&transcriptDir, "transcript-dir", "", "Directory to save per-task transcript JSON files")
+	cmd.Flags().StringArrayVar(&taskFilters, "task", nil, "Filter tasks by name/ID glob pattern (can be repeated)")
 
 	return cmd
 }
@@ -95,8 +97,8 @@ func runCommandE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unknown engine type: %s", spec.Config.EngineType)
 	}
 
-	// Create runner
-	runner := orchestration.NewTestRunner(cfg, engine)
+	// Create runner with optional task filters
+	runner := orchestration.NewTestRunner(cfg, engine, orchestration.WithTaskFilters(taskFilters...))
 
 	// Add progress listener
 	if verbose {
