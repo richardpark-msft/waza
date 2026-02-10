@@ -260,7 +260,7 @@ func (fg *fileGrader) buildResult(failures []string, workspaceDir string) *model
 
 	return &models.GraderResults{
 		Name:     fg.name,
-		Type:     TypeFile,
+		Type:     string(TypeFile),
 		Score:    score,
 		Passed:   len(failures) == 0,
 		Feedback: feedback,
