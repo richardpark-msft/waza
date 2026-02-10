@@ -9,6 +9,7 @@
 | Code review | Rusty | Review PRs, check quality |
 | Graders, Copilot SDK | Richard Park 👤 | #28 graders, #29 SDK, #22, #23 Cobra |
 | Sensei engine, compliance, tokens | Charles Lowell 👤 | #32-38 sensei, #47-51 tokens |
+| Go implementation, CLI, infra | Wallace Breza 👤 | Go features, CLI commands, infrastructure |
 | Session logging | Scribe | Automatic |
 
 ## Rules
