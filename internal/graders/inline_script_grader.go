@@ -51,15 +51,15 @@ func NewInlineScriptGrader(name string, language Language, assertions []string) 
 	}, nil
 }
 
-func (isg *InlineScriptGrader) Name() string { return isg.name }
-func (isg *InlineScriptGrader) Type() Type   { return TypeInlineScript }
+func (isg *InlineScriptGrader) Name() string            { return isg.name }
+func (isg *InlineScriptGrader) Kind() models.GraderKind { return models.GraderKindInlineScript }
 
 func (isg *InlineScriptGrader) Grade(ctx context.Context, gradingContext *Context) (*models.GraderResults, error) {
 	return measureTime(func() (*models.GraderResults, error) {
 		if len(isg.assertions) == 0 {
 			return &models.GraderResults{
 				Name:     isg.name,
-				Type:     string(TypeInlineScript),
+				Type:     models.GraderKindInlineScript,
 				Score:    1.0,
 				Passed:   true,
 				Feedback: "No assertions configured",
@@ -82,7 +82,7 @@ func (isg *InlineScriptGrader) Grade(ctx context.Context, gradingContext *Contex
 
 		return &models.GraderResults{
 			Name:     isg.name,
-			Type:     string(TypeInlineScript),
+			Type:     models.GraderKindInlineScript,
 			Score:    score,
 			Passed:   allPassed,
 			Feedback: feedback,

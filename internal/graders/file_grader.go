@@ -57,8 +57,8 @@ func NewFileGrader(args FileGraderArgs) (*fileGrader, error) {
 	}, nil
 }
 
-func (fg *fileGrader) Name() string { return fg.name }
-func (fg *fileGrader) Type() Type   { return TypeFile }
+func (fg *fileGrader) Name() string            { return fg.name }
+func (fg *fileGrader) Kind() models.GraderKind { return models.GraderKindFile }
 
 func (fg *fileGrader) Grade(ctx context.Context, gradingContext *Context) (*models.GraderResults, error) {
 	return measureTime(func() (*models.GraderResults, error) {
@@ -66,7 +66,7 @@ func (fg *fileGrader) Grade(ctx context.Context, gradingContext *Context) (*mode
 		if workspaceDir == "" {
 			return &models.GraderResults{
 				Name:     fg.name,
-				Type:     string(TypeFile),
+				Type:     models.GraderKindFile,
 				Score:    0.0,
 				Passed:   false,
 				Feedback: "No workspace directory available for file grading",
@@ -260,7 +260,7 @@ func (fg *fileGrader) buildResult(failures []string, workspaceDir string) *model
 
 	return &models.GraderResults{
 		Name:     fg.name,
-		Type:     string(TypeFile),
+		Type:     models.GraderKindFile,
 		Score:    score,
 		Passed:   len(failures) == 0,
 		Feedback: feedback,

@@ -70,7 +70,7 @@ func FormatSummaryReport(outcome *models.EvaluationOutcome) string {
 		b.WriteString("\nPer-Task Interpretation:\n")
 		for _, to := range outcome.TestOutcomes {
 			icon := "✓"
-			if to.Status != "passed" {
+			if to.Status != models.StatusPassed {
 				icon = "✗"
 			}
 			b.WriteString(fmt.Sprintf("  %s %s: %s\n", icon, to.DisplayName, to.Status))

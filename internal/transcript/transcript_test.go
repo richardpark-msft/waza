@@ -50,7 +50,7 @@ func TestWrite(t *testing.T) {
 	tr := &models.TaskTranscript{
 		TaskID:      "test-1",
 		TaskName:    "Explain Code",
-		Status:      "passed",
+		Status:      models.StatusPassed,
 		StartedAt:   time.Date(2025, 6, 15, 14, 0, 0, 0, time.UTC),
 		CompletedAt: time.Date(2025, 6, 15, 14, 0, 1, 0, time.UTC),
 		DurationMs:  1000,
@@ -63,7 +63,7 @@ func TestWrite(t *testing.T) {
 		Validations: map[string]models.GraderResults{
 			"contains-check": {
 				Name:   "contains-check",
-				Type:   "regex",
+				Type:   models.GraderKindRegex,
 				Score:  1.0,
 				Passed: true,
 			},
@@ -104,8 +104,8 @@ func TestWrite(t *testing.T) {
 	if decoded.TaskID != "test-1" {
 		t.Errorf("TaskID = %q, want %q", decoded.TaskID, "test-1")
 	}
-	if decoded.Status != "passed" {
-		t.Errorf("Status = %q, want %q", decoded.Status, "passed")
+	if decoded.Status != models.StatusPassed {
+		t.Errorf("Status = %q, want %q", decoded.Status, models.StatusPassed)
 	}
 	if decoded.DurationMs != 1000 {
 		t.Errorf("DurationMs = %d, want %d", decoded.DurationMs, 1000)
@@ -127,7 +127,7 @@ func TestWrite_CreatesDir(t *testing.T) {
 	tr := &models.TaskTranscript{
 		TaskID:    "test-2",
 		TaskName:  "Nested Dir Test",
-		Status:    "passed",
+		Status:    models.StatusPassed,
 		StartedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 	}
 
@@ -156,11 +156,11 @@ func TestBuildTaskTranscript(t *testing.T) {
 	outcome := models.TestOutcome{
 		TestID:      "tc-1",
 		DisplayName: "Code Explain",
-		Status:      "passed",
+		Status:      models.StatusPassed,
 		Runs: []models.RunResult{
 			{
 				RunNumber:  1,
-				Status:     "passed",
+				Status:     models.StatusPassed,
 				DurationMs: 500,
 				Transcript: []models.TranscriptEntry{
 					{Role: "user", Content: "Explain this code"},
@@ -184,8 +184,8 @@ func TestBuildTaskTranscript(t *testing.T) {
 	if result.TaskName != "Code Explain" {
 		t.Errorf("TaskName = %q, want %q", result.TaskName, "Code Explain")
 	}
-	if result.Status != "passed" {
-		t.Errorf("Status = %q, want %q", result.Status, "passed")
+	if result.Status != models.StatusPassed {
+		t.Errorf("Status = %q, want %q", result.Status, models.StatusPassed)
 	}
 	if result.Prompt != "Explain this code" {
 		t.Errorf("Prompt = %q, want %q", result.Prompt, "Explain this code")

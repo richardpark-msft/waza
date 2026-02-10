@@ -24,8 +24,8 @@ func NewRegexGrader(name string, mustMatch []string, mustNotMatch []string) (*Re
 	}, nil
 }
 
-func (reg *RegexGrader) Name() string { return reg.name }
-func (reg *RegexGrader) Type() Type   { return TypeRegex }
+func (reg *RegexGrader) Name() string            { return reg.name }
+func (reg *RegexGrader) Kind() models.GraderKind { return models.GraderKindRegex }
 
 func (reg *RegexGrader) Grade(ctx context.Context, gradingContext *Context) (*models.GraderResults, error) {
 	return measureTime(func() (*models.GraderResults, error) {
@@ -70,7 +70,7 @@ func (reg *RegexGrader) Grade(ctx context.Context, gradingContext *Context) (*mo
 
 		return &models.GraderResults{
 			Name:     reg.name,
-			Type:     string(TypeRegex),
+			Type:     models.GraderKindRegex,
 			Score:    score,
 			Passed:   len(failures) == 0,
 			Feedback: feedback,

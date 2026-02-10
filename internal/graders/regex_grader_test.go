@@ -12,7 +12,7 @@ func TestRegexGrader_Basic(t *testing.T) {
 	g, err := NewRegexGrader("test", []string{`he.*`, `world`}, nil)
 	require.NoError(t, err)
 
-	require.Equal(t, TypeRegex, g.Type())
+	require.Equal(t, models.GraderKindRegex, g.Kind())
 	require.Equal(t, "test", g.Name())
 }
 
@@ -152,7 +152,7 @@ func TestRegexGrader_Grade(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, "detail-test", results.Name)
-		require.Equal(t, "regex", results.Type)
+		require.Equal(t, "regex", string(results.Type))
 		require.Equal(t, []string{"a"}, results.Details["must_match"])
 		require.Equal(t, []string{"z"}, results.Details["must_not_match"])
 	})
@@ -171,13 +171,13 @@ func TestRegexGrader_Grade(t *testing.T) {
 
 func TestRegexGrader_ViaCreate(t *testing.T) {
 	t.Run("Create with TypeRegex works", func(t *testing.T) {
-		g, err := Create(TypeRegex, "from-create", map[string]any{
+		g, err := Create(models.GraderKindRegex, "from-create", map[string]any{
 			"must_match":     []string{`hello`},
 			"must_not_match": []string{`bye`},
 		})
 		require.NoError(t, err)
 		require.Equal(t, "from-create", g.Name())
-		require.Equal(t, TypeRegex, g.Type())
+		require.Equal(t, models.GraderKindRegex, g.Kind())
 
 		results, err := g.Grade(context.Background(), &Context{
 			Output: "hello world",

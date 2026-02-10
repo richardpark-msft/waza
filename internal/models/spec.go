@@ -41,7 +41,7 @@ type Config struct {
 
 // GraderConfig defines a validator/grader
 type GraderConfig struct {
-	Kind       string         `yaml:"type" json:"kind"`
+	Kind       GraderKind     `yaml:"type" json:"kind"`
 	Identifier string         `yaml:"name" json:"identifier"`
 	ScriptPath string         `yaml:"script,omitempty" json:"script_path,omitempty"`
 	Rubric     string         `yaml:"rubric,omitempty" json:"rubric,omitempty"`

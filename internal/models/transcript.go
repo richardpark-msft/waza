@@ -6,7 +6,7 @@ import "time"
 type TaskTranscript struct {
 	TaskID      string                   `json:"task_id"`
 	TaskName    string                   `json:"task_name"`
-	Status      string                   `json:"status"`
+	Status      Status                   `json:"status"`
 	StartedAt   time.Time                `json:"started_at"`
 	CompletedAt time.Time                `json:"completed_at"`
 	DurationMs  int64                    `json:"duration_ms"`

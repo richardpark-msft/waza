@@ -86,7 +86,7 @@ func TestFormatSummaryReport(t *testing.T) {
 		TestOutcomes: []models.TestOutcome{
 			{
 				DisplayName: "Task A",
-				Status:      "passed",
+				Status:      models.StatusPassed,
 				Stats: &models.TestStats{
 					AvgScore: 0.95,
 					PassRate: 1.0,
@@ -95,7 +95,7 @@ func TestFormatSummaryReport(t *testing.T) {
 			},
 			{
 				DisplayName: "Task B",
-				Status:      "failed",
+				Status:      models.StatusFailed,
 				Stats: &models.TestStats{
 					AvgScore: 0.40,
 					PassRate: 0.5,

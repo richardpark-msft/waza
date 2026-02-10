@@ -231,7 +231,7 @@ func simpleProgressListener(event orchestration.ProgressEvent) {
 	switch event.EventType {
 	case orchestration.EventTestComplete:
 		status := "✓"
-		if event.Status != "passed" {
+		if event.Status != models.StatusPassed {
 			status = "✗"
 		}
 		fmt.Printf("%s [%d/%d] %s\n", status, event.TestNum, event.TotalTests, event.TestName)
@@ -266,7 +266,7 @@ func printSummary(outcome *models.EvaluationOutcome) {
 	fmt.Println("-" + strings.Repeat("-", 50))
 	for _, to := range outcome.TestOutcomes {
 		icon := "✓"
-		if to.Status != "passed" {
+		if to.Status != models.StatusPassed {
 			icon = "✗"
 		}
 		fmt.Printf("  %s %s [%s]\n", icon, to.DisplayName, to.Status)
@@ -283,7 +283,7 @@ func printSummary(outcome *models.EvaluationOutcome) {
 	if digest.Failed > 0 || digest.Errors > 0 {
 		fmt.Println("Failed Tests:")
 		for _, to := range outcome.TestOutcomes {
-			if to.Status != "passed" {
+			if to.Status != models.StatusPassed {
 				fmt.Printf("  - %s (%s)\n", to.DisplayName, to.Status)
 
 				// Show validation failures
