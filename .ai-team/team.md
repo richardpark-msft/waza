@@ -19,6 +19,7 @@
 | Scribe | Session Logger | `.ai-team/agents/scribe/charter.md` | 📋 Silent |
 | Richard Park | Go Engineer | — | 👤 Human |
 | Charles Lowell | Go Engineer | — | 👤 Human |
+| Wallace Breza | Go Engineer | — | 👤 Human |
 
 ## Project Context
 
