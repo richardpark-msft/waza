@@ -53,7 +53,7 @@ func sampleOutcome(modelID string, score float64, successRate float64, taskScore
 			{
 				TestID:      "task-001",
 				DisplayName: "Sample Task",
-				Status:      "passed",
+				Status:      models.StatusPassed,
 				Stats: &models.TestStats{
 					PassRate: successRate,
 					AvgScore: taskScore,
