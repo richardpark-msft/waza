@@ -567,12 +567,13 @@ func (r *TestRunner) buildGraderContext(tc *models.TestCase, resp *execution.Exe
 	}
 
 	return &graders.Context{
-		TestCase:   tc,
-		Transcript: transcript,
-		Output:     resp.FinalOutput,
-		Outcome:    make(map[string]any),
-		DurationMS: resp.DurationMs,
-		Metadata:   make(map[string]any),
+		TestCase:     tc,
+		Transcript:   transcript,
+		Output:       resp.FinalOutput,
+		Outcome:      make(map[string]any),
+		DurationMS:   resp.DurationMs,
+		Metadata:     make(map[string]any),
+		WorkspaceDir: resp.WorkspaceDir,
 	}
 }
 
