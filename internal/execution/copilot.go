@@ -183,6 +183,7 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 		ToolCalls:    extractToolCalls(events),
 		ErrorMsg:     errorMsg,
 		Success:      errorMsg == "",
+		WorkspaceDir: e.workspace,
 	}
 
 	return resp, nil
