@@ -415,6 +415,74 @@ content_patterns:
 	})
 }
 
+func TestFileGrader_CountTotalChecks(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     FileGraderArgs
+		expected int
+	}{
+		{
+			name:     "must_exist only",
+			args:     FileGraderArgs{Name: "t", MustExist: []string{"a.txt", "b.txt"}},
+			expected: 2,
+		},
+		{
+			name:     "must_not_exist only",
+			args:     FileGraderArgs{Name: "t", MustNotExist: []string{"a.txt"}},
+			expected: 1,
+		},
+		{
+			name: "content pattern adds implicit file existence check",
+			args: FileGraderArgs{Name: "t", ContentPatterns: []FileContentPattern{
+				{Path: "f.go", MustMatch: []string{`a`, `b`}},
+			}},
+			expected: 3, // 2 must_match + 1 implicit file existence
+		},
+		{
+			name: "content pattern with must_not_match",
+			args: FileGraderArgs{Name: "t", ContentPatterns: []FileContentPattern{
+				{Path: "f.go", MustNotMatch: []string{`x`}},
+			}},
+			expected: 2, // 1 must_not_match + 1 implicit file existence
+		},
+		{
+			name: "content pattern with both match types",
+			args: FileGraderArgs{Name: "t", ContentPatterns: []FileContentPattern{
+				{Path: "f.go", MustMatch: []string{`a`}, MustNotMatch: []string{`b`, `c`}},
+			}},
+			expected: 4, // 1 must_match + 2 must_not_match + 1 implicit file existence
+		},
+		{
+			name: "multiple content patterns each get implicit check",
+			args: FileGraderArgs{Name: "t", ContentPatterns: []FileContentPattern{
+				{Path: "a.go", MustMatch: []string{`x`}},
+				{Path: "b.go", MustNotMatch: []string{`y`}},
+			}},
+			expected: 4, // (1+1) + (1+1)
+		},
+		{
+			name: "combined must_exist, must_not_exist, and content patterns",
+			args: FileGraderArgs{
+				Name:         "t",
+				MustExist:    []string{"a.txt", "b.txt"},
+				MustNotExist: []string{"c.txt"},
+				ContentPatterns: []FileContentPattern{
+					{Path: "d.go", MustMatch: []string{`p1`, `p2`}, MustNotMatch: []string{`p3`}},
+				},
+			},
+			expected: 7, // 2 must_exist + 1 must_not_exist + (2+1+1) content pattern
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g, err := NewFileGrader(tt.args)
+			require.NoError(t, err)
+			require.Equal(t, tt.expected, g.countTotalChecks())
+		})
+	}
+}
+
 // Ensure FileGrader satisfies the Grader interface at compile time.
 var _ Grader = (*fileGrader)(nil)
 var _ *models.GraderResults // ensure import is used

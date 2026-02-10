@@ -237,13 +237,9 @@ func (fg *fileGrader) countTotalChecks() int {
 
 	// patterns per file
 	for _, cp := range fg.contentPatterns {
-		total += len(cp.MustMatch) + len(cp.MustNotMatch)
-
-		// Add 1 for the file existence check implicit in content patterns
-		if len(cp.MustMatch) > 0 || len(cp.MustNotMatch) > 0 {
-			total++
-		}
+		total += len(cp.MustMatch) + len(cp.MustNotMatch) + 1 // +1 is the implicit check for file existence,
 	}
+
 	return total
 }
 
