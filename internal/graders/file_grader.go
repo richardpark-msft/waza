@@ -41,7 +41,7 @@ type fileGrader struct {
 	contentPatterns []FileContentPattern
 }
 
-// NewFileGrader creates a [fileGrader], which can be used to simple existence (or non-existence) checks with
+// NewFileGrader creates a [fileGrader], which can be used to perform simple existence (or non-existence) checks with
 // 'mustExist'/'mustNotExist', or validate that the contents of the file match or do not match certain
 // regex patterns, using 'contentPatterns'.
 func NewFileGrader(args FileGraderArgs) (*fileGrader, error) {
