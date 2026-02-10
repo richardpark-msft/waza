@@ -230,7 +230,7 @@ func TestFileGrader_Grade(t *testing.T) {
 		tmpDir := t.TempDir()
 		require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "test.txt"), []byte("content"), 0644))
 
-		badRegexPattern := `[invalid` + `_regex` //nolint:staticcheck // intentionally invalid regex for testing
+		const badRegexPattern = `[invalid` + `_regex`
 
 		g, err := NewFileGrader(FileGraderArgs{Name: "test", ContentPatterns: []FileContentPattern{
 			{Path: "test.txt", MustNotMatch: []string{badRegexPattern}}, // invalid (on purpose): no closing ]
@@ -248,7 +248,7 @@ func TestFileGrader_Grade(t *testing.T) {
 
 		// we should also see the actual regex compilation error in there. I'll create an invalid regex
 		// so I know what the error message should be.
-		_, err = regexp.Compile(badRegexPattern)
+		_, err = regexp.Compile(badRegexPattern) //nolint:staticcheck // intentionally invalid regex for testing
 		require.Error(t, err)
 		require.Contains(t, results.Feedback, err.Error())
 	})
