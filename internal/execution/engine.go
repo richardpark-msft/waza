@@ -44,6 +44,7 @@ type ExecutionResponse struct {
 	ToolCalls    []ToolCall
 	ErrorMsg     string
 	Success      bool
+	WorkspaceDir string // Path to workspace directory (for file grading)
 }
 
 // SessionEvent represents an event during execution
