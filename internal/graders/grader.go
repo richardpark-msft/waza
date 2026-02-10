@@ -9,34 +9,13 @@ import (
 	"github.com/spboyer/waza/internal/models"
 )
 
-type Type string
-
-const (
-	// this was originally in the other prototype, and just eval'd. We don't need to
-	// embed a Python interpreter here, so reconsider how we want to do that one.
-	TypeInlineScript Type = "code"
-
-	TypePrompt Type = "prompt"
-	TypeRegex  Type = "regex"
-
-	// TypeFile does existence/content checks
-	TypeFile       Type = "file"
-	TypeKeyword    Type = "keyword"
-	TypeJSONSchema Type = "json_schema"
-
-	TypeProgram Type = "program"
-
-	// TODO: unsure what this would actually be.
-	// TypeComposite Type = "composite"
-)
-
 // Grader is the interface for all validators
 type Grader interface {
 	// Identifier returns the validator name
 	Name() string
 
 	// Category returns the validator type
-	Type() Type
+	Kind() models.GraderKind
 
 	// Validate performs validation and returns a result
 	Grade(ctx context.Context, gradingContext *Context) (*models.GraderResults, error)
@@ -58,9 +37,9 @@ type Context struct {
 }
 
 // Create creates a validator from the global registry
-func Create(graderType Type, identifier string, params map[string]any) (Grader, error) {
+func Create(graderType models.GraderKind, identifier string, params map[string]any) (Grader, error) {
 	switch graderType {
-	case TypeInlineScript:
+	case models.GraderKindInlineScript:
 		var v *struct {
 			Assertions []string
 		}
@@ -70,7 +49,7 @@ func Create(graderType Type, identifier string, params map[string]any) (Grader, 
 		}
 
 		return NewInlineScriptGrader(identifier, LanguagePython, v.Assertions)
-	case TypeRegex:
+	case models.GraderKindRegex:
 		var v *struct {
 			MustMatch    []string `mapstructure:"must_match"`
 			MustNotMatch []string `mapstructure:"must_not_match"`
@@ -81,7 +60,7 @@ func Create(graderType Type, identifier string, params map[string]any) (Grader, 
 		}
 
 		return NewRegexGrader(identifier, v.MustMatch, v.MustNotMatch)
-	case TypeFile:
+	case models.GraderKindFile:
 		var v *struct {
 			MustExist       []string `mapstructure:"must_exist"`
 			MustNotExist    []string `mapstructure:"must_not_exist"`
@@ -111,7 +90,7 @@ func Create(graderType Type, identifier string, params map[string]any) (Grader, 
 			MustNotExist:    v.MustNotExist,
 			ContentPatterns: contentPatterns,
 		})
-	case TypePrompt, TypeKeyword, TypeJSONSchema, TypeProgram:
+	case models.GraderKindPrompt, models.GraderKindKeyword, models.GraderKindJSONSchema, models.GraderKindProgram:
 		return nil, fmt.Errorf("'%s' is not yet implemented", graderType)
 	default:
 		return nil, fmt.Errorf("'%s' is not a valid grader type", graderType)

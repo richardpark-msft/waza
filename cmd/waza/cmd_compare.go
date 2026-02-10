@@ -32,13 +32,13 @@ per-task score deltas, pass rate differences, and aggregate statistics.`,
 
 // taskComparison holds per-task delta information across result files.
 type taskComparison struct {
-	TaskID      string    `json:"task_id"`
-	DisplayName string    `json:"display_name"`
-	Scores      []float64 `json:"scores"`
-	PassRates   []float64 `json:"pass_rates"`
-	Statuses    []string  `json:"statuses"`
-	ScoreDelta  float64   `json:"score_delta"`
-	PassDelta   float64   `json:"pass_rate_delta"`
+	TaskID      string          `json:"task_id"`
+	DisplayName string          `json:"display_name"`
+	Scores      []float64       `json:"scores"`
+	PassRates   []float64       `json:"pass_rates"`
+	Statuses    []models.Status `json:"statuses"`
+	ScoreDelta  float64         `json:"score_delta"`
+	PassDelta   float64         `json:"pass_rate_delta"`
 }
 
 // comparisonReport is the full comparison output.
@@ -149,7 +149,7 @@ func buildComparisonReport(files []string, outcomes []*models.EvaluationOutcome)
 			if !found {
 				tc.Scores = append(tc.Scores, math.NaN())
 				tc.PassRates = append(tc.PassRates, math.NaN())
-				tc.Statuses = append(tc.Statuses, "n/a")
+				tc.Statuses = append(tc.Statuses, models.StatusNA)
 			}
 		}
 		tc.ScoreDelta = tc.Scores[n-1] - tc.Scores[0]

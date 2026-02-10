@@ -3,6 +3,32 @@ package models
 import (
 	"math"
 	"time"
+
+	copilot "github.com/github/copilot-sdk/go"
+)
+
+// Status represents the outcome status of a test or run.
+type Status string
+
+const (
+	StatusPassed Status = "passed"
+	StatusFailed Status = "failed"
+	StatusError  Status = "error"
+	// StatusNA is used in comparison reports when a task is not found in a result file.
+	StatusNA Status = "n/a"
+)
+
+// GraderKind identifies the type of grader (e.g. regex, file, code).
+type GraderKind string
+
+const (
+	GraderKindInlineScript GraderKind = "code"
+	GraderKindPrompt       GraderKind = "prompt"
+	GraderKindRegex        GraderKind = "regex"
+	GraderKindFile         GraderKind = "file"
+	GraderKindKeyword      GraderKind = "keyword"
+	GraderKindJSONSchema   GraderKind = "json_schema"
+	GraderKindProgram      GraderKind = "program"
 )
 
 // EvaluationOutcome represents the complete result of an evaluation run
@@ -52,15 +78,18 @@ type MeasureResult struct {
 type TestOutcome struct {
 	TestID      string      `json:"test_id"`
 	DisplayName string      `json:"display_name"`
-	Status      string      `json:"status"`
+	Status      Status      `json:"status"`
 	Runs        []RunResult `json:"runs"`
 	Stats       *TestStats  `json:"stats,omitempty"`
 }
 
 // RunResult is the result of a single run/trial
 type RunResult struct {
-	RunNumber     int                      `json:"run_number"`
-	Status        string                   `json:"status"`
+	RunNumber int `json:"run_number"`
+	// Status contains the overall status of the run.
+	// NOTE: if Status == [StatusError], then [ErrorMsg] will be set to the
+	// message from the error.
+	Status        Status                   `json:"status"`
 	DurationMs    int64                    `json:"duration_ms"`
 	Validations   map[string]GraderResults `json:"validations"`
 	SessionDigest SessionDigest            `json:"session_digest"`
@@ -71,7 +100,7 @@ type RunResult struct {
 
 type GraderResults struct {
 	Name       string         `json:"identifier"`
-	Type       string         `json:"type"`
+	Type       GraderKind     `json:"type"`
 	Score      float64        `json:"score"`
 	Passed     bool           `json:"passed"`
 	Feedback   string         `json:"feedback"`
@@ -89,11 +118,15 @@ type SessionDigest struct {
 	Errors        []string `json:"errors"`
 }
 
+// TranscriptEventKind identifies the type of event in a transcript entry.
+// Values come from the copilot SDK's SessionEventType.
+type TranscriptEventKind copilot.SessionEventType
+
 type TranscriptEntry struct {
-	Role    string         `json:"role"`
-	Content string         `json:"content,omitempty"`
-	Type    string         `json:"type,omitempty"`
-	Data    map[string]any `json:"data,omitempty"`
+	Role    string              `json:"role"`
+	Content string              `json:"content,omitempty"`
+	Kind    TranscriptEventKind `json:"kind,omitempty"`
+	Data    map[string]any      `json:"data,omitempty"`
 }
 
 type TestStats struct {

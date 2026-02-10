@@ -61,7 +61,7 @@ type BehaviorRules struct {
 // ValidatorInline is a validator embedded in a test case
 type ValidatorInline struct {
 	Identifier string         `yaml:"name" json:"identifier"`
-	Kind       string         `yaml:"type,omitempty" json:"kind,omitempty"`
+	Kind       GraderKind     `yaml:"type,omitempty" json:"kind,omitempty"`
 	Checks     []string       `yaml:"assertions,omitempty" json:"checks,omitempty"`
 	Rubric     string         `yaml:"rubric,omitempty" json:"rubric,omitempty"`
 	Weight     float64        `yaml:"weight,omitempty" json:"weight,omitempty"`

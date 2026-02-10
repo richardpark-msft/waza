@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 	"time"
+
+	copilot "github.com/github/copilot-sdk/go"
 )
 
 // AgentEngine is the interface for executing test prompts
@@ -49,7 +51,7 @@ type ExecutionResponse struct {
 
 // SessionEvent represents an event during execution
 type SessionEvent struct {
-	EventType string
+	EventType copilot.SessionEventType
 	Timestamp time.Time
 	Payload   map[string]any
 }
@@ -66,7 +68,7 @@ type ToolCall struct {
 func (r *ExecutionResponse) ExtractMessages() []string {
 	var messages []string
 	for _, evt := range r.Events {
-		if evt.EventType == "assistant.message" {
+		if evt.EventType == copilot.AssistantMessage {
 			if content, ok := evt.Payload["content"].(string); ok {
 				messages = append(messages, content)
 			}

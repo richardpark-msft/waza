@@ -36,7 +36,7 @@ func TestInlineScriptGrader(t *testing.T) {
 
 		require.Equal(t, &models.GraderResults{
 			Name:     "test",
-			Type:     string(TypeInlineScript),
+			Type:     models.GraderKindInlineScript,
 			Score:    1.0,
 			Passed:   true,
 			Feedback: "All assertions passed",
@@ -55,7 +55,7 @@ func TestInlineScriptGrader(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, "test", grader.Name())
-		require.Equal(t, TypeInlineScript, grader.Type())
+		require.Equal(t, models.GraderKindInlineScript, grader.Kind())
 
 		results, err := grader.Grade(context.Background(), &Context{})
 		require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestInlineScriptGrader(t *testing.T) {
 
 		require.Equal(t, &models.GraderResults{
 			Name:     "test",
-			Type:     string(TypeInlineScript),
+			Type:     models.GraderKindInlineScript,
 			Score:    0.0,
 			Passed:   false,
 			Feedback: "Failed: 1 == 0",
@@ -97,7 +97,7 @@ func TestInlineScriptGrader(t *testing.T) {
 
 		require.Equal(t, &models.GraderResults{
 			Name:     "test",
-			Type:     string(TypeInlineScript),
+			Type:     models.GraderKindInlineScript,
 			Score:    0.5, // 2 of 4 passed
 			Passed:   false,
 			Feedback: "Failed: 2 == 3; Failed: 4 == 5",
@@ -127,7 +127,7 @@ func TestInlineScriptGrader(t *testing.T) {
 
 		require.Equal(t, &models.GraderResults{
 			Name:     "test",
-			Type:     string(TypeInlineScript),
+			Type:     models.GraderKindInlineScript,
 			Score:    1.0,
 			Passed:   true,
 			Feedback: "All assertions passed",
@@ -150,7 +150,7 @@ func TestEmptyAssertions(t *testing.T) {
 
 	require.Equal(t, &models.GraderResults{
 		Name:     "test",
-		Type:     string(TypeInlineScript),
+		Type:     models.GraderKindInlineScript,
 		Score:    1.0,
 		Passed:   true,
 		Feedback: "No assertions configured",

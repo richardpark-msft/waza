@@ -59,7 +59,7 @@ type ProgressEvent struct {
 	TotalTests int
 	RunNum     int
 	TotalRuns  int
-	Status     string
+	Status     models.Status
 	DurationMs int64
 	Details    map[string]any
 }
@@ -220,7 +220,7 @@ func (r *TestRunner) runSequential(ctx context.Context, testCases []*models.Test
 		if spec.Config.StopOnError && i > 0 {
 			// Check if any previous test failed or had an error
 			for _, prevResult := range outcomes {
-				if prevResult.Status != "passed" {
+				if prevResult.Status != models.StatusPassed {
 					r.notifyProgress(ProgressEvent{
 						EventType: EventBenchmarkStopped,
 						Details:   map[string]any{"reason": "fail_fast enabled and previous test failed"},
@@ -348,10 +348,10 @@ func (r *TestRunner) runTest(ctx context.Context, tc *models.TestCase, testNum, 
 	stats := r.computeTestStats(runs)
 
 	// Determine overall status
-	status := "passed"
+	status := models.StatusPassed
 	for _, run := range runs {
-		if run.Status != "passed" {
-			status = "failed"
+		if run.Status != models.StatusPassed {
+			status = models.StatusFailed
 			break
 		}
 	}
@@ -385,7 +385,7 @@ func (r *TestRunner) executeRun(ctx context.Context, tc *models.TestCase, runNum
 	if err != nil {
 		return models.RunResult{
 			RunNumber:  runNum,
-			Status:     "error",
+			Status:     models.StatusError,
 			DurationMs: time.Since(startTime).Milliseconds(),
 			ErrorMsg:   err.Error(),
 		}
@@ -412,7 +412,7 @@ func (r *TestRunner) executeRun(ctx context.Context, tc *models.TestCase, runNum
 	if err != nil {
 		return models.RunResult{
 			RunNumber:  runNum,
-			Status:     "error",
+			Status:     models.StatusError,
 			DurationMs: time.Since(startTime).Milliseconds(),
 			ErrorMsg:   err.Error(),
 		}
@@ -443,13 +443,13 @@ func (r *TestRunner) executeRun(ctx context.Context, tc *models.TestCase, runNum
 	}
 
 	// Determine status
-	status := "passed"
+	status := models.StatusPassed
 	if resp.ErrorMsg != "" {
-		status = "error"
+		status = models.StatusError
 	} else {
 		for _, v := range gradersResults {
 			if !v.Passed {
-				status = "failed"
+				status = models.StatusFailed
 				break
 			}
 		}
@@ -560,7 +560,7 @@ func (r *TestRunner) buildGraderContext(tc *models.TestCase, resp *execution.Exe
 	var transcript []models.TranscriptEntry
 	for _, evt := range resp.Events {
 		entry := models.TranscriptEntry{
-			Type: evt.EventType,
+			Kind: models.TranscriptEventKind(evt.EventType),
 			Data: evt.Payload,
 		}
 		transcript = append(transcript, entry)
@@ -583,7 +583,7 @@ func (r *TestRunner) runGraders(ctx context.Context, tc *models.TestCase, grader
 	// Run global validators
 	spec := r.cfg.Spec()
 	for _, vCfg := range spec.Graders {
-		grader, err := graders.Create(graders.Type(vCfg.Kind), vCfg.Identifier, vCfg.Parameters)
+		grader, err := graders.Create(vCfg.Kind, vCfg.Identifier, vCfg.Parameters)
 
 		if err != nil {
 			return nil, err
@@ -613,7 +613,7 @@ func (r *TestRunner) runGraders(ctx context.Context, tc *models.TestCase, grader
 			params["assertions"] = vCfg.Checks
 		}
 
-		grader, err := graders.Create(graders.Type(kind), vCfg.Identifier, params)
+		grader, err := graders.Create(kind, vCfg.Identifier, params)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to create grader %s: %w", vCfg.Identifier, err)
@@ -649,7 +649,7 @@ func (r *TestRunner) buildTranscript(resp *execution.ExecutionResponse) []models
 	entries := make([]models.TranscriptEntry, 0, len(resp.Events))
 	for _, evt := range resp.Events {
 		entries = append(entries, models.TranscriptEntry{
-			Type: evt.EventType,
+			Kind: models.TranscriptEventKind(evt.EventType),
 			Data: evt.Payload,
 		})
 	}
@@ -707,11 +707,11 @@ func (r *TestRunner) buildOutcome(testOutcomes []models.TestOutcome, startTime t
 
 	for _, to := range testOutcomes {
 		switch to.Status {
-		case "passed":
+		case models.StatusPassed:
 			succeeded++
-		case "failed":
+		case models.StatusFailed:
 			failed++
-		case "error":
+		case models.StatusError:
 			errors++
 		}
 	}

@@ -53,7 +53,7 @@ func sampleOutcome(modelID string, score float64, successRate float64, taskScore
 			{
 				TestID:      "task-001",
 				DisplayName: "Sample Task",
-				Status:      "passed",
+				Status:      models.StatusPassed,
 				Stats: &models.TestStats{
 					PassRate: successRate,
 					AvgScore: taskScore,
@@ -222,7 +222,7 @@ func TestBuildComparisonReport_MissingTask(t *testing.T) {
 	o2.TestOutcomes = append(o2.TestOutcomes, models.TestOutcome{
 		TestID:      "task-002",
 		DisplayName: "Extra Task",
-		Status:      "passed",
+		Status:      models.StatusPassed,
 		Stats: &models.TestStats{
 			PassRate: 1.0,
 			AvgScore: 0.90,
@@ -237,7 +237,7 @@ func TestBuildComparisonReport_MissingTask(t *testing.T) {
 	require.Len(t, report.TaskDeltas, 2)
 	// The extra task should show as n/a for file 1
 	assert.Equal(t, "task-002", report.TaskDeltas[1].TaskID)
-	assert.Equal(t, "n/a", report.TaskDeltas[1].Statuses[0])
+	assert.Equal(t, models.StatusNA, report.TaskDeltas[1].Statuses[0])
 }
 
 // ---------------------------------------------------------------------------

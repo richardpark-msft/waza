@@ -117,7 +117,7 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 	unsubscribe := session.On(func(evt copilot.SessionEvent) {
 		// Convert to our event format
 		event := SessionEvent{
-			EventType: string(evt.Type),
+			EventType: evt.Type,
 			Timestamp: evt.Timestamp,
 			Payload:   make(map[string]any),
 		}
@@ -266,7 +266,7 @@ func joinStrings(parts []string) string {
 func extractToolCalls(events []SessionEvent) []ToolCall {
 	var calls []ToolCall
 	for _, evt := range events {
-		if evt.EventType == "tool.execution_start" {
+		if evt.EventType == copilot.ToolExecutionStart {
 			call := ToolCall{
 				Name:      getStringFromPayload(evt.Payload, "toolName"),
 				Arguments: getMapFromPayload(evt.Payload, "arguments"),
