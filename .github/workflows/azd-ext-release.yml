@@ -28,7 +28,7 @@ jobs:
       - name: Setup Go Environment
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version-file: 'go.mod'
           cache-dependency-path: go.sum
 
       - name: Determine Version
@@ -98,6 +98,9 @@ jobs:
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Delete existing remote branch if it exists (handle retries)
+          git push origin --delete "$BRANCH" 2>/dev/null || true
 
           # Create branch and commit
           git checkout -b "$BRANCH"

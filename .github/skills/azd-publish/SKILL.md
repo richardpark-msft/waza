@@ -42,11 +42,12 @@ Also read `extension.yaml` to confirm the version matches. If they differ, flag 
 Get the latest version tag and collect commits since then:
 
 ```bash
-# Find the latest version tag
-git tag --sort=-v:refname | head -5
+# Find the latest azd extension version tags
+git tag --list 'azd-ext-microsoft-azd-waza_*' --sort=-v:refname | head -5
 
-# Get commits since last tag (use conventional commit format)
-git log $(git describe --tags --abbrev=0)..HEAD --oneline --no-decorate
+# Get commits since last azd extension tag
+last_tag=$(git tag --list 'azd-ext-microsoft-azd-waza_*' --sort=-v:refname | head -1)
+git log "${last_tag}..HEAD" --oneline --no-decorate
 ```
 
 Summarize the changes grouped by type:
