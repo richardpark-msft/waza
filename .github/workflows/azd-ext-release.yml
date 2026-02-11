@@ -50,17 +50,35 @@ jobs:
         run: azd extension install microsoft.azd.extensions
 
       - name: Build Extension
-        run: azd x build
+        run: azd x build --all --skip-install
         env:
           VERSION: ${{ steps.version.outputs.version }}
 
       - name: Pack Extension
-        run: azd x pack
+        run: azd x pack -o ./artifacts
         env:
           VERSION: ${{ steps.version.outputs.version }}
 
+      - name: Release Extension
+        run: |
+          azd x release \
+            --repo spboyer/waza \
+            --version "$VERSION" \
+            --title "Waza azd Extension v${VERSION}" \
+            --notes "Release v${VERSION} of the waza azd extension" \
+            --artifacts "./artifacts/*.zip,./artifacts/*.tar.gz" \
+            --confirm
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish Extension
-        run: azd x publish --repo spboyer/waza
+        run: |
+          azd x publish \
+            --repo spboyer/waza \
+            --version "$VERSION" \
+            --artifacts "./artifacts/*.zip,./artifacts/*.tar.gz" \
+            --registry ./registry.json
         env:
           VERSION: ${{ steps.version.outputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
