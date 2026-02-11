@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/azure/azure-dev/cli/azd/pkg/extensions"
+	"github.com/spboyer/waza/internal/metadata"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,12 +20,12 @@ func TestMetadataCommand_OutputsValidJSON(t *testing.T) {
 	err := rootCmd.Execute()
 	require.NoError(t, err)
 
-	var metadata extensions.ExtensionCommandMetadata
-	err = json.Unmarshal(buf.Bytes(), &metadata)
+	var meta metadata.ExtensionCommandMetadata
+	err = json.Unmarshal(buf.Bytes(), &meta)
 	require.NoError(t, err, "metadata output should be valid JSON matching ExtensionCommandMetadata")
 
-	require.Equal(t, "1.0", metadata.SchemaVersion)
-	require.Equal(t, "microsoft.azd.waza", metadata.ID)
+	require.Equal(t, "1.0", meta.SchemaVersion)
+	require.Equal(t, "microsoft.azd.waza", meta.ID)
 }
 
 func TestMetadataCommand_ContainsExpectedCommands(t *testing.T) {
@@ -39,13 +39,13 @@ func TestMetadataCommand_ContainsExpectedCommands(t *testing.T) {
 	err := rootCmd.Execute()
 	require.NoError(t, err)
 
-	var metadata extensions.ExtensionCommandMetadata
-	err = json.Unmarshal(buf.Bytes(), &metadata)
+	var meta metadata.ExtensionCommandMetadata
+	err = json.Unmarshal(buf.Bytes(), &meta)
 	require.NoError(t, err)
 
 	// Collect top-level command names
 	cmdNames := make(map[string]bool)
-	for _, cmd := range metadata.Commands {
+	for _, cmd := range meta.Commands {
 		if len(cmd.Name) > 0 {
 			cmdNames[cmd.Name[0]] = true
 		}
@@ -58,7 +58,7 @@ func TestMetadataCommand_ContainsExpectedCommands(t *testing.T) {
 
 	// metadata command itself should be present but hidden
 	require.True(t, cmdNames["metadata"], "metadata command should appear in output")
-	for _, cmd := range metadata.Commands {
+	for _, cmd := range meta.Commands {
 		if len(cmd.Name) > 0 && cmd.Name[0] == "metadata" {
 			require.True(t, cmd.Hidden, "metadata command should be hidden")
 		}
@@ -76,12 +76,12 @@ func TestMetadataCommand_FlagsPopulated(t *testing.T) {
 	err := rootCmd.Execute()
 	require.NoError(t, err)
 
-	var metadata extensions.ExtensionCommandMetadata
-	err = json.Unmarshal(buf.Bytes(), &metadata)
+	var meta metadata.ExtensionCommandMetadata
+	err = json.Unmarshal(buf.Bytes(), &meta)
 	require.NoError(t, err)
 
 	// Find the "run" command and check it has flags
-	for _, cmd := range metadata.Commands {
+	for _, cmd := range meta.Commands {
 		if len(cmd.Name) > 0 && cmd.Name[0] == "run" {
 			flagNames := make(map[string]bool)
 			for _, f := range cmd.Flags {

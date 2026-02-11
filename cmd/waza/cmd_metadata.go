@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/azure/azure-dev/cli/azd/pkg/azdext"
+	"github.com/spboyer/waza/internal/metadata"
 	"github.com/spf13/cobra"
 )
 
@@ -18,9 +18,9 @@ func newMetadataCommand(rootCmd *cobra.Command) *cobra.Command {
 		Hidden: true,
 		Args:   cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			metadata := azdext.GenerateExtensionMetadata(metadataSchemaVersion, extensionID, rootCmd)
+			meta := metadata.GenerateExtensionMetadata(metadataSchemaVersion, extensionID, rootCmd)
 
-			data, err := json.MarshalIndent(metadata, "", "  ")
+			data, err := json.MarshalIndent(meta, "", "  ")
 			if err != nil {
 				return fmt.Errorf("failed to marshal metadata: %w", err)
 			}
