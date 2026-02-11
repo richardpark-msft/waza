@@ -24,7 +24,7 @@ type Grader interface {
 // Context provides context for validation
 type Context struct {
 	TestCase   *models.TestCase
-	Transcript []models.TranscriptEntry
+	Transcript []models.TranscriptEvent
 	Output     string
 	Outcome    map[string]any
 	DurationMS int64
@@ -46,13 +46,18 @@ func Create(graderType models.GraderKind, identifier string, params map[string]a
 	case models.GraderKindInlineScript:
 		var v *struct {
 			Assertions []string
+			Language   Language
 		}
 
 		if err := mapstructure.Decode(params, &v); err != nil {
 			return nil, err
 		}
 
-		return NewInlineScriptGrader(identifier, LanguagePython, v.Assertions)
+		if v.Language == "" {
+			v.Language = LanguagePython
+		}
+
+		return NewInlineScriptGrader(identifier, v.Language, v.Assertions)
 	case models.GraderKindRegex:
 		var v *struct {
 			MustMatch    []string `mapstructure:"must_match"`

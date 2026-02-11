@@ -557,12 +557,9 @@ func (r *TestRunner) loadResources(tc *models.TestCase) []execution.ResourceFile
 
 func (r *TestRunner) buildGraderContext(tc *models.TestCase, resp *execution.ExecutionResponse) *graders.Context {
 	// Convert events to transcript entries
-	var transcript []models.TranscriptEntry
+	var transcript []models.TranscriptEvent
 	for _, evt := range resp.Events {
-		entry := models.TranscriptEntry{
-			Kind: models.TranscriptEventKind(evt.EventType),
-			Data: evt.Payload,
-		}
+		entry := models.TranscriptEvent{SessionEvent: evt}
 		transcript = append(transcript, entry)
 	}
 
@@ -645,13 +642,10 @@ func (r *TestRunner) buildSessionDigest(resp *execution.ExecutionResponse) model
 	}
 }
 
-func (r *TestRunner) buildTranscript(resp *execution.ExecutionResponse) []models.TranscriptEntry {
-	entries := make([]models.TranscriptEntry, 0, len(resp.Events))
+func (r *TestRunner) buildTranscript(resp *execution.ExecutionResponse) []models.TranscriptEvent {
+	entries := make([]models.TranscriptEvent, 0, len(resp.Events))
 	for _, evt := range resp.Events {
-		entries = append(entries, models.TranscriptEntry{
-			Kind: models.TranscriptEventKind(evt.EventType),
-			Data: evt.Payload,
-		})
+		entries = append(entries, models.TranscriptEvent{SessionEvent: evt})
 	}
 	return entries
 }

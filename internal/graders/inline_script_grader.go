@@ -11,24 +11,34 @@ import (
 
 	_ "embed"
 
+	copilot "github.com/github/copilot-sdk/go"
 	"github.com/spboyer/waza/internal/models"
 )
 
 type Language string
 
 const (
-	LanguagePython Language = "python"
+	LanguagePython     Language = "python"
+	LanguageJavascript Language = "javascript"
 )
+
+const allAssertionsPassedMsg = "All assertions passed"
 
 //go:embed data/eval_wrapper.py
 var evalWrapperPy string
 
-// InlineScriptGrader validates using assertion expressions that represent
-// Python snippets.
+//go:embed data/eval_wrapper.js
+var evalWrapperJS string
+
+// InlineScriptGrader validates using assertion expressions evaluated by
+// an external script runner (Python or JavaScript).
 type InlineScriptGrader struct {
 	name       string
 	assertions []string
-	language   Language
+
+	scriptExt      string
+	scriptBin      string
+	scriptContents string
 }
 
 type InlineScriptResult struct {
@@ -38,17 +48,25 @@ type InlineScriptResult struct {
 }
 
 func NewInlineScriptGrader(name string, language Language, assertions []string) (*InlineScriptGrader, error) {
+	var g = &InlineScriptGrader{
+		name:       name,
+		assertions: assertions,
+	}
+
 	switch language {
 	case LanguagePython:
+		g.scriptExt = "py"
+		g.scriptBin = "python"
+		g.scriptContents = evalWrapperPy
+	case LanguageJavascript:
+		g.scriptExt = "js"
+		g.scriptBin = "node"
+		g.scriptContents = evalWrapperJS
 	default:
 		return nil, fmt.Errorf("language '%s' is not yet supported with inline scripts", language)
 	}
 
-	return &InlineScriptGrader{
-		name:       name,
-		assertions: assertions,
-		language:   language,
-	}, nil
+	return g, nil
 }
 
 func (isg *InlineScriptGrader) Name() string            { return isg.name }
@@ -66,7 +84,7 @@ func (isg *InlineScriptGrader) Grade(ctx context.Context, gradingContext *Contex
 			}, nil
 		}
 
-		failures, passed, err := runPythonScript(ctx, gradingContext, isg.assertions)
+		failures, passed, err := isg.runScript(ctx, gradingContext)
 
 		if err != nil {
 			return nil, err
@@ -75,7 +93,7 @@ func (isg *InlineScriptGrader) Grade(ctx context.Context, gradingContext *Contex
 		score := float64(passed) / float64(len(isg.assertions))
 		allPassed := len(failures) == 0
 
-		feedback := "All assertions passed"
+		feedback := allAssertionsPassedMsg
 		if !allPassed {
 			feedback = strings.Join(failures, "; ")
 		}
@@ -96,36 +114,35 @@ func (isg *InlineScriptGrader) Grade(ctx context.Context, gradingContext *Contex
 	})
 }
 
-func runPythonScript(ctx context.Context, gradingContext *Context, assertions []string) (failures []string, passed int, err error) {
-	pythonStdinText, err := getPythonStdinText(gradingContext, assertions)
+func (isg *InlineScriptGrader) runScript(ctx context.Context, gradingContext *Context) (failures []string, passed int, err error) {
+	stdinText, err := getStdinTextForScript(gradingContext, isg.assertions)
 
 	if err != nil {
 		// let's not quit the entire thing, but we can mark this failure.
 		return nil, 0, fmt.Errorf("Failed: script conversion failed for assertions: %w", err)
 	}
 
-	tempPythonFile, err := os.CreateTemp("", "temp-python-*.py")
+	tempScriptFile, err := os.CreateTemp("", "waza-inline-script-*."+isg.scriptExt)
 
 	if err != nil {
 		return nil, 0, err
 	}
 
 	defer func() {
-		_ = os.Remove(tempPythonFile.Name())
+		_ = os.Remove(tempScriptFile.Name())
 	}()
 
-	if _, err := tempPythonFile.Write([]byte(evalWrapperPy)); err != nil {
+	if _, err := tempScriptFile.Write([]byte(isg.scriptContents)); err != nil {
 		return nil, 0, err
 	}
 
-	if err := tempPythonFile.Close(); err != nil {
+	if err := tempScriptFile.Close(); err != nil {
 		return nil, 0, err
 	}
 
-	// TODO: maybe they have their own python we should use.
-	cmd := exec.CommandContext(ctx, "python", tempPythonFile.Name())
+	cmd := exec.CommandContext(ctx, isg.scriptBin, tempScriptFile.Name())
 
-	cmd.Stdin = bytes.NewReader(pythonStdinText)
+	cmd.Stdin = bytes.NewReader(stdinText)
 	cmd.Stderr = os.Stderr
 
 	outputBytes, err := cmd.Output()
@@ -134,19 +151,21 @@ func runPythonScript(ctx context.Context, gradingContext *Context, assertions []
 		return nil, 0, fmt.Errorf("failed to execute inline script for assertions (%s): %w", string(outputBytes), err)
 	}
 
-	var pythonOutput *struct {
-		Results []bool
+	var snippetOutput *struct {
+		Results []string
 	}
 
-	if err := json.Unmarshal(outputBytes, &pythonOutput); err != nil {
+	if err := json.Unmarshal(outputBytes, &snippetOutput); err != nil {
 		return nil, 0, fmt.Errorf("failed to deserialize output (%s) from assertions: %w", string(outputBytes), err)
 	}
 
 	// TODO: it might be nice to get more rich results here, but for now it's literally an array
 	// as big as assertions, with a true/false value.
-	for i, v := range pythonOutput.Results {
-		if !v {
-			failures = append(failures, fmt.Sprintf("Failed: %s", assertions[i]))
+	for i, errMsg := range snippetOutput.Results {
+		if errMsg == "fail" {
+			failures = append(failures, fmt.Sprintf("Failed: %s", isg.assertions[i]))
+		} else if errMsg != "" {
+			failures = append(failures, fmt.Sprintf("Failed: %s: %s", isg.assertions[i], errMsg))
 		} else {
 			passed++
 		}
@@ -154,42 +173,45 @@ func runPythonScript(ctx context.Context, gradingContext *Context, assertions []
 	return failures, passed, nil
 }
 
-func getPythonStdinText(gradingContext *Context, assertions []string) ([]byte, error) {
-	/*
-	   class Event(TypedDict):
-	       role: str
-	       content: Any
-	       type: str
+func getStdinTextForScript(gradingContext *Context, assertions []string) ([]byte, error) {
+	var sessionEvents []copilot.SessionEvent
 
-	   class Data(TypedDict):
-	       output: str
-	       assertions: list[str]
-	       outcome: dict[str, Any]
-	       transcript: list[dict[str, Event]]
-	       duration_ms: int
-	*/
+	for _, te := range gradingContext.Transcript {
+		sessionEvents = append(sessionEvents, te.SessionEvent)
+	}
+
+	outcome := gradingContext.Outcome
+
+	if outcome == nil {
+		outcome = map[string]any{}
+	}
+
+	transcriptEvents := gradingContext.Transcript
+
+	if transcriptEvents == nil {
+		transcriptEvents = []models.TranscriptEvent{}
+	}
+
+	toolCalls := models.FilterToolCalls(sessionEvents)
+
+	if toolCalls == nil {
+		toolCalls = []models.ToolCall{}
+	}
 
 	scriptStdin := struct {
 		Output     string                   `json:"output"`
 		Outcome    map[string]any           `json:"outcome"`
-		Transcript []models.TranscriptEntry `json:"transcript"`
+		Transcript []models.TranscriptEvent `json:"transcript"`
+		ToolCalls  []models.ToolCall        `json:"tool_calls"`
 		DurationMS int64                    `json:"duration_ms"`
 		Assertions []string                 `json:"assertions"`
 	}{
 		Output:     gradingContext.Output,
-		Outcome:    gradingContext.Outcome,
-		Transcript: gradingContext.Transcript,
+		Outcome:    outcome,
+		Transcript: transcriptEvents,
+		ToolCalls:  toolCalls,
 		DurationMS: gradingContext.DurationMS,
 		Assertions: assertions,
-	}
-
-	// make life easier for scripters and init values to an empty value, instead of None/nil/null
-	if scriptStdin.Transcript == nil {
-		scriptStdin.Transcript = []models.TranscriptEntry{}
-	}
-
-	if scriptStdin.Outcome == nil {
-		scriptStdin.Outcome = map[string]any{}
 	}
 
 	scriptJSON, err := json.MarshalIndent(scriptStdin, "  ", "  ")

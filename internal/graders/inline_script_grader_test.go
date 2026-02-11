@@ -2,10 +2,18 @@ package graders
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"testing"
 
+	copilot "github.com/github/copilot-sdk/go"
+	"github.com/spboyer/waza/internal/execution"
 	"github.com/spboyer/waza/internal/models"
+	"github.com/spboyer/waza/internal/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,6 +22,14 @@ func skipIfNoPython(t *testing.T) {
 
 	if err := pythonCheck.Run(); err != nil {
 		t.Skip("Skipping InlineScriptGrader that needs Python")
+	}
+}
+
+func skipIfNoJavascript(t *testing.T) {
+	pythonCheck := exec.Command("node", "--version")
+
+	if err := pythonCheck.Run(); err != nil {
+		t.Skip("Skipping InlineScriptGrader that needs Javascript")
 	}
 }
 
@@ -157,8 +173,164 @@ func TestEmptyAssertions(t *testing.T) {
 	}, results)
 }
 
+func TestWithRealContextPython(t *testing.T) {
+	skipIfNoPython(t)
+
+	sessionEvents := loadSampleEvents(t)
+	transcript := convertToTranscriptEvents(sessionEvents)
+
+	grader, err := NewInlineScriptGrader("test", LanguagePython, []string{
+		fmt.Sprintf("len(transcript) == %d", len(sessionEvents)),
+		"len(errors) == 0",
+		"len(tool_calls) == 1",
+		"outcome['hello'] == 'world'",
+		"output == 'hello world'",
+		"duration_ms < 102 and duration_ms > 100",
+		"len(tool_calls[0]['result']['content']) > 0",
+	})
+	require.NoError(t, err)
+
+	results, err := grader.Grade(context.Background(), &Context{
+		Outcome: map[string]any{
+			"hello": "world",
+		},
+		Output:     "hello world",
+		Transcript: transcript,
+		DurationMS: 101,
+	})
+	require.NoError(t, err)
+	require.Equal(t, allAssertionsPassedMsg, results.Feedback)
+	require.True(t, results.Passed)
+}
+
+func TestWithRealContextJavascript(t *testing.T) {
+	skipIfNoJavascript(t)
+
+	sessionEvents := loadSampleEvents(t)
+	transcript := convertToTranscriptEvents(sessionEvents)
+
+	grader, err := NewInlineScriptGrader("test", LanguageJavascript, []string{
+		fmt.Sprintf("transcript.length === %d", len(sessionEvents)),
+		"errors.length === 0",
+		"tool_calls.length === 1",
+		"outcome['hello'] === 'world'",
+		"output === 'hello world'",
+		"duration_ms < 102 && duration_ms > 100",
+		"tool_calls[0].result.content.length > 0",
+	})
+	require.NoError(t, err)
+
+	results, err := grader.Grade(context.Background(), &Context{
+		Outcome: map[string]any{
+			"hello": "world",
+		},
+		Output:     "hello world",
+		Transcript: transcript,
+		DurationMS: 101,
+	})
+	require.NoError(t, err)
+	require.Equal(t, allAssertionsPassedMsg, results.Feedback)
+	require.True(t, results.Passed)
+}
+
+func TestWithError(t *testing.T) {
+	skipIfNoPython(t)
+
+	collector := execution.NewSessionEventsCollector()
+
+	collector.On(copilot.SessionEvent{
+		Data: copilot.Data{
+			Content: utils.Ptr("oh no there was a fake error"),
+		},
+		ID:   "2450ebe2-8dea-4cf8-9c3b-191027e4002e",
+		Type: copilot.AssistantMessage,
+	})
+
+	transcript := convertToTranscriptEvents(collector.SessionEvents())
+
+	grader, err := NewInlineScriptGrader("test", LanguagePython, []string{
+		"len(transcript) == 1",
+		"len(errors) == 1", // ie, we expect some errors.
+		"len(tool_calls) == 0",
+	})
+	require.NoError(t, err)
+
+	results, err := grader.Grade(context.Background(), &Context{
+		Transcript: transcript,
+	})
+	require.NoError(t, err)
+	require.True(t, results.Passed)
+}
+
+func TestWithSyntaxError(t *testing.T) {
+	t.Run("python", func(t *testing.T) {
+		skipIfNoPython(t)
+
+		grader, err := NewInlineScriptGrader("test", LanguagePython, []string{
+			"what language is this, anyways?",
+		})
+		require.NoError(t, err)
+
+		results, err := grader.Grade(context.Background(), &Context{})
+		require.NoError(t, err)
+		require.Contains(t, results.Feedback, "invalid syntax")
+		require.False(t, results.Passed)
+	})
+
+	t.Run("javascript", func(t *testing.T) {
+		skipIfNoJavascript(t)
+
+		grader, err := NewInlineScriptGrader("test", LanguageJavascript, []string{
+			"what language is this, anyways?",
+		})
+		require.NoError(t, err)
+
+		results, err := grader.Grade(context.Background(), &Context{})
+		require.NoError(t, err)
+		require.Contains(t, results.Feedback, "Unexpected identifier")
+		require.False(t, results.Passed)
+	})
+}
+
 func TestUnsupportedLanguage(t *testing.T) {
 	_, err := NewInlineScriptGrader("test", Language("ruby"), []string{"true"})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "language 'ruby' is not yet supported")
+}
+
+func loadSampleEvents(t *testing.T) []copilot.SessionEvent {
+	reader, err := os.Open("../testdata/copilot_events_using_skill.json")
+	require.NoError(t, err)
+
+	defer func() { _ = reader.Close() }()
+
+	decoder := json.NewDecoder(reader)
+
+	sessionEventCollector := execution.NewSessionEventsCollector()
+
+	i := -1
+	for {
+		i++
+		var sessionEvent *copilot.SessionEvent
+		err := decoder.Decode(&sessionEvent)
+
+		if errors.Is(err, io.EOF) {
+			break
+		}
+
+		require.NoErrorf(t, err, "error on iteration %d", i)
+		sessionEventCollector.On(*sessionEvent)
+	}
+
+	return sessionEventCollector.SessionEvents()
+}
+
+func convertToTranscriptEvents(sessionEvents []copilot.SessionEvent) []models.TranscriptEvent {
+	var transcript []models.TranscriptEvent
+
+	for _, evt := range sessionEvents {
+		transcript = append(transcript, models.TranscriptEvent{SessionEvent: evt})
+	}
+
+	return transcript
 }

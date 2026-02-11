@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	copilot "github.com/github/copilot-sdk/go"
+	"github.com/spboyer/waza/internal/models"
 )
 
 // MockEngine is a simple mock implementation for testing
@@ -35,11 +38,11 @@ func (m *MockEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Execu
 
 	resp := &ExecutionResponse{
 		FinalOutput:  output,
-		Events:       []SessionEvent{},
+		Events:       []copilot.SessionEvent{},
 		ModelID:      m.modelID,
 		SkillInvoked: req.SkillName,
 		DurationMs:   time.Since(start).Milliseconds(),
-		ToolCalls:    []ToolCall{},
+		ToolCalls:    []models.ToolCall{},
 		Success:      true,
 	}
 

@@ -8,7 +8,9 @@ import (
 	"testing"
 	"time"
 
+	copilot "github.com/github/copilot-sdk/go"
 	"github.com/spboyer/waza/internal/models"
+	"github.com/spboyer/waza/internal/utils"
 )
 
 func TestSanitizeName(t *testing.T) {
@@ -56,9 +58,17 @@ func TestWrite(t *testing.T) {
 		DurationMs:  1000,
 		Prompt:      "Explain this function",
 		FinalOutput: "This function does X",
-		Transcript: []models.TranscriptEntry{
-			{Role: "user", Content: "Explain this function"},
-			{Role: "assistant", Content: "This function does X"},
+		Transcript: []models.TranscriptEvent{
+			{
+				SessionEvent: copilot.SessionEvent{
+					Data: copilot.Data{Content: utils.Ptr("Explain this function")},
+				},
+			},
+			{
+				SessionEvent: copilot.SessionEvent{
+					Data: copilot.Data{Content: utils.Ptr("This function does X")},
+				},
+			},
 		},
 		Validations: map[string]models.GraderResults{
 			"contains-check": {
@@ -162,9 +172,9 @@ func TestBuildTaskTranscript(t *testing.T) {
 				RunNumber:  1,
 				Status:     models.StatusPassed,
 				DurationMs: 500,
-				Transcript: []models.TranscriptEntry{
-					{Role: "user", Content: "Explain this code"},
-					{Role: "assistant", Content: "Sure, this code..."},
+				Transcript: []models.TranscriptEvent{
+					{SessionEvent: copilot.SessionEvent{Data: copilot.Data{Content: utils.Ptr("Explain this code")}}},
+					{SessionEvent: copilot.SessionEvent{Data: copilot.Data{Content: utils.Ptr("Sure, this code...")}}},
 				},
 				Validations: map[string]models.GraderResults{
 					"check": {Name: "check", Score: 1.0, Passed: true},

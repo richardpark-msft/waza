@@ -6,20 +6,10 @@ import re
 ## NOTE: if you're editing this file do NOT print to stdout - we parse that in the caller to determine
 ## what's failed.
 
-class Event(TypedDict):
-    role: str
-    content: Any
-    type: str
-
-class Data(TypedDict):
-    output: str
-    assertions: list[str]
-    outcome: dict[str, Any]
-    transcript: list[dict[str, Event]]
-    duration_ms: int
+from typing import Literal
 
 input_data = sys.stdin.read()
-data: Data = json.loads(input_data)
+data = json.loads(input_data)
 
 # stderr isn't captured by the caller, so you can use this to do some print debugging.
 # print(f"Received data: {input_data}", file=sys.stderr)
@@ -30,9 +20,9 @@ def print_stderr(*args, **kwargs):
 eval_context = {
     "output": data['output'] or "",
     "outcome": data['outcome'],
-    "chat_events": data['transcript'],
-    "tool_calls": [t for t in data['transcript'] if t['role'] == "tool" or t["type"] == "tool_call"],
-    "errors": [t for t in data['transcript'] if t.get("type") == "error" or "error" in str(t.get("content", ""))],
+    "transcript": data['transcript'],
+    "tool_calls": data['tool_calls'],
+    "errors": [t for t in data['transcript'] if "error" in t.get("type") or "error" in str(t.get("content", ""))],
     "duration_ms": data['duration_ms'],
     "len": len,
     "any": any,
@@ -48,11 +38,17 @@ eval_context = {
     "False": False,
 }
 
-results = []
+# anything but empty string means we failed.
+# 'fail' if it's just an assertion failure
+# any other string is assumed to be an exception of some kind (ie, bad syntax, using a non-existent field).
+results: list[str] = []
 
 for assertion in data['assertions']:
-    result = eval(assertion, {"__builtins__": {}}, eval_context)
-    results.append(not not result)
+    try:
+        result = eval(assertion, {"__builtins__": {}}, eval_context)
+        results.append("" if not not result else "fail")
+    except Exception as e:
+        results.append(str(e))
 
 print(json.dumps({
     "results": results,

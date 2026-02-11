@@ -3,8 +3,6 @@ package models
 import (
 	"math"
 	"time"
-
-	copilot "github.com/github/copilot-sdk/go"
 )
 
 // Status represents the outcome status of a test or run.
@@ -94,7 +92,7 @@ type RunResult struct {
 	DurationMs    int64                    `json:"duration_ms"`
 	Validations   map[string]GraderResults `json:"validations"`
 	SessionDigest SessionDigest            `json:"session_digest"`
-	Transcript    []TranscriptEntry        `json:"transcript,omitempty"`
+	Transcript    []TranscriptEvent        `json:"transcript,omitempty"`
 	FinalOutput   string                   `json:"final_output"`
 	ErrorMsg      string                   `json:"error_msg,omitempty"`
 }
@@ -117,17 +115,6 @@ type SessionDigest struct {
 	TokensTotal   int      `json:"tokens_total"`
 	ToolsUsed     []string `json:"tools_used"`
 	Errors        []string `json:"errors"`
-}
-
-// TranscriptEventKind identifies the type of event in a transcript entry.
-// Values come from the copilot SDK's SessionEventType.
-type TranscriptEventKind copilot.SessionEventType
-
-type TranscriptEntry struct {
-	Role    string              `json:"role"`
-	Content string              `json:"content,omitempty"`
-	Kind    TranscriptEventKind `json:"kind,omitempty"`
-	Data    map[string]any      `json:"data,omitempty"`
 }
 
 type TestStats struct {

@@ -107,49 +107,10 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 		}
 	}()
 
-	// Collect events
-	var events []SessionEvent
-	var outputParts []string
-	var errorMsg string
-	done := make(chan struct{})
+	eventsCollector := NewSessionEventsCollector()
 
 	// Event handler with updated API
-	unsubscribe := session.On(func(evt copilot.SessionEvent) {
-		// Convert to our event format
-		event := SessionEvent{
-			EventType: evt.Type,
-			Timestamp: evt.Timestamp,
-			Payload:   make(map[string]any),
-		}
-
-		// Extract message content from Data based on event type
-		if evt.Type == copilot.AssistantMessage || evt.Type == copilot.AssistantMessageDelta {
-			if evt.Data.Content != nil {
-				event.Payload["content"] = *evt.Data.Content
-				outputParts = append(outputParts, *evt.Data.Content)
-			}
-		}
-
-		// Check for completion
-		if evt.Type == copilot.SessionIdle {
-			select {
-			case <-done:
-			default:
-				close(done)
-			}
-		} else if evt.Type == copilot.SessionError {
-			if evt.Data.Message != nil {
-				errorMsg = *evt.Data.Message
-			}
-			select {
-			case <-done:
-			default:
-				close(done)
-			}
-		}
-
-		events = append(events, event)
-	})
+	unsubscribe := session.On(eventsCollector.On)
 	defer unsubscribe()
 
 	// Send prompt with updated API
@@ -164,8 +125,10 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(req.TimeoutSec)*time.Second)
 	defer cancel()
 
+	errorMsg := ""
+
 	select {
-	case <-done:
+	case <-eventsCollector.Done():
 		// Completed normally
 	case <-timeoutCtx.Done():
 		errorMsg = fmt.Sprintf("execution timed out after %ds", req.TimeoutSec)
@@ -173,14 +136,18 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 
 	duration := time.Since(start)
 
+	if errorMsg == "" {
+		errorMsg = eventsCollector.ErrorMessage()
+	}
+
 	// Build response
 	resp := &ExecutionResponse{
-		FinalOutput:  joinStrings(outputParts),
-		Events:       events,
+		FinalOutput:  joinStrings(eventsCollector.OutputParts()),
+		Events:       eventsCollector.SessionEvents(),
 		ModelID:      e.modelID,
 		SkillInvoked: req.SkillName,
 		DurationMs:   duration.Milliseconds(),
-		ToolCalls:    extractToolCalls(events),
+		ToolCalls:    eventsCollector.ToolCalls(),
 		ErrorMsg:     errorMsg,
 		Success:      errorMsg == "",
 		WorkspaceDir: e.workspace,
@@ -261,32 +228,4 @@ func joinStrings(parts []string) string {
 		builder.WriteString(p)
 	}
 	return builder.String()
-}
-
-func extractToolCalls(events []SessionEvent) []ToolCall {
-	var calls []ToolCall
-	for _, evt := range events {
-		if evt.EventType == copilot.ToolExecutionStart {
-			call := ToolCall{
-				Name:      getStringFromPayload(evt.Payload, "toolName"),
-				Arguments: getMapFromPayload(evt.Payload, "arguments"),
-			}
-			calls = append(calls, call)
-		}
-	}
-	return calls
-}
-
-func getStringFromPayload(payload map[string]any, key string) string {
-	if val, ok := payload[key].(string); ok {
-		return val
-	}
-	return ""
-}
-
-func getMapFromPayload(payload map[string]any, key string) map[string]any {
-	if val, ok := payload[key].(map[string]any); ok {
-		return val
-	}
-	return nil
 }
