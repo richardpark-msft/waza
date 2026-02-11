@@ -16,6 +16,8 @@ jobs:
   publish:
     name: Build, Pack & Publish Extension
     runs-on: ubuntu-latest
+    env:
+      AZURE_DEV_NONINTERACTIVE: true
 
     steps:
       - name: Checkout Repository
