@@ -2,6 +2,28 @@
 
 A Go CLI for evaluating AI agent skills — scaffold eval suites, run benchmarks, and compare results across models.
 
+## Installation via Azure Developer CLI (azd)
+
+Waza is available as an [azd extension](https://learn.microsoft.com/azure/developer/azure-developer-cli/azure-developer-cli-extensions). Add the custom extension source and install:
+
+```bash
+# Add the waza extension registry
+azd ext source add -n waza -t url -l https://raw.githubusercontent.com/spboyer/waza/main/registry.json
+
+# Install the extension
+azd ext install microsoft.azd.waza
+
+# Verify it's working
+azd waza --help
+```
+
+Once installed, all waza commands are available under `azd waza`. For example:
+
+```bash
+azd waza init my-eval --interactive
+azd waza run examples/code-explainer/eval.yaml -v
+```
+
 ## Quick Start
 
 ```bash
