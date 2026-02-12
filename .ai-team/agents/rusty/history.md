@@ -61,3 +61,19 @@
 📌 Team update (2026-02-12): azd-publish skill location convention — repo-level skills go under `.github/skills/`, project eval skills go under `skills/`. — decided by Wallace Breza
 📌 Team update (2026-02-12): azd extension uses tag pattern `azd-ext-microsoft-azd-waza_VERSION`, not `vVERSION`. — decided by Linus
 📌 Team update (2026-02-12): PR #115 review feedback addressed — Linus rebased, resolved conflicts, added doc comments per review. — decided by Linus
+### 2026-02-11: PR #117 Review — waza dev command (E2: Sensei Engine)
+- **Author:** Charles Lowell (chlowell), branch `waza-dev`
+- **Verdict:** APPROVED. Clean, well-architected implementation of the Sensei development loop. Closes #32, #33, #35.
+- **Epic:** E2 (Sensei Engine) — Iterative skill improvement with heuristic scoring
+- **Architecture:** Four-package structure:
+  - `cmd/waza/dev/` — CLI (root.go, loop.go, score.go, display.go, prompt.go) with clear separation: orchestration, heuristics, formatting, user input
+  - `internal/skill/` — New SKILL.md parser with `TextMarshaler`/`TextUnmarshaler` for YAML round-trip, preserves unknown fields
+  - `internal/tokens/` — Extracted token estimation logic (surgical refactor: import path changes only, no logic modifications)
+  - Tests: 61 functions across 6 test files (display, score, loop, prompt, skill, tokens)
+- **Heuristic Scoring:** Correctly implements Sensei reference rules: Low → Medium (desc 150+ chars + triggers) → Medium-High (+ anti-triggers) → High (+ routing clarity). Pattern detection validates against real fixtures (code-explainer=Low, waza=High).
+- **Ralph Loop:** Iterates through description expansion → triggers → anti-triggers → routing clarity. Correctly skips inapplicable steps; declining suggestion advances to next step (not terminating). Enforces soft (500) and hard (5000) token limits.
+- **Code Quality:** Idiomatic Go — interface-based scorer for test injection, functional error wrapping (%w), clean naming, well-commented. Prompt state handling (shared bufio.Scanner) prevents stdin clobbering across multiple user prompts. Display formatting includes box-drawing characters, emoji width awareness, rune-aware truncation.
+- **Test Coverage:** Table-driven pattern matching tests, edge cases (nil skill, over-length descriptions, token budgets), real fixture loading, comprehensive testdata (high, valid, minimal, no-frontmatter).
+- **Alignment:** ✅ E2 epic, ✅ issues #32-35, ✅ sensei reference patterns, ✅ Ralph loop discipline
+- **CI:** Both build/test and lint passing (no errcheck, gofmt, or misspell violations)
+- **Recommendation:** Merge immediately. Implementation demonstrates deep understanding of Sensei architecture and Go conventions. No rework needed. Post-merge: consider future --strict flag for hard-limit exit code (E4 scope).

@@ -63,3 +63,15 @@
 **Related:** PR #115, E7 (#62)
 **What:** Rebased `feat/metadata-capability` onto latest `main` (797f72c), resolved `.golangci.yml` conflict (kept v2 format with `version: "2"` header), added doc comments on `metadataSchemaVersion` and `extensionID` constants per Rusty's review. All 4 metadata tests pass. Force-pushed to `wbreza/feat/metadata-capability`.
 **Why:** PR had merge conflicts after main advanced; review requested clarifying comments on constants.
+### 2026-02-11: Sensei dev command heuristics & test discipline
+**By:** Rusty (Lead)
+**Related:** E2 (#32-35), PR #117
+**What:** `waza dev` heuristic scoring rules (from `spboyer/sensei` reference):
+- **Low** — description < 150 chars OR no trigger phrases
+- **Medium** — description ≥ 150 chars AND trigger keywords (USE FOR, USE THIS SKILL, TRIGGERS, etc.)
+- **Medium-High** — Medium + anti-trigger phrases (DO NOT USE FOR, NOT FOR, Don't use, Instead use)
+- **High** — Medium-High + routing clarity (INVOKES, FOR SINGLE OPERATIONS, **WORKFLOW SKILL**, **UTILITY SKILL**, **ANALYSIS SKILL**)
+
+Test discipline: use table-driven subtests for pattern detection, validate against real fixture loading (code-explainer=Low, waza=High), test exact terminal output (box-drawing, emoji width awareness, rune counting), mock scorer interface for loop testing.
+**Why:** Clear, testable compliance framework enables future skill compliance automation across the team's codebase. Reference implementation pattern reduces drift across similar tools.
+
