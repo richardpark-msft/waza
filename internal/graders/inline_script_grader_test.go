@@ -26,9 +26,9 @@ func skipIfNoPython(t *testing.T) {
 }
 
 func skipIfNoJavascript(t *testing.T) {
-	pythonCheck := exec.Command("node", "--version")
+	nodeCheck := exec.Command("node", "--version")
 
-	if err := pythonCheck.Run(); err != nil {
+	if err := nodeCheck.Run(); err != nil {
 		t.Skip("Skipping InlineScriptGrader that needs Javascript")
 	}
 }
