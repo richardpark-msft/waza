@@ -12,7 +12,7 @@ type TaskTranscript struct {
 	DurationMs  int64                    `json:"duration_ms"`
 	Prompt      string                   `json:"prompt"`
 	FinalOutput string                   `json:"final_output"`
-	Transcript  []TranscriptEntry        `json:"transcript"`
+	Transcript  []TranscriptEvent        `json:"transcript"`
 	Validations map[string]GraderResults `json:"validations,omitempty"`
 	Session     SessionDigest            `json:"session"`
 	ErrorMsg    string                   `json:"error_msg,omitempty"`

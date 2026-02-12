@@ -1,0 +1,169 @@
+{
+    "data": {
+        "content": "use the example horn",
+        "transformedContent": "\u003ccurrent_datetime\u003e2026-02-11T02:03:33.061Z\u003c/current_datetime\u003e\n\nuse the example horn\n\n\u003creminder\u003e\n\u003csql_tables\u003eNo tables currently exist. Default tables (todos, todo_deps) will be created automatically when you first use the SQL tool.\u003c/sql_tables\u003e\n\u003c/reminder\u003e"
+    },
+    "id": "0262f407-823b-42ab-a7da-44562295cbb7",
+    "parentId": "a4338370-0ce6-4354-a63e-219a99bf3242",
+    "timestamp": "2026-02-11T02:03:33.061Z",
+    "type": "user.message"
+}
+{
+    "data": {
+        "currentTokens": 10642,
+        "messagesLength": 2,
+        "tokenLimit": 168000
+    },
+    "ephemeral": true,
+    "id": "9cbffbe3-2a45-48cd-9f5b-1d0aa00f9baf",
+    "parentId": "ec42016d-ba8c-4ed2-9853-23839a292fb8",
+    "timestamp": "2026-02-11T02:03:33.885Z",
+    "type": "session.usage_info"
+}
+{
+    "data": {
+        "content": "",
+        "messageId": "9b3b9eae-6b15-48e3-b2e2-4da2eacb8d09",
+        "reasoningText": "The user wants me to use the \"example\" skill. Let me invoke it.",
+        "toolRequests": [
+            {
+                "arguments": {
+                    "intent": "Using example skill"
+                },
+                "name": "report_intent",
+                "toolCallId": "toolu_01SEYL3nzyDJb6XeyU5DwvDZ",
+                "type": "function"
+            },
+            {
+                "arguments": {
+                    "skill": "example"
+                },
+                "name": "skill",
+                "toolCallId": "toolu_012vQAiz1EzkYvHcYVELY94P",
+                "type": "function"
+            }
+        ]
+    },
+    "id": "69433d6b-eab9-4f14-9909-ebfab91bac85",
+    "parentId": "e2348699-2a92-498b-b657-5000cb7780ff",
+    "timestamp": "2026-02-11T02:03:37.187Z",
+    "type": "assistant.message"
+}
+{
+    "data": {
+        "arguments": {
+            "intent": "Using example skill"
+        },
+        "toolCallId": "toolu_01SEYL3nzyDJb6XeyU5DwvDZ",
+        "toolName": "report_intent"
+    },
+    "id": "8e1d6a7c-1822-4596-ab88-ba619bf241ff",
+    "parentId": "5c177006-2ea6-4362-b4d3-938e993cdf66",
+    "timestamp": "2026-02-11T02:03:37.187Z",
+    "type": "tool.execution_start"
+}
+{
+    "data": {
+        "arguments": {
+            "skill": "example"
+        },
+        "toolCallId": "toolu_012vQAiz1EzkYvHcYVELY94P",
+        "toolName": "skill"
+    },
+    "id": "ef383444-9e13-4eb1-9d55-c618b625a94a",
+    "parentId": "8e1d6a7c-1822-4596-ab88-ba619bf241ff",
+    "timestamp": "2026-02-11T02:03:37.187Z",
+    "type": "tool.execution_start"
+}
+{
+    "data": {
+        "result": {
+            "content": "Intent logged",
+            "detailedContent": "Using example skill"
+        },
+        "success": true,
+        "toolCallId": "toolu_01SEYL3nzyDJb6XeyU5DwvDZ"
+    },
+    "id": "cf65223c-c99e-46fd-8502-fdfa496a8036",
+    "parentId": "ef383444-9e13-4eb1-9d55-c618b625a94a",
+    "timestamp": "2026-02-11T02:03:37.218Z",
+    "type": "tool.execution_complete"
+}
+{
+    "data": {
+        "result": {
+            "content": "Skill \"example\" loaded successfully. Follow the instructions in the skill context.",
+            "detailedContent": "Skill loaded successfully ✅\n\n---\nname: example\ndescription: \"Checks to see if skills are enabled - if you use this skill it prints out yes\"\n---\n"
+        },
+        "success": true,
+        "toolCallId": "toolu_012vQAiz1EzkYvHcYVELY94P",
+        "toolTelemetry": {
+            "metrics": {
+                "skillContentLength": 115
+            },
+            "properties": {
+                "found": "true",
+                "skillName": "example",
+                "skillSource": "personal-copilot"
+            }
+        }
+    },
+    "id": "e66d753b-6b10-4904-98af-9bf9c51e488c",
+    "parentId": "cf65223c-c99e-46fd-8502-fdfa496a8036",
+    "timestamp": "2026-02-11T02:03:37.232Z",
+    "type": "tool.execution_complete"
+}
+{
+    "data": {
+        "content": "---\nname: example\ndescription: \"Checks to see if skills are enabled - if you use this skill it prints out yes\"\n---\n",
+        "name": "example",
+        "path": "/home/\u003credacted\u003e/.copilot/skills/example/SKILL.md"
+    },
+    "id": "d23aca2c-729e-4449-8c07-dbfbb2640f05",
+    "parentId": "e66d753b-6b10-4904-98af-9bf9c51e488c",
+    "timestamp": "2026-02-11T02:03:37.233Z",
+    "type": "skill.invoked"
+}
+{
+    "data": {
+        "currentTokens": 10787,
+        "messagesLength": 6,
+        "tokenLimit": 168000
+    },
+    "ephemeral": true,
+    "id": "f1c85941-ad32-4df7-bb67-f2d5e4ab1da5",
+    "parentId": "d67b1598-ff2c-4ab4-b159-c2f42591313f",
+    "timestamp": "2026-02-11T02:03:37.294Z",
+    "type": "session.usage_info"
+}
+{
+    "data": {
+        "deltaContent": "yes",
+        "messageId": "526de083-733e-427b-9576-b288ca6ea8d6",
+        "totalResponseSizeBytes": 223
+    },
+    "ephemeral": true,
+    "id": "7c6658d5-bd11-469c-b661-dcf98fdda2c8",
+    "parentId": "e3714faa-b9e0-480c-bfd4-0b81a8f011f0",
+    "timestamp": "2026-02-11T02:03:40.059Z",
+    "type": "assistant.message_delta"
+}
+{
+    "data": {
+        "content": "yes",
+        "messageId": "526de083-733e-427b-9576-b288ca6ea8d6",
+        "reasoningText": "The skill is loaded, but based on its description it just checks if skills are enabled. The description says \"if you use this skill it prints out yes\". So I should simply respond with \"yes\" to confirm skills are working."
+    },
+    "id": "2450ebe2-8dea-4cf8-9c3b-191027e4002e",
+    "parentId": "4f461cbc-f664-4580-a369-228874bc3cd4",
+    "timestamp": "2026-02-11T02:03:40.117Z",
+    "type": "assistant.message"
+}
+{
+    "data": {},
+    "ephemeral": true,
+    "id": "3948075b-addf-41de-a92e-1f9527bbb62b",
+    "parentId": "8340298b-7322-40ff-8c70-d96ed9bfaf16",
+    "timestamp": "2026-02-11T02:03:40.135Z",
+    "type": "session.idle"
+}

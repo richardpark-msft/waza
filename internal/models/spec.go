@@ -8,8 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TODO: why are the JSON specs so different than the YAML? Also, when do we even use JSON?
-
 // BenchmarkSpec represents a complete evaluation specification
 type BenchmarkSpec struct {
 	SpecIdentity `yaml:",inline"`

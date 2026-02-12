@@ -3,9 +3,9 @@ package execution
 import (
 	"context"
 	"strings"
-	"time"
 
 	copilot "github.com/github/copilot-sdk/go"
+	"github.com/spboyer/waza/internal/models"
 )
 
 // AgentEngine is the interface for executing test prompts
@@ -39,38 +39,23 @@ type ResourceFile struct {
 // ExecutionResponse represents the result of an execution
 type ExecutionResponse struct {
 	FinalOutput  string
-	Events       []SessionEvent
+	Events       []copilot.SessionEvent
 	ModelID      string
 	SkillInvoked string
 	DurationMs   int64
-	ToolCalls    []ToolCall
+	ToolCalls    []models.ToolCall
 	ErrorMsg     string
 	Success      bool
 	WorkspaceDir string // Path to workspace directory (for file grading)
-}
-
-// SessionEvent represents an event during execution
-type SessionEvent struct {
-	EventType copilot.SessionEventType
-	Timestamp time.Time
-	Payload   map[string]any
-}
-
-// ToolCall represents a tool invocation
-type ToolCall struct {
-	Name      string
-	Arguments map[string]any
-	Result    any
-	Success   bool
 }
 
 // ExtractMessages gets all assistant messages from events
 func (r *ExecutionResponse) ExtractMessages() []string {
 	var messages []string
 	for _, evt := range r.Events {
-		if evt.EventType == copilot.AssistantMessage {
-			if content, ok := evt.Payload["content"].(string); ok {
-				messages = append(messages, content)
+		if evt.Type == copilot.AssistantMessage {
+			if evt.Data.Content != nil {
+				messages = append(messages, *evt.Data.Content)
 			}
 		}
 	}
