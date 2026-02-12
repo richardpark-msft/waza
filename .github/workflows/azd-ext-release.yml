@@ -7,6 +7,11 @@ on:
         description: 'Version to publish (leave empty to use version.txt)'
         required: false
         type: string
+      prerelease:
+        description: 'Create as a prerelease'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -63,12 +68,18 @@ jobs:
 
       - name: Release Extension
         run: |
+          PRERELEASE_FLAG=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
           azd x release \
             --repo spboyer/waza \
             --version "$VERSION" \
             --title "Waza azd Extension v${VERSION}" \
             --notes "Release v${VERSION} of the waza azd extension" \
             --artifacts "./artifacts/*.zip,./artifacts/*.tar.gz" \
+            $PRERELEASE_FLAG \
             --confirm
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -110,7 +121,7 @@ jobs:
           # Push branch
           git push origin "$BRANCH"
 
-          # Create PR with auto-merge
+          # Create PR for registry update
           PR_URL=$(gh pr create \
             --title "chore: Update extension registry for v${VERSION}" \
             --body "## Extension Registry Update
