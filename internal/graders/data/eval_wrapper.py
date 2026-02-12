@@ -5,8 +5,6 @@ import re
 ## NOTE: if you're editing this file do NOT print to stdout - we parse that in the caller to determine
 ## what's failed.
 
-from typing import Literal
-
 input_data = sys.stdin.read()
 data = json.loads(input_data)
 
