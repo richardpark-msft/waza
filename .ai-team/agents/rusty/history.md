@@ -77,3 +77,16 @@
 - **Alignment:** ✅ E2 epic, ✅ issues #32-35, ✅ sensei reference patterns, ✅ Ralph loop discipline
 - **CI:** Both build/test and lint passing (no errcheck, gofmt, or misspell violations)
 - **Recommendation:** Merge immediately. Implementation demonstrates deep understanding of Sensei architecture and Go conventions. No rework needed. Post-merge: consider future --strict flag for hard-limit exit code (E4 scope).
+
+### 2026-02-11: PR #117 Deep Review (second opinion, opus-4.6)
+- **Verdict:** Confirmed approval. First review was accurate on architecture, scoring correctness, and test quality.
+- **New findings (all non-blocking):**
+  1. **TriggerCount vs HasTriggers mismatch** — `HasTriggers` matches 4 patterns but `TriggerCount` only counts after "USE FOR:". Display can show "Triggers: 0" while scoring Medium. UX confusion, not a scoring bug.
+  2. **parseFrontmatter closing delimiter fragile** — `strings.Index(rest, "\n---")` could split prematurely on multiline YAML scalars containing `---`. Safe during round-trip (yaml.Marshal escapes), edge case for hand-crafted files.
+  3. **writeSkillFile not atomic** — `os.WriteFile` without temp+rename. Ctrl+C during write could truncate. Low risk.
+  4. **No context.Context** — Will need retrofit when Copilot-based suggestions (#36) land.
+  5. **suggestTriggers semantic duplicates** — Name + heading overlap produces redundant phrases. Cosmetic.
+  6. **boxLine emoji width** — Rune count ≠ terminal column width for ✅/❌. Acknowledged in code comments.
+- **Suggestions:** count all trigger patterns (not just "USE FOR:"), atomic writes, context.Context plumbing, --dry-run flag, tests for non-existent path and --target low.
+- **Copilot reviewer alignment:** 3 of 4 inline comments were valid (trigger count mismatch, parser fragility, comment/code mismatch). The 4th was a typo fix.
+- **Lesson:** Deep reviews catch UX inconsistencies and future-proofing gaps that fast-model reviews miss, but the fast model correctly identified all structural and correctness aspects.
