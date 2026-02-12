@@ -54,7 +54,7 @@ func (coll *SessionEventsCollector) On(event copilot.SessionEvent) {
 
 	case copilot.ToolExecutionStart:
 		if event.Data.ToolName != nil && *event.Data.ToolName == "report_intent" {
-			// report_intent always seems to followed by the actual tool invocation,
+			// report_intent always seems to be followed by the actual tool invocation,
 			// so I'm just going to skip these to save a little space.
 			if event.Data.ToolCallID != nil {
 				coll.intentToolIDs[*event.Data.ToolCallID] = true
