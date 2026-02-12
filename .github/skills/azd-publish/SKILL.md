@@ -27,21 +27,13 @@ metadata:
 
 Follow these steps **in order**. Ask the user for input at each decision point.
 
-### Step 1: Determine Current Version
+### Step 1: Gather Changes and Update Changelog
 
-Read the current version from `version.txt`:
+Get the current version from `version.txt` and `extension.yaml`, then collect commits since the last release:
 
 ```bash
 cat version.txt
-```
 
-Also read `extension.yaml` to confirm the version matches. If they differ, flag it to the user before proceeding.
-
-### Step 2: Gather Changes Since Last Version
-
-Get the latest version tag and collect commits since then:
-
-```bash
 # Find the latest azd extension version tags
 git tag --list 'azd-ext-microsoft-azd-waza_*' --sort=-v:refname | head -5
 
@@ -50,69 +42,72 @@ last_tag=$(git tag --list 'azd-ext-microsoft-azd-waza_*' --sort=-v:refname | hea
 git log "${last_tag}..HEAD" --oneline --no-decorate
 ```
 
+If `version.txt` and `extension.yaml` differ, flag it to the user before proceeding.
+
 Summarize the changes grouped by type:
 - **Added** — `feat:` commits
-- **Fixed** — `fix:` commits  
+- **Fixed** — `fix:` commits
 - **Changed** — `refactor:`, `chore:`, `docs:` commits
 - **Removed** — any removal-related commits
 
 Present the summary to the user for review.
 
-### Step 3: Ask for Version Bump Type
+Then update `CHANGELOG.md`. The changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
-**ASK THE USER**: What type of version bump is this?
+Perform these updates (using a placeholder version `X.Y.Z` — the actual version is determined in Step 2):
 
-Choices:
-- **major** — Breaking changes (X.0.0)
-- **minor** — New features, backward compatible (0.X.0)
-- **patch** — Bug fixes, small changes (0.0.X)
+1. **Move Unreleased content**: Move any items currently under `## [Unreleased]` into a staging area. If `[Unreleased]` is empty, populate from the git log summary gathered above.
 
-Compute the new version using standard semver semantics:
-- Given current version `MAJOR.MINOR.PATCH`:
-  - **major** → `(MAJOR+1).0.0`
-  - **minor** → `MAJOR.(MINOR+1).0`
-  - **patch** → `MAJOR.MINOR.(PATCH+1)`
+2. **Populate from commits**: Prepare entries grouped under `### Added`, `### Fixed`, `### Changed` as appropriate based on the commits gathered above.
 
-Confirm the new version with the user before proceeding.
+Hold these changelog entries — the new version section header and comparison links will be finalized after the version is determined in Step 2.
 
-### Step 4: Update Version Files
+### Step 2: Determine Version
 
-Update these files with the new version:
+Based on the changes gathered in Step 1, **recommend** a version bump type using standard semver semantics:
 
-1. **`version.txt`** — Replace contents with new version string
-2. **`extension.yaml`** — Update the `version:` field
+- **major** — Breaking changes, removals of public API (`feat!:`, `BREAKING CHANGE:`) → `(MAJOR+1).0.0`
+- **minor** — New features, backward compatible (`feat:`) → `MAJOR.(MINOR+1).0`
+- **patch** — Bug fixes, docs, refactors, chores (`fix:`, `docs:`, `refactor:`, `chore:`) → `MAJOR.MINOR.(PATCH+1)`
 
-### Step 5: Update CHANGELOG.md
+Present the recommendation with rationale (e.g., "I see 3 `feat:` commits and no breaking changes — recommending a **minor** bump").
 
-The changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
+**ASK THE USER** to confirm the recommended bump or choose a different one.
 
-Perform these updates:
+Compute the new version and confirm with the user before proceeding.
+
+Then finalize the changelog:
 
 1. **Create new version section**: Insert a new section below `## [Unreleased]` with today's date:
    ```markdown
    ## [X.Y.Z] - YYYY-MM-DD
    ```
 
-2. **Move Unreleased content**: Move any items currently under `## [Unreleased]` into the new version section. If `[Unreleased]` is empty, populate from the git log summary gathered in Step 2.
+2. **Add the prepared entries** from Step 1 under the new version section.
 
-3. **Populate from commits**: Add entries grouped under `### Added`, `### Fixed`, `### Changed` as appropriate based on the commits gathered in Step 2.
-
-4. **Update comparison links** at the bottom of the file:
+3. **Update comparison links** at the bottom of the file:
    ```markdown
    [Unreleased]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_X.Y.Z...HEAD
    [X.Y.Z]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_PREVIOUS...azd-ext-microsoft-azd-waza_X.Y.Z
    ```
 
-5. **Clear the Unreleased section**: Leave `## [Unreleased]` with empty subsections or blank.
+4. **Clear the Unreleased section**: Leave `## [Unreleased]` with empty subsections or blank.
 
-### Step 6: Review Changes
+### Step 3: Update Version Files
+
+Update these files with the new version:
+
+1. **`version.txt`** — Replace contents with new version string
+2. **`extension.yaml`** — Update the `version:` field
+
+### Step 4: Review Changes
 
 Show the user a summary of all changes made:
 - New version number
 - Files modified: `version.txt`, `extension.yaml`, `CHANGELOG.md`
 - Show the diff with `git diff`
 
-### Step 7: Ask About PR Creation
+### Step 5: Ask About PR Creation
 
 **ASK THE USER**: Should I create a PR with these changes?
 
