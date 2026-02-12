@@ -55,9 +55,13 @@ jobs:
 
             core.info(`Found ${members.length} squad members: ${members.map(m => m.name).join(', ')}`);
 
+            // Check if @copilot is on the team
+            const hasCopilot = content.includes('🤖 Coding Agent');
+
             // Define label color palette for squad labels
             const SQUAD_COLOR = '6366f1';
             const MEMBER_COLOR = '3b82f6';
+            const COPILOT_COLOR = '10b981';
 
             // Ensure the base "squad" triage label exists
             const labels = [
@@ -69,6 +73,15 @@ jobs:
                 name: `squad:${member.name.toLowerCase()}`,
                 color: MEMBER_COLOR,
                 description: `Assigned to ${member.name} (${member.role})`
+              });
+            }
+
+            // Add @copilot label if coding agent is on the team
+            if (hasCopilot) {
+              labels.push({
+                name: 'squad:copilot',
+                color: COPILOT_COLOR,
+                description: 'Assigned to @copilot (Coding Agent) for autonomous work'
               });
             }
 
