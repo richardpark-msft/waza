@@ -159,8 +159,11 @@ func (isg *InlineScriptGrader) runScript(ctx context.Context, gradingContext *Co
 		return nil, 0, fmt.Errorf("failed to deserialize output (%s) from assertions: %w", string(outputBytes), err)
 	}
 
-	// TODO: it might be nice to get more rich results here, but for now it's literally an array
-	// as big as assertions, with a true/false value.
+	// TODO: it might be nice to get more rich results here. Currently the script returns
+	// a Results slice with one entry per assertion, where:
+	//   ""     => assertion passed
+	//   "fail" => assertion failed with no additional message
+	//   other  => assertion failed and the value is an error message.
 	for i, errMsg := range snippetOutput.Results {
 		if errMsg == "fail" {
 			failures = append(failures, fmt.Sprintf("Failed: %s", isg.assertions[i]))
