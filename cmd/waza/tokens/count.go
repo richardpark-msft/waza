@@ -146,7 +146,7 @@ func outputCountTable(w io.Writer, results []FileResult, showTotal bool) {
 	}
 
 	header := fmt.Sprintf("%-*s  %8s  %8s  %6s", maxPath, "File", "Tokens", "Chars", "Lines")
-	fmt.Fprintln(w, header)                        //nolint:errcheck
+	fmt.Fprintln(w, header)                           //nolint:errcheck
 	fmt.Fprintln(w, strings.Repeat("-", len(header))) //nolint:errcheck
 
 	for _, r := range results {
@@ -154,7 +154,7 @@ func outputCountTable(w io.Writer, results []FileResult, showTotal bool) {
 	}
 
 	if showTotal {
-		fmt.Fprintln(w, strings.Repeat("-", len(header)))
+		fmt.Fprintln(w, strings.Repeat("-", len(header))) //nolint:errcheck
 		var totalTokens, totalChars, totalLines int
 		for _, r := range results {
 			totalTokens += r.Tokens
@@ -162,7 +162,7 @@ func outputCountTable(w io.Writer, results []FileResult, showTotal bool) {
 			totalLines += r.Lines
 		}
 		fmt.Fprintf(w, "%-*s  %8d  %8d  %6d\n", maxPath, "Total", totalTokens, totalChars, totalLines) //nolint:errcheck
-		fmt.Fprintf(w, "\n%d file(s) scanned\n", len(results))                                          //nolint:errcheck
+		fmt.Fprintf(w, "\n%d file(s) scanned\n", len(results))                                         //nolint:errcheck
 	}
 }
 
