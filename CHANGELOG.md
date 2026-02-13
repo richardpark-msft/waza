@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-13
+
+### Added
+
+- Grader showcase examples demonstrating all grader types (#134)
+- Reusable GitHub Actions workflow for waza evaluations (#132)
+- Documentation for prompt and action_sequence grader types (#133)
+- Documentation for `waza dev` command and compliance scoring (#131)
+- Auto-loading of skills for testing (#129)
+- Debug logging support (`--debug` flag) (#130)
+
+### Fixed
+
+- Always output test run errors to help debug failures (#128)
+- Include cwd as a skill folder when running waza (workspace fix)
+
+### Changed
+
+- Exit codes for CI/CD integration: 0=success, 1=test failure, 2=config error (#135)
+- Reordered azd-publish skill workflow steps (#127)
+- Auto-merge bot registry PRs in release workflow
+
 ## [0.2.1] - 2026-02-12
 
 ### Added
@@ -136,7 +158,8 @@ pip install waza
 - YAML escaping for regex patterns with backslashes
 - Progress bar now shows 100% on completion
 
-[Unreleased]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_0.2.1...HEAD
+[Unreleased]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_0.3.0...HEAD
+[0.3.0]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_0.2.1...azd-ext-microsoft-azd-waza_0.3.0
 [0.2.1]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_0.2.0...azd-ext-microsoft-azd-waza_0.2.1
 [0.2.0]: https://github.com/spboyer/waza/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/spboyer/waza/compare/v0.0.2...v0.1.0
