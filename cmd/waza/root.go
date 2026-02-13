@@ -2,6 +2,7 @@ package main
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/spboyer/waza/cmd/waza/dev"
 	"github.com/spboyer/waza/cmd/waza/tokens"
@@ -22,10 +23,15 @@ performance against predefined test cases.`,
 		SilenceUsage: true,
 	}
 
+	logLevel := &slog.LevelVar{}
+	logLevel.Set(slog.LevelInfo)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: logLevel}))
+	slog.SetDefault(logger)
+
 	debugLogging := cmd.PersistentFlags().Bool("debug", false, "Enable debug logging")
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if *debugLogging {
-			slog.SetLogLoggerLevel(slog.LevelDebug)
+			logLevel.Set(slog.LevelDebug)
 		}
 	}
 
