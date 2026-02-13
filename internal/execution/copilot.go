@@ -101,7 +101,7 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 	cwd, err := os.Getwd()
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current directory: %s", err)
+		return nil, fmt.Errorf("failed to get current directory: %w", err)
 	}
 
 	slog.Debug("Adding skill directory", "path", cwd)

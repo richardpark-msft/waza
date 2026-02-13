@@ -1,12 +1,17 @@
 package utils
 
 import (
+	"context"
 	"log/slog"
 
 	copilot "github.com/github/copilot-sdk/go"
 )
 
 func SessionToSlog(event copilot.SessionEvent) {
+	if !slog.Default().Enabled(context.Background(), slog.LevelDebug) {
+		return
+	}
+
 	attrs := []any{
 		"type", event.Type,
 	}
