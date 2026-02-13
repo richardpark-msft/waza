@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log/slog"
+
 	"github.com/spboyer/waza/cmd/waza/dev"
 	"github.com/spboyer/waza/cmd/waza/tokens"
 	"github.com/spf13/cobra"
@@ -18,6 +20,13 @@ It provides tools to run benchmarks, validate agent behavior, and measure
 performance against predefined test cases.`,
 		Version:      version,
 		SilenceUsage: true,
+	}
+
+	debugLogging := cmd.PersistentFlags().Bool("debug", false, "Enable debug logging")
+	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		if *debugLogging {
+			slog.SetLogLoggerLevel(slog.LevelDebug)
+		}
 	}
 
 	// Add subcommands
