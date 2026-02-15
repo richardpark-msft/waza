@@ -117,28 +117,30 @@ func checkReadiness(skillDir string) (*readinessReport, error) {
 	return report, nil
 }
 
+//nolint:errcheck // display function — fmt.Fprintf errors to stdout are not actionable
 func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report *readinessReport) {
 	w := out
 
 	// Header
-	fmt.Fprintf(w, "\n🔍 Skill Readiness Check\n")
-	fmt.Fprintf(w, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+	fmt.Fprintf(w, "\n🔍 Skill Readiness Check\n")                        //nolint:errcheck
+	fmt.Fprintf(w, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n") //nolint:errcheck
 
 	skillName := report.skillName
 	if skillName == "" {
 		skillName = "unnamed-skill"
 	}
-	fmt.Fprintf(w, "Skill: %s\n\n", skillName)
+	fmt.Fprintf(w, "Skill: %s\n\n", skillName) //nolint:errcheck
 
 	// 1. Compliance Check
 	fmt.Fprintf(w, "📋 Compliance Score: %s\n", report.complianceLevel)
-	if report.complianceLevel == dev.AdherenceHigh {
+	switch report.complianceLevel {
+	case dev.AdherenceHigh:
 		fmt.Fprintf(w, "   ✅ Excellent! Your skill meets all compliance requirements.\n")
-	} else if report.complianceLevel == dev.AdherenceMediumHigh {
+	case dev.AdherenceMediumHigh:
 		fmt.Fprintf(w, "   ⚠️  Good, but could be improved. Missing routing clarity.\n")
-	} else if report.complianceLevel == dev.AdherenceMedium {
+	case dev.AdherenceMedium:
 		fmt.Fprintf(w, "   ⚠️  Needs improvement. Missing anti-triggers and routing clarity.\n")
-	} else {
+	default:
 		fmt.Fprintf(w, "   ❌ Needs significant improvement. Description too short or missing triggers.\n")
 	}
 
