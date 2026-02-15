@@ -30,6 +30,9 @@ azd waza run examples/code-explainer/eval.yaml -v
 # Build
 make build
 
+# Check if a skill is ready for submission
+./waza check skills/my-skill
+
 # Scaffold a new eval suite
 ./waza init my-eval --interactive
 
@@ -65,6 +68,32 @@ Run an evaluation benchmark from a spec file.
 | `--parallel` | | Run tasks concurrently |
 | `--workers <n>` | | Concurrent workers (default: 4, requires `--parallel`) |
 | `--interpret` | | Print plain-language result interpretation |
+| `--format <fmt>` | | Output format: `default` or `github-comment` (default: `default`) |
+| `--cache` | | Enable result caching to speed up repeated runs |
+| `--no-cache` | | Explicitly disable result caching |
+| `--cache-dir <dir>` | | Cache directory (default: `.waza-cache`) |
+
+**Result Caching**
+
+Enable caching with `--cache` to store test results and skip re-execution on repeated runs:
+
+```bash
+# First run executes all tests and caches results
+waza run eval.yaml --cache
+
+# Second run uses cached results (much faster)
+waza run eval.yaml --cache
+
+# Clear the cache when needed
+waza cache clear
+```
+
+Cached results are automatically invalidated when:
+- Spec configuration changes (model, timeout, graders, etc.)
+- Task definitions change
+- Fixture files change
+
+**Note:** Caching is automatically disabled for evaluations using non-deterministic graders (`behavior`, `prompt`).
 
 **Exit Codes**
 
@@ -90,6 +119,10 @@ if [ $EXIT_CODE -eq 1 ]; then
 elif [ $EXIT_CODE -eq 2 ]; then
   echo "Configuration error"
 fi
+
+# Post results as PR comment (GitHub Actions)
+waza run eval.yaml --format github-comment > comment.md
+gh pr comment $PR_NUMBER --body-file comment.md
 ```
 
 ### `waza init [directory]`
@@ -116,6 +149,14 @@ Compare results from multiple evaluation runs side by side — per-task score de
 |------|-------|-------------|
 | `--format <fmt>` | `-f` | Output format: `table` or `json` (default: `table`) |
 
+### `waza cache clear`
+
+Clear all cached evaluation results to force re-execution on the next run.
+
+| Flag | Description |
+|------|-------------|
+| `--cache-dir <dir>` | Cache directory to clear (default: `.waza-cache`) |
+
 ### `waza dev [skill-path]`
 
 Iteratively score and improve skill frontmatter in a SKILL.md file.
@@ -125,6 +166,63 @@ Iteratively score and improve skill frontmatter in a SKILL.md file.
 | `--target <level>` | Target adherence level: `low`, `medium`, `medium-high`, `high` (default: `medium-high`) |
 | `--max-iterations <n>` | Maximum improvement iterations (default: 5) |
 | `--auto` | Apply improvements without prompting |
+
+### `waza check [skill-path]`
+
+Check if a skill is ready for submission with a comprehensive readiness report.
+
+Performs three types of checks:
+1. **Compliance scoring** — Validates frontmatter adherence (Low/Medium/Medium-High/High)
+2. **Token budget** — Checks if SKILL.md is within token limits (default: 500 tokens)
+3. **Evaluation suite** — Checks for the presence of eval.yaml
+
+Provides a plain-language summary and actionable next steps to improve the skill.
+
+**Example output:**
+```
+🔍 Skill Readiness Check
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Skill: code-explainer
+
+📋 Compliance Score: High
+   ✅ Excellent! Your skill meets all compliance requirements.
+
+📊 Token Budget: 450 / 500 tokens
+   ✅ Within budget (50 tokens remaining).
+
+🧪 Evaluation Suite: Found
+   ✅ eval.yaml detected. Run 'waza run eval.yaml' to test.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 Overall Readiness
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Your skill is ready for submission!
+
+🎯 Next Steps
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ No action needed! Your skill looks great.
+
+Consider:
+  • Running 'waza run eval.yaml' to verify functionality
+  • Submitting a PR to microsoft/skills
+```
+
+**Usage:**
+```bash
+# Check current directory
+waza check
+
+# Check specific skill
+waza check skills/my-skill
+
+# Suggested workflow
+waza check skills/my-skill     # Check readiness
+waza dev skills/my-skill       # Improve compliance if needed
+waza check skills/my-skill     # Verify improvements
+```
 
 ### `waza tokens count [paths...]`
 
@@ -217,24 +315,86 @@ tasks:
 
 ## CI/CD Integration
 
-Waza includes reusable GitHub Actions workflows for running evaluations in CI/CD pipelines.
+Waza is designed to work seamlessly with CI/CD pipelines, including **microsoft/skills** repositories.
 
-### Quick Setup
+### For microsoft/skills Contributors
 
-1. Use the reusable workflow in your `.github/workflows/`:
+If you're contributing a skill to [microsoft/skills](https://github.com/microsoft/skills), waza can validate your skill in CI:
+
+#### Installation in CI
+
+**Option 1: Install from source (recommended)**
+```bash
+# Requires Go 1.25+
+go install github.com/spboyer/waza/cmd/waza@latest
+```
+
+**Option 2: Use Docker**
+```bash
+docker build -t waza:local .
+docker run -v $(pwd):/workspace waza:local run eval/eval.yaml
+```
+
+#### Quick Workflow Setup
+
+Copy [`.github/workflows/skills-ci-example.yml`](.github/workflows/skills-ci-example.yml) to your skill repository:
 
 ```yaml
 jobs:
-  eval:
-    uses: ./.github/workflows/waza-eval.yml
-    with:
-      eval-yaml: 'examples/code-explainer/eval.yaml'
-      verbose: true
+  evaluate-skill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - run: go install github.com/spboyer/waza/cmd/waza@latest
+      - run: waza run eval/eval.yaml --verbose --output results.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: waza-evaluation-results
+          path: results.json
 ```
 
-2. For matrix testing across multiple models, see the example at [`examples/ci/eval-on-pr.yml`](examples/ci/eval-on-pr.yml)
+#### Environment Requirements
 
-3. The workflow automatically runs on PRs that modify evaluation files or skills
+| Requirement | Details |
+|-------------|---------|
+| **Go Version** | 1.25 or higher |
+| **Executor** | Use `mock` executor for CI (no API keys needed) |
+| **GitHub Token** | Only required for `copilot-sdk` executor: set `GITHUB_TOKEN` env var |
+| **Exit Codes** | 0=success, 1=test failure, 2=config error |
+
+#### Expected Skill Structure
+
+```
+your-skill/
+├── SKILL.md              # Skill definition
+└── eval/                 # Evaluation suite
+    ├── eval.yaml         # Benchmark spec
+    ├── tasks/            # Task definitions
+    │   └── *.yaml
+    └── fixtures/         # Context files
+        └── *.txt
+```
+
+### For Waza Repository
+
+This repository includes reusable workflows:
+
+1. **[`.github/workflows/waza-eval.yml`](.github/workflows/waza-eval.yml)** - Reusable workflow for running evals
+   ```yaml
+   jobs:
+     eval:
+       uses: ./.github/workflows/waza-eval.yml
+       with:
+         eval-yaml: 'examples/code-explainer/eval.yaml'
+         verbose: true
+   ```
+
+2. **[`examples/ci/eval-on-pr.yml`](examples/ci/eval-on-pr.yml)** - Matrix testing across models
+
+3. **[`examples/ci/basic-example.yml`](examples/ci/basic-example.yml)** - Minimal workflow example
 
 See [`examples/ci/README.md`](examples/ci/README.md) for detailed documentation and more examples.
 
@@ -246,11 +406,21 @@ Waza supports multiple grader types for comprehensive evaluation:
 |--------|---------|---------------|
 | `code` | Python/JavaScript assertion-based validation | [docs/GRADERS.md](docs/GRADERS.md#code---assertion-based-grader) |
 | `regex` | Pattern matching in output | [docs/GRADERS.md](docs/GRADERS.md#regex---pattern-matching-grader) |
+| `file` | File existence and content validation | [docs/GRADERS.md](docs/GRADERS.md#file---file-system-validation) |
 | `behavior` | Agent behavior constraints (tool calls, tokens, duration) | [docs/GRADERS.md](docs/GRADERS.md#behavior---agent-behavior-validation) |
 | `action_sequence` | Tool call sequence validation with F1 scoring | [docs/GRADERS.md](docs/GRADERS.md#action_sequence---tool-call-sequence-validation) |
+| `skill_invocation` | Skill orchestration sequence validation | [docs/GRADERS.md](docs/GRADERS.md#skill_invocation---skill-invocation-sequence-validation) |
 | `prompt` | LLM-as-judge evaluation with rubrics (planned) | [docs/GRADERS.md](docs/GRADERS.md#prompt---llm-based-evaluation) |
 
 See the complete [Grader Reference](docs/GRADERS.md) for detailed configuration options and examples.
+
+## Documentation
+
+- **[Demo Guide](docs/DEMO-GUIDE.md)** - 7 live demo scenarios for presentations
+- **[Grader Reference](docs/GRADERS.md)** - Complete grader types and configuration
+- **[Tutorial](docs/TUTORIAL.md)** - Getting started with writing skill evals
+- **[CI Integration](docs/SKILLS_CI_INTEGRATION.md)** - GitHub Actions workflows for microsoft/skills
+- **[Token Management](docs/TOKEN-LIMITS.md)** - Tracking and optimizing skill context size
 
 ## Contributing
 

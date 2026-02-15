@@ -27,6 +27,7 @@ type ExecutionRequest struct {
 	Context    map[string]any
 	Resources  []ResourceFile
 	SkillName  string
+	SkillPaths []string // Directories to search for skills
 	TimeoutSec int
 }
 
@@ -36,17 +37,24 @@ type ResourceFile struct {
 	Content string
 }
 
+type SkillInvocation struct {
+	// Name of the invoked skill
+	Name string
+	// Path of the invoked SKILL.md
+	Path string
+}
+
 // ExecutionResponse represents the result of an execution
 type ExecutionResponse struct {
-	FinalOutput  string
-	Events       []copilot.SessionEvent
-	ModelID      string
-	SkillInvoked string
-	DurationMs   int64
-	ToolCalls    []models.ToolCall
-	ErrorMsg     string
-	Success      bool
-	WorkspaceDir string // Path to workspace directory (for file grading)
+	FinalOutput      string
+	Events           []copilot.SessionEvent
+	ModelID          string
+	SkillInvocations []SkillInvocation
+	DurationMs       int64
+	ToolCalls        []models.ToolCall
+	ErrorMsg         string
+	Success          bool
+	WorkspaceDir     string // Path to workspace directory (for file grading)
 }
 
 // ExtractMessages gets all assistant messages from events

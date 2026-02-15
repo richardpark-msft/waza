@@ -9,23 +9,29 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spboyer/waza/internal/cache"
 	"github.com/spboyer/waza/internal/config"
 	"github.com/spboyer/waza/internal/execution"
 	"github.com/spboyer/waza/internal/models"
 	"github.com/spboyer/waza/internal/orchestration"
 	"github.com/spboyer/waza/internal/reporting"
+	"github.com/spboyer/waza/internal/utils"
 	"github.com/spf13/cobra"
 )
 
 var (
-	contextDir    string
-	outputPath    string
-	verbose       bool
-	transcriptDir string
-	taskFilters   []string
-	parallel      bool
-	workers       int
-	interpret     bool
+	contextDir     string
+	outputPath     string
+	verbose        bool
+	transcriptDir  string
+	taskFilters    []string
+	parallel       bool
+	workers        int
+	interpret      bool
+	format         string
+	enableCache    bool
+	disableCache   bool
+	runCacheDir    string
 )
 
 func newRunCommand() *cobra.Command {
@@ -48,6 +54,10 @@ Resources are loaded from the context directory (defaults to ./fixtures).`,
 	cmd.Flags().BoolVar(&parallel, "parallel", false, "Run tasks concurrently")
 	cmd.Flags().IntVar(&workers, "workers", 0, "Number of concurrent workers (default: 4, requires --parallel)")
 	cmd.Flags().BoolVar(&interpret, "interpret", false, "Print a plain-language interpretation of the results")
+	cmd.Flags().StringVar(&format, "format", "default", "Output format: default, github-comment")
+	cmd.Flags().BoolVar(&enableCache, "cache", false, "Enable result caching (default: false)")
+	cmd.Flags().BoolVar(&disableCache, "no-cache", false, "Disable result caching (default)")
+	cmd.Flags().StringVar(&runCacheDir, "cache-dir", ".waza-cache", "Cache directory for storing results")
 
 	return cmd
 }
@@ -100,6 +110,30 @@ func runCommandE(cmd *cobra.Command, args []string) error {
 		config.WithTranscriptDir(transcriptDir),
 	)
 
+	// Setup cache if enabled
+	var resultCache *cache.Cache
+	useCaching := enableCache && !disableCache
+
+	// Skip cache for non-deterministic graders
+	if useCaching && cache.HasNonDeterministicGraders(spec) {
+		if verbose {
+			fmt.Println("Note: Caching disabled due to non-deterministic graders (behavior, prompt)")
+		}
+		useCaching = false
+	}
+
+	if useCaching {
+		// Resolve cache directory to absolute path
+		absCacheDir, err := filepath.Abs(runCacheDir)
+		if err != nil {
+			return fmt.Errorf("resolving cache directory: %w", err)
+		}
+		resultCache = cache.New(absCacheDir)
+		if verbose {
+			fmt.Printf("Cache enabled: %s\n", absCacheDir)
+		}
+	}
+
 	// Create engine based on spec
 	var engine execution.AgentEngine
 
@@ -112,8 +146,14 @@ func runCommandE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unknown engine type: %s", spec.Config.EngineType)
 	}
 
-	// Create runner with optional task filters
-	runner := orchestration.NewTestRunner(cfg, engine, orchestration.WithTaskFilters(taskFilters...))
+	// Create runner with optional task filters and cache
+	runnerOpts := []orchestration.RunnerOption{
+		orchestration.WithTaskFilters(taskFilters...),
+	}
+	if resultCache != nil {
+		runnerOpts = append(runnerOpts, orchestration.WithCache(resultCache))
+	}
+	runner := orchestration.NewTestRunner(cfg, engine, runnerOpts...)
 
 	// Add progress listener
 	if verbose {
@@ -136,6 +176,16 @@ func runCommandE(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Printf("Parallel: %d workers\n", w)
 	}
+
+	// Print skill directories in verbose mode
+	if verbose && len(spec.Config.SkillPaths) > 0 {
+		fmt.Printf("Skill Directories:\n")
+		resolvedPaths := utils.ResolvePaths(spec.Config.SkillPaths, specDir)
+		for _, path := range resolvedPaths {
+			fmt.Printf("  - %s\n", path)
+		}
+	}
+
 	fmt.Println()
 
 	outcome, err := runner.RunBenchmark(ctx)
@@ -143,13 +193,21 @@ func runCommandE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("benchmark failed: %w", err)
 	}
 
-	// Print summary
-	printSummary(outcome)
+	// Print results based on format
+	switch format {
+	case "github-comment":
+		fmt.Print(FormatGitHubComment(outcome))
+	case "default":
+		// Print summary
+		printSummary(outcome)
 
-	// Print plain-language interpretation if requested
-	if interpret {
-		fmt.Println()
-		fmt.Print(reporting.FormatSummaryReport(outcome))
+		// Print plain-language interpretation if requested
+		if interpret {
+			fmt.Println()
+			fmt.Print(reporting.FormatSummaryReport(outcome))
+		}
+	default:
+		return fmt.Errorf("unknown output format: %s (supported: default, github-comment)", format)
 	}
 
 	// Save output if requested
@@ -176,6 +234,8 @@ func verboseProgressListener(event orchestration.ProgressEvent) {
 		fmt.Printf("Starting benchmark with %d test(s)...\n\n", event.TotalTests)
 	case orchestration.EventTestStart:
 		fmt.Printf("[%d/%d] Running test: %s\n", event.TestNum, event.TotalTests, event.TestName)
+	case orchestration.EventTestCached:
+		fmt.Printf("[%d/%d] Test: %s [cached]\n\n", event.TestNum, event.TotalTests, event.TestName)
 	case orchestration.EventRunStart:
 		fmt.Printf("  Run %d/%d...", event.RunNum, event.TotalRuns)
 	case orchestration.EventRunComplete:
@@ -234,6 +294,8 @@ func truncate(s string, maxLen int) string {
 
 func simpleProgressListener(event orchestration.ProgressEvent) {
 	switch event.EventType {
+	case orchestration.EventTestCached:
+		fmt.Printf("✓ [%d/%d] %s [cached]\n", event.TestNum, event.TotalTests, event.TestName)
 	case orchestration.EventTestComplete:
 		status := "✓"
 		if event.Status != models.StatusPassed {
