@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/spboyer/waza/internal/skill"
+	"github.com/spboyer/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -53,10 +54,21 @@ func runDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	skillDir := "."
+	skillDir := ""
 	if len(args) > 0 {
 		skillDir = args[0]
 	}
+
+	// Try workspace detection if no explicit path given or arg looks like a skill name
+	if skillDir == "" || (!filepath.IsAbs(skillDir) && filepath.Ext(skillDir) == "" && !strings.ContainsAny(skillDir, `/\`) && skillDir != ".") {
+		resolved := tryResolveSkillDir(skillDir)
+		if resolved != "" {
+			skillDir = resolved
+		} else if skillDir == "" {
+			skillDir = "."
+		}
+	}
+
 	if !filepath.IsAbs(skillDir) {
 		wd, err := os.Getwd()
 		if err != nil {
@@ -338,4 +350,32 @@ func writeSkillFile(skill *skill.Skill) error {
 		return err
 	}
 	return os.WriteFile(skill.Path, data, 0644)
+}
+
+// tryResolveSkillDir uses workspace detection to find a skill directory.
+// If name is empty, returns the first detected skill's dir.
+// If name is a skill name, returns that skill's dir.
+// Returns empty string if detection fails.
+func tryResolveSkillDir(name string) string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	ctx, err := workspace.DetectContext(wd)
+	if err != nil || ctx.Type == workspace.ContextNone {
+		return ""
+	}
+
+	if name == "" {
+		if len(ctx.Skills) > 0 {
+			return ctx.Skills[0].Dir
+		}
+		return ""
+	}
+
+	si, err := workspace.FindSkill(ctx, name)
+	if err != nil {
+		return ""
+	}
+	return si.Dir
 }

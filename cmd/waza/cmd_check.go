@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spboyer/waza/cmd/waza/dev"
 	"github.com/spboyer/waza/internal/skill"
 	internalTokens "github.com/spboyer/waza/internal/tokens"
+	"github.com/spboyer/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
 func newCheckCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "check [skill-path]",
+		Use:   "check [skill-name | skill-path]",
 		Short: "Check if a skill is ready for submission",
 		Long: `Check if a skill is ready for submission by running compliance, token, and eval checks.
 
@@ -25,11 +27,14 @@ Performs the following checks:
 
 Provides a plain-language summary and suggests next steps.
 
-If skill-path is omitted, the current working directory is used.
+With no arguments, uses workspace detection to find skills automatically:
+  - Single-skill workspace → checks that skill
+  - Multi-skill workspace → checks ALL skills with summary table
 
-Example:
-  waza check skills/code-explainer
-  waza check .`,
+You can also specify a skill name or path:
+  waza check code-explainer   # by skill name
+  waza check skills/my-skill  # by path
+  waza check .                # current directory`,
 		Args:          cobra.MaximumNArgs(1),
 		RunE:          runCheck,
 		SilenceErrors: true,
@@ -49,6 +54,13 @@ type readinessReport struct {
 }
 
 func runCheck(cmd *cobra.Command, args []string) error {
+	// Try workspace detection first
+	skills, err := resolveSkillsFromArgs(args)
+	if err == nil && len(skills) > 0 {
+		return runCheckForSkills(cmd, skills)
+	}
+
+	// Fallback: explicit path (backward compatible)
 	skillDir := "."
 	if len(args) > 0 {
 		skillDir = args[0]
@@ -68,6 +80,59 @@ func runCheck(cmd *cobra.Command, args []string) error {
 
 	displayReadinessReport(cmd.OutOrStdout(), report)
 	return nil
+}
+
+func runCheckForSkills(cmd *cobra.Command, skills []workspace.SkillInfo) error {
+	w := cmd.OutOrStdout()
+	var reports []*readinessReport
+
+	for i, si := range skills {
+		if len(skills) > 1 {
+			if i > 0 {
+				fmt.Fprintln(w)
+			}
+			fmt.Fprintf(w, "\n=== %s ===\n", si.Name)
+		}
+
+		report, err := checkReadiness(si.Dir)
+		if err != nil {
+			return fmt.Errorf("checking skill %s: %w", si.Name, err)
+		}
+		reports = append(reports, report)
+		displayReadinessReport(w, report)
+	}
+
+	if len(skills) > 1 {
+		printCheckSummaryTable(w, reports)
+	}
+	return nil
+}
+
+func printCheckSummaryTable(w interface{ Write([]byte) (int, error) }, reports []*readinessReport) {
+	fmt.Fprintf(w, "\n")
+	fmt.Fprintf(w, "═══════════════════════════════════════════════\n")
+	fmt.Fprintf(w, " CHECK SUMMARY\n")
+	fmt.Fprintf(w, "═══════════════════════════════════════════════\n\n")
+	fmt.Fprintf(w, "%-25s %-15s %-12s %s\n", "Skill", "Compliance", "Tokens", "Eval")
+	fmt.Fprintf(w, "%s\n", strings.Repeat("─", 60))
+
+	for _, r := range reports {
+		name := r.skillName
+		if name == "" {
+			name = "unnamed"
+		}
+		tokenStatus := "✅"
+		if r.tokenExceeded {
+			tokenStatus = "❌"
+		}
+		evalStatus := "✅"
+		if !r.hasEval {
+			evalStatus = "⚠️"
+		}
+		fmt.Fprintf(w, "%-25s %-15s %s %d/%-6d %s\n",
+			name, r.complianceLevel, tokenStatus, r.tokenCount, r.tokenLimit, evalStatus)
+	}
+	fmt.Fprintf(w, "\n")
 }
 
 func checkReadiness(skillDir string) (*readinessReport, error) {
@@ -108,7 +173,16 @@ func checkReadiness(skillDir string) (*readinessReport, error) {
 	report.tokenLimit = 500
 	report.tokenExceeded = report.tokenCount > report.tokenLimit
 
-	// 5. Check for eval.yaml
+	// 5. Check for eval.yaml (try workspace-aware detection first, then co-located)
+	wd, wdErr := os.Getwd()
+	if wdErr == nil {
+		if ctx, ctxErr := workspace.DetectContext(wd); ctxErr == nil && ctx.Type != workspace.ContextNone {
+			if evalPath, findErr := workspace.FindEval(ctx, sk.Frontmatter.Name); findErr == nil && evalPath != "" {
+				report.hasEval = true
+				return report, nil
+			}
+		}
+	}
 	evalPath := filepath.Join(skillDir, "eval.yaml")
 	if _, err := os.Stat(evalPath); err == nil {
 		report.hasEval = true
