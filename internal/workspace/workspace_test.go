@@ -335,9 +335,10 @@ func TestDetectContext_SkillsDirHidden(t *testing.T) {
 }
 
 func TestFindEval_SkillNotInContext(t *testing.T) {
+	tmpDir := t.TempDir()
 	ctx := &WorkspaceContext{
 		Type: ContextNone,
-		Root: t.TempDir(),
+		Root: tmpDir,
 	}
 
 	_, err := FindEval(ctx, "nonexistent")
