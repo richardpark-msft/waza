@@ -45,6 +45,7 @@ performance against predefined test cases.`,
 	cmd.AddCommand(newMetadataCommand(cmd))
 	cmd.AddCommand(newCheckCommand())
 	cmd.AddCommand(newCacheCommand())
+	cmd.AddCommand(newNewCommand())
 
 	return cmd
 }
