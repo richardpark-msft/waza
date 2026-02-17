@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
@@ -56,7 +57,7 @@ func NewInlineScriptGrader(name string, language Language, assertions []string) 
 	switch language {
 	case LanguagePython:
 		g.scriptExt = "py"
-		g.scriptBin = "python"
+		g.scriptBin = resolvePythonBin()
 		g.scriptContents = evalWrapperPy
 	case LanguageJavascript:
 		g.scriptExt = "js"
@@ -67,6 +68,19 @@ func NewInlineScriptGrader(name string, language Language, assertions []string) 
 	}
 
 	return g, nil
+}
+
+func resolvePythonBin() string {
+	// Prefer python3, but verify it actually works — on Windows the
+	// Microsoft Store registers a python3.exe stub that just prints
+	// "Python was not found" and exits 9009.
+	if path, err := exec.LookPath("python3"); err == nil {
+		cmd := exec.Command(path, "--version")
+		if cmd.Run() == nil {
+			return "python3"
+		}
+	}
+	return "python"
 }
 
 func (isg *InlineScriptGrader) Name() string            { return isg.name }
@@ -208,6 +222,9 @@ func getStdinTextForScript(gradingContext *Context, assertions []string) ([]byte
 		ToolCalls  []models.ToolCall        `json:"tool_calls"`
 		DurationMS int64                    `json:"duration_ms"`
 		Assertions []string                 `json:"assertions"`
+
+		// Debug causes the underlying scripts to print, to stderr, their stdin contents.
+		Debug bool `json:"debug"`
 	}{
 		Output:     gradingContext.Output,
 		Outcome:    outcome,
@@ -215,6 +232,7 @@ func getStdinTextForScript(gradingContext *Context, assertions []string) ([]byte
 		ToolCalls:  toolCalls,
 		DurationMS: gradingContext.DurationMS,
 		Assertions: assertions,
+		Debug:      slog.Default().Enabled(context.Background(), slog.LevelDebug),
 	}
 
 	scriptJSON, err := json.MarshalIndent(scriptStdin, "  ", "  ")
