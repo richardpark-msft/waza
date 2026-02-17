@@ -60,7 +60,7 @@ func runDev(cmd *cobra.Command, args []string) error {
 	}
 
 	// Try workspace detection if no explicit path given or arg looks like a skill name
-	if skillDir == "" || (!filepath.IsAbs(skillDir) && filepath.Ext(skillDir) == "" && !strings.ContainsAny(skillDir, `/\`) && skillDir != ".") {
+	if skillDir == "" || !workspace.LooksLikePath(skillDir) {
 		resolved := tryResolveSkillDir(skillDir)
 		if resolved != "" {
 			skillDir = resolved

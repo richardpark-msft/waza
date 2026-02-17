@@ -19,6 +19,7 @@ import (
 	"github.com/spboyer/waza/internal/reporting"
 	"github.com/spboyer/waza/internal/trigger"
 	"github.com/spboyer/waza/internal/utils"
+	"github.com/spboyer/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -133,7 +134,7 @@ func resolveSpecPaths(args []string) ([]skillSpecPath, error) {
 	if len(args) > 0 {
 		arg := args[0]
 		// If it looks like a path, use directly
-		if looksLikePath(arg) {
+		if workspace.LooksLikePath(arg) {
 			return []skillSpecPath{{specPath: arg}}, nil
 		}
 		// Treat as skill name

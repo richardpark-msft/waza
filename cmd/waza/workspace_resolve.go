@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/spboyer/waza/internal/workspace"
 )
@@ -17,21 +15,22 @@ import (
 //   - No args + multi-skill workspace → returns all skills
 //   - No workspace detected → returns error
 func resolveSkillsFromArgs(args []string) ([]workspace.SkillInfo, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("getting working directory: %w", err)
+	}
+	ctx, err := workspace.DetectContext(wd)
+	if err != nil {
+		return nil, fmt.Errorf("detecting workspace: %w", err)
+	}
+
 	if len(args) > 0 {
 		arg := args[0]
 		// If arg looks like a file path (has extension or separator), treat as explicit path
-		if looksLikePath(arg) {
+		if workspace.LooksLikePath(arg) {
 			return nil, nil // caller handles explicit path
 		}
-		// Treat as skill name — look it up in workspace
-		wd, err := os.Getwd()
-		if err != nil {
-			return nil, fmt.Errorf("getting working directory: %w", err)
-		}
-		ctx, err := workspace.DetectContext(wd)
-		if err != nil {
-			return nil, fmt.Errorf("detecting workspace: %w", err)
-		}
+		// Treat as skill name
 		if ctx.Type == workspace.ContextNone {
 			return nil, fmt.Errorf("no workspace detected and %q is not a file path", arg)
 		}
@@ -43,19 +42,8 @@ func resolveSkillsFromArgs(args []string) ([]workspace.SkillInfo, error) {
 	}
 
 	// No args — use workspace detection
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("getting working directory: %w", err)
-	}
-	ctx, err := workspace.DetectContext(wd)
-	if err != nil {
-		return nil, fmt.Errorf("detecting workspace: %w", err)
-	}
-
 	switch ctx.Type {
-	case workspace.ContextSingleSkill:
-		return ctx.Skills, nil
-	case workspace.ContextMultiSkill:
+	case workspace.ContextSingleSkill, workspace.ContextMultiSkill:
 		return ctx.Skills, nil
 	default:
 		return nil, fmt.Errorf("no skills detected in workspace; provide a path or skill name")
@@ -72,7 +60,7 @@ func resolveEvalPath(si *workspace.SkillInfo) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("detecting workspace: %w", err)
 	}
-	// Ensure this skill is in the context
+	// Ensure the skill is in the context so FindEval can locate it
 	found := false
 	for _, s := range ctx.Skills {
 		if s.Name == si.Name {
@@ -81,7 +69,6 @@ func resolveEvalPath(si *workspace.SkillInfo) (string, error) {
 		}
 	}
 	if !found {
-		// Add the skill to context so FindEval works
 		ctx.Skills = append(ctx.Skills, *si)
 	}
 	evalPath, err := workspace.FindEval(ctx, si.Name)
@@ -92,12 +79,4 @@ func resolveEvalPath(si *workspace.SkillInfo) (string, error) {
 		return "", fmt.Errorf("no eval.yaml found for skill %q", si.Name)
 	}
 	return evalPath, nil
-}
-
-// looksLikePath returns true if the string appears to be a file path
-// rather than a skill name.
-func looksLikePath(s string) bool {
-	return strings.ContainsAny(s, `/\`) ||
-		filepath.Ext(s) != "" ||
-		s == "."
 }
