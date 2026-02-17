@@ -211,7 +211,7 @@ func getStdinTextForScript(gradingContext *Context, assertions []string) ([]byte
 		Assertions []string                 `json:"assertions"`
 
 		// Debug causes the underlying scripts to print, to stderr, their stdin contents.
-		Debug      bool                     `json:"debug"`
+		Debug bool `json:"debug"`
 	}{
 		Output:     gradingContext.Output,
 		Outcome:    outcome,

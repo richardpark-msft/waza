@@ -18,13 +18,13 @@ type CopilotEngine struct {
 	modelID string
 
 	// Mutex to protect concurrent access to workspace and client
-	mu        sync.Mutex
-	client    *copilot.Client
+	mu     sync.Mutex
+	client *copilot.Client
 
 	// Sessions run using this copilot instance until the engine is shut down.
 	// This lets us use things like PromptGrader to query the previous context.
 	sessionsIDsMu sync.Mutex
-	sessionsIDs []string
+	sessionsIDs   []string
 
 	workspace string
 }
@@ -145,7 +145,7 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 	e.sessionsIDsMu.Lock()
 	e.sessionsIDs = append(e.sessionsIDs, session.SessionID)
 	e.sessionsIDsMu.Unlock()
-	
+
 	eventsCollector := NewSessionEventsCollector()
 
 	// Event handler with updated API
@@ -203,7 +203,6 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 func (e *CopilotEngine) Shutdown(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-
 
 	if e.client != nil {
 		e.sessionsIDsMu.Lock()
