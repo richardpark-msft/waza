@@ -216,3 +216,12 @@ func isDir(path string) bool {
 	fi, err := os.Stat(path)
 	return err == nil && fi.IsDir()
 }
+
+// LooksLikePath returns true if the string appears to be a file path
+// rather than a skill name. Exported so that CLI packages (cmd/waza,
+// cmd/waza/dev) can share the same heuristic without duplication.
+func LooksLikePath(s string) bool {
+	return strings.ContainsAny(s, `/\`) ||
+		filepath.Ext(s) != "" ||
+		s == "."
+}

@@ -25,7 +25,7 @@ func TestLooksLikePath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			assert.Equal(t, tt.expected, looksLikePath(tt.input))
+			assert.Equal(t, tt.expected, workspace.LooksLikePath(tt.input))
 		})
 	}
 }

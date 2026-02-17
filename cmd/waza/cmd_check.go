@@ -109,12 +109,12 @@ func runCheckForSkills(cmd *cobra.Command, skills []workspace.SkillInfo) error {
 }
 
 func printCheckSummaryTable(w interface{ Write([]byte) (int, error) }, reports []*readinessReport) {
-	fmt.Fprintf(w, "\n")                                                //nolint:errcheck
-	fmt.Fprintf(w, "═══════════════════════════════════════════════\n") //nolint:errcheck
-	fmt.Fprintf(w, " CHECK SUMMARY\n")
-	fmt.Fprintf(w, "═══════════════════════════════════════════════\n\n")
-	fmt.Fprintf(w, "%-25s %-15s %-12s %s\n", "Skill", "Compliance", "Tokens", "Eval")
-	fmt.Fprintf(w, "%s\n", strings.Repeat("─", 60))
+	fmt.Fprintf(w, "\n")                                                              //nolint:errcheck
+	fmt.Fprintf(w, "═══════════════════════════════════════════════\n")               //nolint:errcheck
+	fmt.Fprintf(w, " CHECK SUMMARY\n")                                                //nolint:errcheck
+	fmt.Fprintf(w, "═══════════════════════════════════════════════\n\n")             //nolint:errcheck
+	fmt.Fprintf(w, "%-25s %-15s %-12s %s\n", "Skill", "Compliance", "Tokens", "Eval") //nolint:errcheck
+	fmt.Fprintf(w, "%s\n", strings.Repeat("─", 60))                                   //nolint:errcheck
 
 	for _, r := range reports {
 		name := r.skillName
@@ -129,10 +129,10 @@ func printCheckSummaryTable(w interface{ Write([]byte) (int, error) }, reports [
 		if !r.hasEval {
 			evalStatus = "⚠️"
 		}
-		fmt.Fprintf(w, "%-25s %-15s %s %d/%-6d %s\n",
+		fmt.Fprintf(w, "%-25s %-15s %s %d/%-6d %s\n", //nolint:errcheck
 			name, r.complianceLevel, tokenStatus, r.tokenCount, r.tokenLimit, evalStatus)
 	}
-	fmt.Fprintf(w, "\n")
+	fmt.Fprintf(w, "\n") //nolint:errcheck
 }
 
 func checkReadiness(skillDir string) (*readinessReport, error) {
