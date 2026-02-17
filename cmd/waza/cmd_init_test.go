@@ -4,99 +4,107 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
-
-	"github.com/spboyer/waza/internal/models"
 )
+
+func TestInitCommand_CreatesProjectStructure(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "my-project")
+
+	var buf bytes.Buffer
+	cmd := newInitCommand()
+	cmd.SetOut(&buf)
+	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetArgs([]string{target, "--no-skill"})
+	require.NoError(t, cmd.Execute())
+
+	// Verify directories created
+	assert.DirExists(t, filepath.Join(target, "skills"))
+	assert.DirExists(t, filepath.Join(target, "evals"))
+
+	// Verify files created
+	assert.FileExists(t, filepath.Join(target, ".github", "workflows", "eval.yml"))
+	assert.FileExists(t, filepath.Join(target, ".gitignore"))
+	assert.FileExists(t, filepath.Join(target, "README.md"))
+
+	// Verify output mentions created status
+	output := buf.String()
+	assert.Contains(t, output, "created")
+	assert.Contains(t, output, "skills")
+	assert.Contains(t, output, "evals")
+	assert.Contains(t, output, "eval.yml")
+	assert.Contains(t, output, ".gitignore")
+	assert.Contains(t, output, "README.md")
+}
+
+func TestInitCommand_Idempotent(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "my-project")
+
+	// Run init first time
+	cmd1 := newInitCommand()
+	cmd1.SetOut(&bytes.Buffer{})
+	cmd1.SetIn(strings.NewReader("skip\n"))
+	cmd1.SetArgs([]string{target, "--no-skill"})
+	require.NoError(t, cmd1.Execute())
+
+	// Run init second time — should succeed and report "exists"
+	var buf bytes.Buffer
+	cmd2 := newInitCommand()
+	cmd2.SetOut(&buf)
+	cmd2.SetIn(strings.NewReader("skip\n"))
+	cmd2.SetArgs([]string{target, "--no-skill"})
+	require.NoError(t, cmd2.Execute())
+
+	output := buf.String()
+	assert.Contains(t, output, "exists")
+}
+
+func TestInitCommand_NeverOverwrites(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "my-project")
+
+	// Create the target directory and a custom README
+	require.NoError(t, os.MkdirAll(target, 0o755))
+	customContent := "# My Custom README\n"
+	require.NoError(t, os.WriteFile(filepath.Join(target, "README.md"), []byte(customContent), 0o644))
+
+	cmd := newInitCommand()
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetArgs([]string{target, "--no-skill"})
+	require.NoError(t, cmd.Execute())
+
+	// Verify the custom README was NOT overwritten
+	data, err := os.ReadFile(filepath.Join(target, "README.md"))
+	require.NoError(t, err)
+	assert.Equal(t, customContent, string(data))
+}
 
 func TestInitCommand_DefaultDir(t *testing.T) {
 	dir := t.TempDir()
 
-	// Change to temp dir so default "." works in an isolated location
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
 	t.Cleanup(func() {
-		err := os.Chdir(origDir)
-		if err != nil {
-			t.Logf("failed to restore working directory: %v", err)
-		}
+		_ = os.Chdir(origDir)
 	})
 
 	var buf bytes.Buffer
 	cmd := newInitCommand()
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{})
+	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetArgs([]string{"--no-skill"})
 	require.NoError(t, cmd.Execute())
 
-	// Verify files exist
-	assert.FileExists(t, filepath.Join(dir, "eval.yaml"))
-	assert.FileExists(t, filepath.Join(dir, "tasks", "example-task.yaml"))
-	assert.FileExists(t, filepath.Join(dir, "fixtures", "example.py"))
-
-	// Verify output mentions files
-	output := buf.String()
-	assert.Contains(t, output, "eval.yaml")
-	assert.Contains(t, output, "example-task.yaml")
-	assert.Contains(t, output, "example.py")
-}
-
-func TestInitCommand_NamedDir(t *testing.T) {
-	parent := t.TempDir()
-	target := filepath.Join(parent, "my-eval")
-
-	var buf bytes.Buffer
-	cmd := newInitCommand()
-	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{target})
-	require.NoError(t, cmd.Execute())
-
-	assert.FileExists(t, filepath.Join(target, "eval.yaml"))
-	assert.FileExists(t, filepath.Join(target, "tasks", "example-task.yaml"))
-	assert.FileExists(t, filepath.Join(target, "fixtures", "example.py"))
-}
-
-func TestInitCommand_ValidSpec(t *testing.T) {
-	dir := t.TempDir()
-
-	cmd := newInitCommand()
-	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetArgs([]string{dir})
-	require.NoError(t, cmd.Execute())
-
-	// Read and parse the generated eval.yaml
-	data, err := os.ReadFile(filepath.Join(dir, "eval.yaml"))
-	require.NoError(t, err)
-
-	var spec models.BenchmarkSpec
-	require.NoError(t, yaml.Unmarshal(data, &spec))
-
-	assert.Equal(t, "my-skill-eval", spec.Name)
-	assert.Equal(t, "my-skill", spec.SkillName)
-	assert.Equal(t, "1.0", spec.Version)
-	assert.Equal(t, "mock", spec.Config.EngineType)
-	assert.Equal(t, 1, spec.Config.RunsPerTest)
-	assert.Equal(t, 300, spec.Config.TimeoutSec)
-	assert.Equal(t, []string{"tasks/*.yaml"}, spec.Tasks)
-}
-
-func TestInitCommand_ExistingDir(t *testing.T) {
-	dir := t.TempDir()
-
-	// Run init twice — second should succeed (overwrite)
-	cmd := newInitCommand()
-	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetArgs([]string{dir})
-	require.NoError(t, cmd.Execute())
-
-	cmd2 := newInitCommand()
-	cmd2.SetOut(&bytes.Buffer{})
-	cmd2.SetArgs([]string{dir})
-	require.NoError(t, cmd2.Execute())
+	assert.DirExists(t, filepath.Join(dir, "skills"))
+	assert.DirExists(t, filepath.Join(dir, "evals"))
+	assert.FileExists(t, filepath.Join(dir, ".gitignore"))
 }
 
 func TestInitCommand_TooManyArgs(t *testing.T) {
@@ -104,6 +112,108 @@ func TestInitCommand_TooManyArgs(t *testing.T) {
 	cmd.SetArgs([]string{"a", "b"})
 	err := cmd.Execute()
 	assert.Error(t, err)
+}
+
+func TestInitCommand_NoSkillFlag(t *testing.T) {
+	dir := t.TempDir()
+
+	var buf bytes.Buffer
+	cmd := newInitCommand()
+	cmd.SetOut(&buf)
+	cmd.SetArgs([]string{dir, "--no-skill"})
+	require.NoError(t, cmd.Execute())
+
+	// Should NOT contain the skill prompt
+	output := buf.String()
+	assert.NotContains(t, output, "Create your first skill?")
+}
+
+func TestInitCommand_SkillPromptSkip(t *testing.T) {
+	dir := t.TempDir()
+
+	var buf bytes.Buffer
+	cmd := newInitCommand()
+	cmd.SetOut(&buf)
+	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetArgs([]string{dir})
+	require.NoError(t, cmd.Execute())
+
+	output := buf.String()
+	assert.Contains(t, output, "Create your first skill?")
+	// Skill directories should NOT exist since user skipped
+	assert.NoDirExists(t, filepath.Join(dir, "skills", "my-skill"))
+}
+
+func TestInitCommand_SkillPromptCreatesSkill(t *testing.T) {
+	dir := t.TempDir()
+
+	var buf bytes.Buffer
+	cmd := newInitCommand()
+	cmd.SetOut(&buf)
+	cmd.SetIn(strings.NewReader("test-skill\n"))
+	cmd.SetArgs([]string{dir})
+	require.NoError(t, cmd.Execute())
+
+	// newCommandE should have created the skill in-project
+	assert.FileExists(t, filepath.Join(dir, "skills", "test-skill", "SKILL.md"))
+	assert.FileExists(t, filepath.Join(dir, "evals", "test-skill", "eval.yaml"))
+}
+
+func TestInitCommand_CIWorkflowContent(t *testing.T) {
+	dir := t.TempDir()
+
+	cmd := newInitCommand()
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetArgs([]string{dir, "--no-skill"})
+	require.NoError(t, cmd.Execute())
+
+	data, err := os.ReadFile(filepath.Join(dir, ".github", "workflows", "eval.yml"))
+	require.NoError(t, err)
+	content := string(data)
+	assert.Contains(t, content, "Run Skill Evaluations")
+	assert.Contains(t, content, "actions/checkout@v4")
+	assert.Contains(t, content, "actions/setup-go@v5")
+	assert.Contains(t, content, "waza run")
+	assert.Contains(t, content, "upload-artifact@v4")
+}
+
+func TestInitCommand_GitignoreContent(t *testing.T) {
+	dir := t.TempDir()
+
+	cmd := newInitCommand()
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetArgs([]string{dir, "--no-skill"})
+	require.NoError(t, cmd.Execute())
+
+	data, err := os.ReadFile(filepath.Join(dir, ".gitignore"))
+	require.NoError(t, err)
+	content := string(data)
+	assert.Contains(t, content, "results.json")
+	assert.Contains(t, content, ".waza-cache/")
+	assert.Contains(t, content, "coverage.txt")
+	assert.Contains(t, content, "*.exe")
+}
+
+func TestInitCommand_ReadmeContent(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "my-project")
+
+	cmd := newInitCommand()
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetArgs([]string{target, "--no-skill"})
+	require.NoError(t, cmd.Execute())
+
+	data, err := os.ReadFile(filepath.Join(target, "README.md"))
+	require.NoError(t, err)
+	content := string(data)
+	assert.Contains(t, content, "# my-project")
+	assert.Contains(t, content, "waza new my-skill")
+	assert.Contains(t, content, "waza run")
+	assert.Contains(t, content, "waza check")
+	assert.Contains(t, content, "git push")
 }
 
 func TestRootCommand_HasInitSubcommand(t *testing.T) {
@@ -116,4 +226,45 @@ func TestRootCommand_HasInitSubcommand(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "root command should have 'init' subcommand")
+}
+
+func TestEnsureDir_Creates(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "new-dir")
+	status := ensureDir(target)
+	assert.Equal(t, "✅ created", status)
+	assert.DirExists(t, target)
+}
+
+func TestEnsureDir_Exists(t *testing.T) {
+	dir := t.TempDir()
+	status := ensureDir(dir)
+	assert.Equal(t, "✓ exists", status)
+}
+
+func TestEnsureFile_Creates(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "sub", "file.txt")
+	status, err := ensureFile(target, "hello")
+	require.NoError(t, err)
+	assert.Equal(t, "✅ created", status)
+
+	data, err := os.ReadFile(target)
+	require.NoError(t, err)
+	assert.Equal(t, "hello", string(data))
+}
+
+func TestEnsureFile_Exists(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "file.txt")
+	require.NoError(t, os.WriteFile(target, []byte("original"), 0o644))
+
+	status, err := ensureFile(target, "replaced")
+	require.NoError(t, err)
+	assert.Equal(t, "✓ exists", status)
+
+	// Content should NOT have changed
+	data, err := os.ReadFile(target)
+	require.NoError(t, err)
+	assert.Equal(t, "original", string(data))
 }
