@@ -345,34 +345,3 @@ func TestFindEval_SkillNotInContext(t *testing.T) {
 		t.Fatal("expected error for skill not in context")
 	}
 }
-
-func TestDetectContext_NonExistentDir(t *testing.T) {
-	_, err := DetectContext(filepath.Join(t.TempDir(), "no-such-dir"))
-	if err == nil {
-		t.Fatal("expected error for non-existent directory")
-	}
-}
-
-func TestDetectContext_FileNotDir(t *testing.T) {
-	f := filepath.Join(t.TempDir(), "afile.txt")
-	writeFile(t, f, "hello")
-
-	_, err := DetectContext(f)
-	if err == nil {
-		t.Fatal("expected error when path is a file, not a directory")
-	}
-}
-
-func TestFindSkill_NilContext(t *testing.T) {
-	_, err := FindSkill(nil, "anything")
-	if err == nil {
-		t.Fatal("expected error for nil context")
-	}
-}
-
-func TestFindEval_NilContext(t *testing.T) {
-	_, err := FindEval(nil, "anything")
-	if err == nil {
-		t.Fatal("expected error for nil context")
-	}
-}

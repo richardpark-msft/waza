@@ -89,9 +89,9 @@ func runCheckForSkills(cmd *cobra.Command, skills []workspace.SkillInfo) error {
 	for i, si := range skills {
 		if len(skills) > 1 {
 			if i > 0 {
-				fmt.Fprintln(w)
+				fmt.Fprintln(w) //nolint:errcheck
 			}
-			fmt.Fprintf(w, "\n=== %s ===\n", si.Name)
+			fmt.Fprintf(w, "\n=== %s ===\n", si.Name) //nolint:errcheck
 		}
 
 		report, err := checkReadiness(si.Dir)
@@ -109,8 +109,8 @@ func runCheckForSkills(cmd *cobra.Command, skills []workspace.SkillInfo) error {
 }
 
 func printCheckSummaryTable(w interface{ Write([]byte) (int, error) }, reports []*readinessReport) {
-	fmt.Fprintf(w, "\n")
-	fmt.Fprintf(w, "═══════════════════════════════════════════════\n")
+	fmt.Fprintf(w, "\n")                                                //nolint:errcheck
+	fmt.Fprintf(w, "═══════════════════════════════════════════════\n") //nolint:errcheck
 	fmt.Fprintf(w, " CHECK SUMMARY\n")
 	fmt.Fprintf(w, "═══════════════════════════════════════════════\n\n")
 	fmt.Fprintf(w, "%-25s %-15s %-12s %s\n", "Skill", "Compliance", "Tokens", "Eval")
