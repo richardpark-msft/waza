@@ -35,15 +35,16 @@ const (
 
 // EvaluationOutcome represents the complete result of an evaluation run
 type EvaluationOutcome struct {
-	RunID        string                   `json:"eval_id"`
-	SkillTested  string                   `json:"skill"`
-	BenchName    string                   `json:"eval_name"`
-	Timestamp    time.Time                `json:"timestamp"`
-	Setup        OutcomeSetup             `json:"config"`
-	Digest       OutcomeDigest            `json:"summary"`
-	Measures     map[string]MeasureResult `json:"metrics"`
-	TestOutcomes []TestOutcome            `json:"tasks"`
-	Metadata     map[string]any           `json:"metadata,omitempty"`
+	RunID          string                   `json:"eval_id"`
+	SkillTested    string                   `json:"skill"`
+	BenchName      string                   `json:"eval_name"`
+	Timestamp      time.Time                `json:"timestamp"`
+	Setup          OutcomeSetup             `json:"config"`
+	Digest         OutcomeDigest            `json:"summary"`
+	Measures       map[string]MeasureResult `json:"metrics"`
+	TestOutcomes   []TestOutcome            `json:"tasks"`
+	TriggerMetrics *TriggerMetrics          `json:"trigger_metrics,omitempty"`
+	Metadata       map[string]any           `json:"metadata,omitempty"`
 }
 
 type OutcomeSetup struct {
@@ -70,7 +71,7 @@ type OutcomeDigest struct {
 type MeasureResult struct {
 	Identifier string         `json:"identifier"`
 	Value      float64        `json:"value"`
-	Cutoff     float64        `json:"cutoff"`
+	Threshold  float64        `json:"threshold"`
 	Passed     bool           `json:"passed"`
 	Weight     float64        `json:"weight"`
 	Details    map[string]any `json:"details,omitempty"`
