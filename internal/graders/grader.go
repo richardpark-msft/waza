@@ -44,7 +44,7 @@ type Context struct {
 	// Used by the skill_invocation grader to verify orchestration workflows.
 	SkillInvocations []execution.SkillInvocation
 
-	// SesssionID from this evaluation run.
+	// SessionID from this evaluation run.
 	SessionID string
 }
 

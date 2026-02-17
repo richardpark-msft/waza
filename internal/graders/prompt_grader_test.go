@@ -26,7 +26,33 @@ func skipIfCopilotNotEnabled(t *testing.T) {
 	}
 }
 
-func TestPrompt(t *testing.T) {
+func TestNewPromptGrader(t *testing.T) {
+	_, err := NewPromptGrader("", PromptGraderArgs{
+		Model: "a-model",
+	})
+	require.ErrorContains(t, err, "missing name")
+
+	_, err = NewPromptGrader("name", PromptGraderArgs{
+		Model: "",
+	})
+	require.ErrorContains(t, err, "required field 'prompt' is missing")
+}
+
+func TestPromptGraderNoContinueWithoutIDFails(t *testing.T) {
+	promptGrader, err := NewPromptGrader("my-prompt-grader", PromptGraderArgs{
+		Prompt:          "Prompt not used",
+		ContinueSession: true,
+	})
+	require.NoError(t, err)
+
+	results, err := promptGrader.Grade(context.Background(), &Context{
+		SessionID: "",
+	})
+	require.ErrorContains(t, err, "no session id set, can't continue session in prmopt grading")
+	require.Empty(t, results)
+}
+
+func TestPromptGraderLive(t *testing.T) {
 	skipIfCopilotNotEnabled(t)
 
 	logLevel := &slog.LevelVar{}
@@ -88,13 +114,12 @@ func TestPrompt(t *testing.T) {
 func TestPromptUsingTools(t *testing.T) {
 	skipIfCopilotNotEnabled(t)
 
-	t.Run("list_files_to_pass", func(t *testing.T) {
+	t.Run("check_fours_pass", func(t *testing.T) {
 		promptGrader, err := NewPromptGrader("my-prompt-grader", PromptGraderArgs{
-			//Model:  basicModel,
-			Model: "any model, any time",
-			Prompt: "This test is to see if any files were created, or not. Look in the current folder, and see if there are any Go files at all.\n" +
+			Model: advancedModel,
+			Prompt: "Test if we have any 4s listed in our conversation:\n" +
 				"If there are, call set_waza_grade_pass.\n" +
-				"If there aren't, then call set_waza_grade_fail, with the reason we apparently could not find any files.",
+				"If there aren't, then call set_waza_grade_fail, with the reason",
 		})
 		require.NoError(t, err)
 
@@ -108,12 +133,13 @@ func TestPromptUsingTools(t *testing.T) {
 		require.Equal(t, 1.0, results.Score)
 	})
 
-	t.Run("check_go_package_to_fail", func(t *testing.T) {
+	t.Run("check_fours_fail", func(t *testing.T) {
 		promptGrader, err := NewPromptGrader("my-prompt-grader", PromptGraderArgs{
 			Model: advancedModel,
-			Prompt: "This test is to see if I have a good Go package name, or not. Look at the .go files in this directory, and see if the package name would make you think about scoring.\n" +
-				"- If it _does_, then call set_waza_grade_fail, with your reasoning\n" +
-				"- If it doesn't, call set_waza_grade_pass, with your reasoning\n",
+			// we purposefully flip this so we "fail" if there are any 4s.
+			Prompt: "Test if we have any 4s listed in our conversation:\n" +
+				"- If there are, then call set_waza_grade_fail, with your reasoning\n" +
+				"- If there aren't, call set_waza_grade_pass, with your reasoning\n",
 		})
 		require.NoError(t, err)
 
@@ -122,11 +148,9 @@ func TestPromptUsingTools(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		t.Logf("%#v", results)
-
-		require.Equal(t, AllPromptsPassed, results.Feedback)
-		require.True(t, results.Passed)
-		require.Equal(t, 1.0, results.Score)
+		require.NotEqual(t, AllPromptsPassed, results.Feedback)
+		require.False(t, results.Passed)
+		require.Equal(t, 0.0, results.Score)
 	})
 }
 
@@ -167,6 +191,7 @@ func TestUsingPreviousSessionID(t *testing.T) {
 		resp, err = session.SendAndWait(context.Background(), copilot.MessageOptions{
 			Prompt: "what was the random string?",
 		})
+		require.NoError(t, err)
 
 		if resp.Data.Content != nil {
 			t.Logf("Content: %s", *resp.Data.Content)

@@ -2,6 +2,7 @@ package graders
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -26,6 +27,14 @@ type promptGrader struct {
 }
 
 func NewPromptGrader(name string, args PromptGraderArgs) (*promptGrader, error) {
+	if name == "" {
+		return nil, errors.New("missing name")
+	}
+
+	if args.Prompt == "" {
+		return nil, errors.New("required field 'prompt' is missing")
+	}
+
 	return &promptGrader{
 		name: name,
 		args: args,
@@ -54,6 +63,10 @@ func (p *promptGrader) Grade(ctx context.Context, gradingContext *Context) (*mod
 		wazaTools := newWazaGraderTools()
 
 		if p.args.ContinueSession {
+			if gradingContext.SessionID == "" {
+				return nil, errors.New("no session id set, can't continue session in prmopt grading")
+			}
+
 			// resume the previous session, but use a different model for the judge.
 			session, err = client.ResumeSessionWithOptions(ctx,
 				gradingContext.SessionID,
@@ -85,7 +98,7 @@ func (p *promptGrader) Grade(ctx context.Context, gradingContext *Context) (*mod
 			return nil, fmt.Errorf("failed to send prompt: %w", err)
 		}
 
-		var score float64 = 0.0
+		var score = 0.0
 		total := len(wazaTools.Failures) + len(wazaTools.Passes)
 
 		if total > 0 {
@@ -107,10 +120,8 @@ func (p *promptGrader) Grade(ctx context.Context, gradingContext *Context) (*mod
 		}
 
 		return &models.GraderResults{
-			Name: p.name,
-			Type: p.Kind(),
-			// TODO: seems okay to say "you never passed anything, you never failed anything" and count that as a failure
-			// since its a likely mistake.
+			Name:     p.name,
+			Type:     p.Kind(),
 			Passed:   len(wazaTools.Failures) == 0 && len(wazaTools.Passes) > 0,
 			Score:    score,
 			Feedback: feedback,

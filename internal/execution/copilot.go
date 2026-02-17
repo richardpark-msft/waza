@@ -140,7 +140,7 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 	}
 
 	// We'll destroy all the sessions after we shut down the entire engine instance.
-	// this let's load up the previous session context if we want to run things like
+	// this lets load up the previous session context if we want to run things like
 	// prompt grading later.
 	e.sessionsIDsMu.Lock()
 	e.sessionsIDs = append(e.sessionsIDs, session.SessionID)
