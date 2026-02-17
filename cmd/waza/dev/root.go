@@ -7,7 +7,7 @@ import (
 // NewCommand returns the `waza dev` sub-command tree.
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "dev [skill-path]",
+		Use:   "dev [skill-name | skill-path]",
 		Short: "Iteratively improve skill frontmatter compliance",
 		Long: `Run a frontmatter improvement loop on a skill directory.
 
@@ -15,9 +15,9 @@ Reads SKILL.md from the target directory, scores frontmatter compliance, suggest
 optionally applies improvements, iterates until the target adherence level is reached
 or max iterations are exhausted.
 
-If skill-path is omitted, the current working directory is used.
-
-Example:
+With no arguments, uses workspace detection to find the skill automatically.
+You can also specify a skill name or path:
+  waza dev code-explainer
   waza dev skills/code-explainer --target high --max-iterations 3`,
 		Args:          cobra.MaximumNArgs(1),
 		RunE:          runDev,

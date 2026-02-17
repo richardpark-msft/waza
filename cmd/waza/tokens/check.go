@@ -13,6 +13,7 @@ import (
 
 	"github.com/spboyer/waza/cmd/waza/tokens/internal"
 	"github.com/spboyer/waza/internal/tokens"
+	"github.com/spboyer/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -25,6 +26,8 @@ func newCheckCmd() *cobra.Command {
 Paths may be files or directories (scanned recursively for .md/.mdx files).
 A relative path is resolved from the working directory; an absolute path is
 used as-is. When no path is given, the working directory is scanned.
+
+Use --skill to scope token checking to a specific skill's directory.
 
 When no .token-limits.json is found, these defaults apply:
 
@@ -43,6 +46,7 @@ When no .token-limits.json is found, these defaults apply:
 	cmd.Flags().String("format", "table", "Output format: json | table")
 	cmd.Flags().Bool("strict", false, "Exit with code 1 if any file exceeds its limit")
 	cmd.Flags().Bool("quiet", false, "Suppress output when no limit is exceeded")
+	cmd.Flags().String("skill", "", "Scope token checking to a specific skill by name")
 	return cmd
 }
 
@@ -74,10 +78,28 @@ func runCheck(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	skillName, err := cmd.Flags().GetString("skill")
+	if err != nil {
+		return err
+	}
 
 	rootDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("getting current directory: %w", err)
+	}
+
+	// If --skill is given, scope to that skill's directory
+	if skillName != "" {
+		ctx, ctxErr := workspace.DetectContext(rootDir)
+		if ctxErr != nil {
+			return fmt.Errorf("detecting workspace for --skill: %w", ctxErr)
+		}
+		si, findErr := workspace.FindSkill(ctx, skillName)
+		if findErr != nil {
+			return findErr
+		}
+		rootDir = si.Dir
+		args = nil // reset paths since we're scoping to skill dir
 	}
 
 	cfg, err := internal.LoadConfig(rootDir)
