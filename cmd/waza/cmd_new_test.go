@@ -21,7 +21,7 @@ func TestNewCommand_InProjectMode(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	var buf bytes.Buffer
 	cmd := newNewCommand()
@@ -69,7 +69,7 @@ func TestNewCommand_StandaloneMode(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	var buf bytes.Buffer
 	cmd := newNewCommand()
@@ -108,7 +108,7 @@ func TestNewCommand_NoOverwriteSafety(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	// Pre-create SKILL.md with custom content
 	skillDir := filepath.Join(dir, "skills", "my-skill")
@@ -185,7 +185,7 @@ func TestNewCommand_NameValidation(t *testing.T) {
 			origDir, err := os.Getwd()
 			require.NoError(t, err)
 			require.NoError(t, os.Chdir(dir))
-			t.Cleanup(func() { _ = os.Chdir(origDir) })
+			t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 			cmd := newNewCommand()
 			cmd.SetOut(&bytes.Buffer{})
@@ -214,7 +214,7 @@ func TestNewCommand_EvalYAMLContent(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	cmd := newNewCommand()
 	cmd.SetOut(&bytes.Buffer{})
@@ -245,7 +245,7 @@ func TestNewCommand_SkillMDContent(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	cmd := newNewCommand()
 	cmd.SetOut(&bytes.Buffer{})
@@ -272,7 +272,7 @@ func TestNewCommand_TaskFileIDs(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	cmd := newNewCommand()
 	cmd.SetOut(&bytes.Buffer{})
@@ -310,7 +310,7 @@ func TestNewCommand_InteractiveFlagAccepted(t *testing.T) {
 	cmd.SetIn(strings.NewReader(""))
 	cmd.SetArgs([]string{"--interactive", "test-skill"})
 	// The wizard will fail reading stdin (EOF), which is expected
-	_ = cmd.Execute()
+	_ = cmd.Execute() //nolint:errcheck // EOF error expected
 }
 
 // ── Template Flag Tests ────────────────────────────────────────────────────────
@@ -321,7 +321,7 @@ func TestNewCommand_TemplateFlagNote(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	var buf bytes.Buffer
 	cmd := newNewCommand()
@@ -354,7 +354,7 @@ func TestNewCommand_StandaloneCIWorkflowContent(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	cmd := newNewCommand()
 	cmd.SetOut(&bytes.Buffer{})
@@ -375,7 +375,7 @@ func TestNewCommand_StandaloneGitignoreContent(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	cmd := newNewCommand()
 	cmd.SetOut(&bytes.Buffer{})
@@ -396,7 +396,7 @@ func TestNewCommand_StandaloneReadmeContent(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	cmd := newNewCommand()
 	cmd.SetOut(&bytes.Buffer{})
@@ -420,7 +420,7 @@ func TestNewCommand_FixtureContent(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	cmd := newNewCommand()
 	cmd.SetOut(&bytes.Buffer{})
