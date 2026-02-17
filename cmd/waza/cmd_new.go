@@ -63,7 +63,10 @@ func newCommandE(cmd *cobra.Command, args []string, interactive bool, templatePa
 		if err != nil {
 			return fmt.Errorf("wizard failed: %w", err)
 		}
-		// Override the skill name with the argument
+		// Validate wizard name against CLI arg
+		if spec.Name != "" && spec.Name != skillName {
+			return fmt.Errorf("wizard name %q does not match CLI argument %q", spec.Name, skillName)
+		}
 		spec.Name = skillName
 		content, err := wizard.GenerateSkillMD(spec)
 		if err != nil {
@@ -85,7 +88,8 @@ func validateSkillName(name string) error {
 	if name == "" {
 		return fmt.Errorf("skill name must not be empty")
 	}
-	if strings.Contains(name, "/") || strings.Contains(name, "\\") || strings.Contains(name, "..") {
+	cleaned := filepath.Clean(name)
+	if cleaned == ".." || strings.Contains(cleaned, "/") || strings.Contains(cleaned, "\\") {
 		return fmt.Errorf("skill name %q contains invalid path characters", name)
 	}
 	return nil
@@ -180,7 +184,7 @@ type fileEntry struct {
 
 // writeFiles writes each file, skipping any that already exist.
 func writeFiles(cmd *cobra.Command, files []fileEntry) error {
-	fmt.Fprintln(cmd.OutOrStdout(), "Created skill scaffold:") //nolint:errcheck
+	fmt.Fprintln(cmd.OutOrStdout(), "Scaffolding skill:") //nolint:errcheck
 
 	for _, f := range files {
 		if _, err := os.Stat(f.path); err == nil {
@@ -213,6 +217,7 @@ func titleCase(s string) string {
 func defaultSkillMD(name string) string {
 	return fmt.Sprintf(`---
 name: %s
+type: utility
 description: |
   USE FOR: %s tasks, ...
   DO NOT USE FOR: unrelated tasks, ...
