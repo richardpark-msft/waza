@@ -56,7 +56,7 @@ func NewInlineScriptGrader(name string, language Language, assertions []string) 
 	switch language {
 	case LanguagePython:
 		g.scriptExt = "py"
-		g.scriptBin = "python"
+		g.scriptBin = resolvePythonBin()
 		g.scriptContents = evalWrapperPy
 	case LanguageJavascript:
 		g.scriptExt = "js"
@@ -67,6 +67,13 @@ func NewInlineScriptGrader(name string, language Language, assertions []string) 
 	}
 
 	return g, nil
+}
+
+func resolvePythonBin() string {
+	if _, err := exec.LookPath("python3"); err == nil {
+		return "python3"
+	}
+	return "python"
 }
 
 func (isg *InlineScriptGrader) Name() string            { return isg.name }
