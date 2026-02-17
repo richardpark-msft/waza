@@ -26,7 +26,7 @@ graders:
       assertions:
         - "len(output) > 10"
         - "'success' in output.lower()"
-  
+
   - type: regex
     name: format_check
     config:
@@ -182,10 +182,10 @@ import sys
 
 def grade(context: dict) -> dict:
     output = context.get("output", "")
-    
+
     # Your custom logic here
     score = 1.0 if "success" in output else 0.0
-    
+
     return {
         "score": score,
         "passed": score >= 0.5,
@@ -305,11 +305,11 @@ Uses an AI model to evaluate quality.
   model: gpt-4o-mini
   rubric: |
     Score the skill execution from 1-5:
-    
+
     1. Correctness: Did it accomplish the task?
     2. Completeness: Were all requirements addressed?
     3. Quality: Was the approach appropriate?
-    
+
     Return JSON: {"score": N, "reasoning": "...", "passed": true/false}
 ```
 
@@ -593,16 +593,16 @@ Uses a language model to evaluate skill execution quality based on a rubric. Thi
     model: gpt-4o-mini
     rubric: |
       Evaluate the code explanation on these criteria:
-      
+
       1. **Correctness** (1-5): Is the explanation technically accurate?
       2. **Completeness** (1-5): Are all key concepts covered?
       3. **Clarity** (1-5): Is it easy to understand?
-      
+
       Provide:
       - A score for each criterion (1-5)
       - Overall assessment (1-5)
       - Brief reasoning
-      
+
       Return JSON:
       {
         "correctness": <1-5>,
@@ -644,23 +644,23 @@ A rubric is a structured evaluation criteria that guides the LLM's assessment:
     model: gpt-4o
     rubric: |
       Evaluate the agent's performance:
-      
+
       **Criteria:**
       1. Task Completion (1-5): Did the agent accomplish the stated goal?
          - 1: Failed completely
          - 3: Partially completed
          - 5: Fully completed with excellence
-      
+
       2. Approach Quality (1-5): Was the approach appropriate and efficient?
          - 1: Poor approach with significant issues
          - 3: Adequate but could be improved
          - 5: Excellent, optimal approach
-      
+
       3. Code Quality (1-5): Is the code well-structured and maintainable?
          - 1: Poor structure, hard to maintain
          - 3: Acceptable quality
          - 5: Excellent quality, follows best practices
-      
+
       **Output Format (JSON):**
       {
         "task_completion": <score>,
@@ -670,7 +670,7 @@ A rubric is a structured evaluation criteria that guides the LLM's assessment:
         "reasoning": "<2-3 sentence explanation>",
         "passed": <true if overall_score >= 3.5>
       }
-      
+
       Think step-by-step and provide honest, critical evaluation.
     threshold: 0.7
     score_type: normalized
@@ -696,14 +696,14 @@ rubric: |
   1. Contains user authentication
   2. Follows security best practices
   3. Includes error handling
-  
+
   Return JSON: {"score": 1 or 0, "passed": true/false, "reasoning": "..."}
 
 # Comparative evaluation
 rubric: |
   Compare the agent's solution to this reference approach:
   [reference description]
-  
+
   Rate similarity (1-5) and quality improvement (1-5).
   Return JSON with scores and reasoning.
 
@@ -713,7 +713,7 @@ rubric: |
   - Naming conventions
   - Documentation completeness
   - Code organization
-  
+
   Return JSON with per-criterion scores and overall assessment.
 ```
 
@@ -771,16 +771,16 @@ result = evaluator(query=query, response=response)
     model: gpt-4o-mini
     rubric: |
       Evaluate how relevant the agent's response is to the user's query.
-      
+
       Query: [Available in the test case prompt; the agent's response is provided as 'output']
-      
+
       Rate relevance (1-5):
       1 - Completely irrelevant
       2 - Slightly relevant
       3 - Moderately relevant
       4 - Very relevant
       5 - Perfectly relevant and comprehensive
-      
+
       Return JSON: {
         "relevance_score": <1-5>,
         "reasoning": "<explanation>",
@@ -807,15 +807,15 @@ evaluator = Prompty.load("security_evaluator.prompty")
     model: gpt-4o
     rubric: |
       Evaluate the code for security vulnerabilities:
-      
+
       Criteria:
       1. Input Validation: Are inputs properly validated?
       2. Authentication: Is auth implemented correctly?
       3. Data Protection: Is sensitive data protected?
       4. Error Handling: Are errors handled securely?
-      
+
       For each criterion, rate 1-5 and provide specific findings.
-      
+
       Return JSON: {
         "input_validation": <score>,
         "authentication": <score>,
@@ -863,7 +863,7 @@ Becomes:
     rubric: |
       Evaluate the code quality on a scale of 1-5...
       [evaluation criteria - copied from .prompty]
-      
+
       Return JSON: {"score": <1-5>, "reasoning": "..."}
 ```
 
@@ -886,16 +886,16 @@ To create graders that match Azure ML evaluator patterns:
     model: gpt-4o-mini
     rubric: |
       Evaluate [what you're assessing] based on:
-      
+
       1. [Criterion 1] (1-5): [Description]
       2. [Criterion 2] (1-5): [Description]
       3. [Criterion 3] (1-5): [Description]
-      
+
       For each criterion:
       - Consider [specific aspects]
       - Rate honestly and critically
       - Provide specific examples
-      
+
       Return JSON: {
         "criterion1_score": <1-5>,
         "criterion2_score": <1-5>,
@@ -904,7 +904,7 @@ To create graders that match Azure ML evaluator patterns:
         "reasoning": "<detailed explanation>",
         "passed": <true/false based on threshold>
       }
-      
+
       Context available:
       - output: The agent's final response
       - tool_calls: List of tools the agent used
@@ -940,13 +940,101 @@ graders:
   - type: code
     name: basic_check
     # Default weight: 1.0
-  
+
   - type: llm
     name: quality_check
     # Default weight: 1.0
 ```
 
 **Final Score:** Average of all grader scores (weighted if specified)
+
+---
+
+## Trigger Tests
+
+Trigger tests measure whether a skill activates for the right prompts and stays
+silent for the wrong ones. They run automatically when a `trigger_tests.yaml`
+file exists alongside `eval.yaml`.
+
+### File Format
+
+```yaml
+skill: code-explainer
+
+should_trigger_prompts:
+  - prompt: "Explain this code to me"
+    reason: "Direct explanation request"        # optional, for documentation
+    confidence: high                            # high (default) or medium
+
+  - prompt: "I don't understand what this code is doing"
+    confidence: medium
+
+should_not_trigger_prompts:
+  - prompt: "Write me a function to sort a list"
+    reason: "Code writing request, not explanation"
+    confidence: high
+
+  - prompt: "Fix the bug in my code"
+    confidence: medium
+```
+
+**Fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `skill` | yes | Skill name to check for invocation |
+| `should_trigger_prompts` | at least one of the two prompt lists | Prompts where the skill should activate |
+| `should_not_trigger_prompts` | at least one of the two prompt lists | Prompts where the skill should stay silent |
+| `prompt` | yes | The test prompt text |
+| `reason` | no | Human-readable explanation (not used in scoring) |
+| `confidence` | no | `high` (default) or `medium` — controls scoring weight |
+
+### Confidence Weighting
+
+Each prompt's result is weighted by its confidence level:
+
+- **`high`** (or omitted): weight **1.0** — a clear-cut case where the expected
+  behavior is unambiguous.
+- **`medium`**: weight **0.5** — an edge case or borderline prompt where the
+  expected behavior is less certain.
+
+This lets you include borderline prompts without letting them dominate the score.
+For example a "medium" false positive penalizes accuracy half as much as a "high"
+one.
+
+### Metrics
+
+Trigger tests produce standard classification metrics:
+
+| Metric | Description |
+|--------|-------------|
+| **Accuracy** | (TP + TN) / total |
+| **Precision** | TP / (TP + FP) — how often activation was correct |
+| **Recall** | TP / (TP + FN) — how often it activated when it should have |
+| **F1** | Harmonic mean of precision and recall |
+| **Errors** | Prompts that failed to execute (counted as incorrect) |
+
+### Using `trigger_accuracy` as a Metric
+
+Add `trigger_accuracy` to the `metrics` section of your `eval.yaml` to set a
+pass/fail threshold:
+
+```yaml
+metrics:
+  - name: trigger_accuracy
+    threshold: 0.9
+    weight: 30
+```
+
+When configured, trigger accuracy is included in the benchmark outcome and the
+run fails if accuracy falls below the threshold.
+
+### Error Handling
+
+When a prompt fails to execute (engine error), it counts as an incorrect
+classification — a false negative for should-trigger prompts or a false positive
+for should-not-trigger prompts. The error count is reported separately so you can
+distinguish engine failures from genuine misclassifications.
 
 ---
 
@@ -963,7 +1051,7 @@ class MyCustomGrader(Grader):
     @property
     def grader_type(self) -> GraderType:
         return GraderType.CODE
-    
+
     def grade(self, context: GraderContext) -> GraderResult:
         # Your logic here
         return GraderResult(
