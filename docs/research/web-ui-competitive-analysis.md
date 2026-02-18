@@ -334,7 +334,134 @@ Build command: `cd web && npm run build` → outputs to `web/dist/` → Go binar
 
 ---
 
-## 7. Key Design Questions
+## 7. User Workflow
+
+The waza Web UI dashboard is designed as a **CLI-first, dashboard-second** experience. Users run evaluations from the terminal, then visualize and analyze results in the browser. This section describes the complete end-to-end journey.
+
+### End-to-End User Journey
+
+#### 1. Run Evals from CLI
+The user executes evaluations from the command line using the existing `waza run` command:
+```bash
+waza run examples/code-explainer/eval.yaml --context-dir examples/code-explainer/fixtures -o results.json
+```
+This produces:
+- **JSON results file** (`results.json`) containing benchmark metadata, test cases, and evaluation outcomes
+- **Session logs** containing detailed execution traces, agent trajectories, and grader outputs
+
+#### 2. Launch the Dashboard
+The user starts the Web UI server with a single command:
+```bash
+waza serve
+```
+The `waza serve` command:
+- Launches an embedded HTTP server (default port `3000`, configurable via `--port`)
+- Automatically opens the browser at `http://localhost:3000`
+- Prints the dashboard URL to the terminal for reference
+- Loads results from JSON files and session logs in the default directory (or via `--results-dir`)
+
+#### 3. Orient — KPI Cards (Phase 1)
+The dashboard landing page displays 5–6 summary cards providing instant orientation:
+- **Total Runs** — count of all evaluations executed
+- **Tasks** — count of test cases across all runs
+- **Pass Rate** — percentage of tasks passing all graders
+- **Avg Tokens** — average token consumption per run
+- **Avg Cost** — estimated cost per run (based on model pricing)
+- **Avg Duration** — average time per run in seconds
+
+These cards require no clicking — the user understands the evaluation health at a glance.
+
+#### 4. Browse Runs — Recent Runs Table (Phase 1)
+Below the KPI cards, a sortable table lists all evaluation runs in reverse chronological order:
+- **Columns:** Run ID, Timestamp, Model, Task Count, Pass Count, Pass Rate, Avg Tokens, Total Cost, Duration
+- **Sorting:** Click any column header to sort
+- **Row drill-down:** Click a run row to expand per-task results showing:
+  - Task name and description
+  - Grader outcomes (pass/fail badges)
+  - Numerical scores from each grader
+  - Which graders fired for this task
+
+#### 5. Compare — Model & Scenario Analysis (Phase 2)
+A **Comparison view** allows side-by-side analysis across dimensions:
+- **Filter tabs:** Switch between Efficiency (tokens/run), Cost, Time, and Quality views
+- **Delta indicators:** Red/green badges showing improvement or regression vs. a baseline run
+- **Model comparison:** Side-by-side metrics for different models (e.g., claude-opus-4.6 vs sonnet-4.5)
+- **Compliance scores:** Sensei engine compliance scoring per skill, displayed as pass/fail indicators or percentages
+
+The user can select two runs and see detailed deltas across all metrics.
+
+#### 6. Trend — Over Time (Phase 2)
+Line charts visualize performance trends:
+- **Tokens/run over time** — track whether recent skill iterations have improved or increased token usage
+- **Cost/run over time** — monitor spending trends and cost-saving opportunities
+- **X-axis:** Chronological run dates (e.g., last 30 days)
+- **Y-axis:** Metric value (tokens, cost, duration)
+- **Multiple series:** Option to overlay trends from different models or skills
+
+This helps teams identify regressions early and celebrate improvements.
+
+#### 7. Deep Dive — Trajectory & Live Stream (Phase 3)
+Advanced exploration features for detailed investigation:
+- **Live streaming:** Watch `waza run` execute in real-time via Server-Sent Events (SSE). Progress updates appear on the dashboard without page refresh.
+- **Agent trajectory:** Click into a task to view the full execution trace:
+  - Tool calls (with arguments and responses)
+  - File edits (diffs of changes made)
+  - Skill invocations and their outcomes
+  - LLM reasoning steps (if available)
+- **CSV export:** Download run results as a CSV file for use in spreadsheets or external analytics
+
+### CLI-First, Dashboard-Second
+
+**Key positioning insight:** Waza's workflow inverts the traditional dashboard-first model used by competitors.
+
+| Aspect | Waza | SkillsBench | MSBench |
+|--------|------|-------------|---------|
+| **Primary interface** | CLI | Dashboard | CLI only |
+| **Eval execution** | `waza run` (terminal) | Web UI form | `msbench eval` (terminal) |
+| **Results view** | `waza serve` (browser) | Automatic | External reporting |
+| **Deployment** | Single binary (go:embed) | Separate deployment | No dashboard |
+| **UX philosophy** | Run → Understand → Iterate | Dashboard → Run | Run → Export → Analyze |
+
+**Why CLI-first?**
+1. **Power users start here:** Engineers and CI/CD pipelines naturally work in the terminal
+2. **Reproducibility:** Every eval is a documented CLI invocation (easy to version control and share)
+3. **Integration:** `waza run` output feeds directly into dashboards, monitoring, and post-processing scripts
+4. **Single binary:** The `go:embed` approach means `waza serve` is bundled automatically — no separate installation, no deployment complexity
+
+The dashboard is the **second step** — you've already run your evals, collected the data, and now you want to understand what happened. This is a fundamental shift from SkillsBench (dashboard-first) and MSBench (CLI-only with no dashboard).
+
+### Workflow Diagram
+
+```
+┌──────────────┐
+│  CLI         │
+│ waza run     │  User executes evaluations from terminal
+│  eval.yaml   │  → Produces: results.json + session logs
+└──────┬───────┘
+       │
+       ↓
+┌──────────────────────┐
+│  Results             │
+│  (JSON + logs)       │  Data accumulated locally
+└──────┬───────────────┘
+       │
+       ↓
+┌──────────────┐
+│ Dashboard    │
+│ waza serve   │  Single binary, embedded SPA
+│ :3000        │  → Visualize and analyze results
+└──────┬───────┘
+       │
+       ↓
+┌──────────────┐
+│  Iterate     │  Run new evals with improvements
+│  (Loop back) │  → Track trends over time
+└──────────────┘
+```
+
+---
+
+## 8. Key Design Questions
 
 These are open decisions for the team before implementation begins:
 
