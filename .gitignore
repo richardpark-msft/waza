@@ -1,6 +1,6 @@
 node_modules/
 
-# Python
+# Python (legacy)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -8,11 +8,10 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -71,17 +70,14 @@ azure-validate-eval/
 azure-validate-transcript.json
 tmp/
 waza-demo.sh
-suggesstions.mdsuggestions.md
+suggestions.md
 
 # Binaries
 *.exe
 *.dll
 *.so
 *.dylib
-
-# Test results
-results.json
-transcript.json
+/waza-bin
 
 # Go build artifacts
 *.test
@@ -105,4 +101,12 @@ coverage.html
 
 # Downloaded tools
 actionlint
+
+# Web UI build artifacts
+web/dist/
+
+# Playwright test artifacts
+web/playwright-report/
+web/test-results/
+web/blob-report/
 
