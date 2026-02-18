@@ -92,7 +92,7 @@ func TestInitCommand_DefaultDir(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
 	t.Cleanup(func() {
-		_ = os.Chdir(origDir)
+		os.Chdir(origDir) //nolint:errcheck // best-effort cleanup
 	})
 
 	var buf bytes.Buffer
