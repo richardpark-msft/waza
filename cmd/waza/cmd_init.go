@@ -94,10 +94,11 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 	// fall back to accessible (number-entry) mode for pipes/CI.
 	accessible := !term.IsTerminal(int(os.Stdin.Fd()))
 
-	// Build a single form with all needed prompts to avoid reader buffering issues
+	// Build form with one question per group (shown one at a time)
 	var groups []*huh.Group
 
 	if needConfigPrompt {
+		// Group 1: Engine selection
 		groups = append(groups, huh.NewGroup(
 			huh.NewSelect[string]().
 				Title("Default evaluation engine").
@@ -107,7 +108,10 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 					huh.NewOption("Mock — fast iteration, no API calls", "mock"),
 				).
 				Value(&engine),
+		))
 
+		// Group 2: Model selection (only shown when engine is copilot-sdk)
+		groups = append(groups, huh.NewGroup(
 			huh.NewSelect[string]().
 				Title("Default model").
 				Description("Model used for evaluations").
@@ -119,10 +123,13 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 					huh.NewOption("o3-mini", "o3-mini"),
 				).
 				Value(&model),
-		))
+		).WithHideFunc(func() bool {
+			return engine != "copilot-sdk"
+		}))
 	}
 
 	if needSkillPrompt {
+		// Group 3: Create first skill?
 		groups = append(groups, huh.NewGroup(
 			huh.NewConfirm().
 				Title("Create your first skill?").
@@ -131,6 +138,7 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 				Value(&createSkill),
 		))
 
+		// Group 4: Skill name (only shown if user said yes)
 		groups = append(groups, huh.NewGroup(
 			huh.NewInput().
 				Title("Skill name").
