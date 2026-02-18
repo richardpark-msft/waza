@@ -88,7 +88,7 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 	var engine, model, skillName string
 	var createSkill bool
 	engine = "copilot-sdk"
-	model = "gpt-4o"
+	model = "claude-sonnet-4.6"
 
 	// Use interactive (arrow-key) mode when running in a terminal,
 	// fall back to accessible (number-entry) mode for pipes/CI.
@@ -111,16 +111,31 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 		))
 
 		// Group 2: Model selection (only shown when engine is copilot-sdk)
+		// Note: Copilot SDK (v0.1.22) has no model enumeration API.
+		// Update this list as new models become available.
 		groups = append(groups, huh.NewGroup(
 			huh.NewSelect[string]().
 				Title("Default model").
 				Description("Model used for evaluations").
 				Options(
-					huh.NewOption("gpt-4o", "gpt-4o"),
-					huh.NewOption("gpt-4o-mini", "gpt-4o-mini"),
+					huh.NewOption("claude-sonnet-4.6", "claude-sonnet-4.6"),
+					huh.NewOption("claude-sonnet-4.5", "claude-sonnet-4.5"),
+					huh.NewOption("claude-haiku-4.5", "claude-haiku-4.5"),
+					huh.NewOption("claude-opus-4.6", "claude-opus-4.6"),
+					huh.NewOption("claude-opus-4.6-fast", "claude-opus-4.6-fast"),
+					huh.NewOption("claude-opus-4.5", "claude-opus-4.5"),
 					huh.NewOption("claude-sonnet-4", "claude-sonnet-4"),
-					huh.NewOption("claude-haiku-4", "claude-haiku-4"),
-					huh.NewOption("o3-mini", "o3-mini"),
+					huh.NewOption("gemini-3-pro-preview", "gemini-3-pro-preview"),
+					huh.NewOption("gpt-5.3-codex", "gpt-5.3-codex"),
+					huh.NewOption("gpt-5.2-codex", "gpt-5.2-codex"),
+					huh.NewOption("gpt-5.2", "gpt-5.2"),
+					huh.NewOption("gpt-5.1-codex-max", "gpt-5.1-codex-max"),
+					huh.NewOption("gpt-5.1-codex", "gpt-5.1-codex"),
+					huh.NewOption("gpt-5.1", "gpt-5.1"),
+					huh.NewOption("gpt-5", "gpt-5"),
+					huh.NewOption("gpt-5.1-codex-mini", "gpt-5.1-codex-mini"),
+					huh.NewOption("gpt-5-mini", "gpt-5-mini"),
+					huh.NewOption("gpt-4.1", "gpt-4.1"),
 				).
 				Value(&model),
 		).WithHideFunc(func() bool {
@@ -169,7 +184,7 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 		if err := form.Run(); err != nil {
 			// Non-interactive — use defaults, skip skill creation
 			engine = "copilot-sdk"
-			model = "gpt-4o"
+			model = "claude-sonnet-4.6"
 			createSkill = false
 		}
 	}

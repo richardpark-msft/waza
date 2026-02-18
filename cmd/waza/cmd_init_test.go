@@ -245,7 +245,7 @@ func TestInitCommand_WazaYAMLContent(t *testing.T) {
 	require.NoError(t, err)
 	content := string(data)
 	assert.Contains(t, content, "engine: copilot-sdk")
-	assert.Contains(t, content, "model: gpt-4o")
+	assert.Contains(t, content, "model: claude-sonnet-4.6")
 	assert.Contains(t, content, "defaults:")
 }
 
