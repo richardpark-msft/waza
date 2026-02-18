@@ -267,10 +267,10 @@ tasks:
 }
 
 // readProjectDefaults reads engine and model from .waza.yaml if it exists.
-// Falls back to copilot-sdk and gpt-4o.
+// Falls back to copilot-sdk and claude-sonnet-4.6.
 func readProjectDefaults() (engine, model string) {
 	engine = "copilot-sdk"
-	model = "gpt-4o"
+	model = "claude-sonnet-4.6"
 
 	// Walk up from CWD looking for .waza.yaml
 	dir, err := os.Getwd()
