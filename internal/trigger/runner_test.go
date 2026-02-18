@@ -10,6 +10,7 @@ import (
 	"github.com/spboyer/waza/internal/config"
 	"github.com/spboyer/waza/internal/execution"
 	"github.com/spboyer/waza/internal/models"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDiscover(t *testing.T) {
@@ -23,9 +24,7 @@ func TestDiscover(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if spec == nil {
-			t.Fatal("expected spec, got nil")
-		}
+		require.NotNil(t, spec, "expected spec, got nil")
 		if spec.Skill != "test-skill" {
 			t.Errorf("skill = %q, want %q", spec.Skill, "test-skill")
 		}
@@ -76,9 +75,7 @@ func TestDiscoverExampleFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Discover(%q) error: %v", dir, err)
 	}
-	if spec == nil {
-		t.Skip("examples/code-explainer/trigger_tests.yaml not found")
-	}
+	require.NotNil(t, spec, "examples/code-explainer/trigger_tests.yaml not found")
 	if spec.Skill == "" {
 		t.Error("spec.Skill is empty")
 	}
@@ -159,9 +156,7 @@ func TestRunnerRunConfig(t *testing.T) {
 	if _, err := r.Run(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	if engine.lastReq == nil {
-		t.Fatal("expected a captured request")
-	}
+	require.NotNil(t, engine.lastReq, "expected a captured request")
 	if engine.lastReq.TimeoutSec != 120 {
 		t.Errorf("TimeoutSec = %d, want 120", engine.lastReq.TimeoutSec)
 	}
