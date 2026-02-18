@@ -3,6 +3,8 @@ package models
 import (
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestComputeTriggerMetrics(t *testing.T) {
@@ -160,9 +162,7 @@ func TestComputeTriggerMetrics(t *testing.T) {
 				}
 				return
 			}
-			if got == nil {
-				t.Fatal("expected non-nil result, got nil")
-			}
+			require.NotNil(t, got)
 			if got.TP != tt.want.TP || got.FP != tt.want.FP ||
 				got.TN != tt.want.TN || got.FN != tt.want.FN {
 				t.Errorf("confusion matrix: got TP=%d FP=%d TN=%d FN=%d, want TP=%d FP=%d TN=%d FN=%d",
