@@ -31,7 +31,7 @@ Idempotently ensures the project has:
 
 Only creates what's missing — never overwrites existing files.
 
-After scaffolding, prompts to create your first skill (calls waza new internally).
+After scaffolding, prompts to create a new skill (calls waza new internally).
 
 Use --no-skill to skip the skill creation prompt.
 Use --interactive for project-level wizard (reserved for future use).
@@ -134,7 +134,7 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 			createSkill = true // default to Yes
 			groups = append(groups, huh.NewGroup(
 				huh.NewConfirm().
-					Title("Create your first skill?").
+					Title("Create a new skill?").
 					Affirmative("Yes").
 					Negative("No").
 					Value(&createSkill),
@@ -268,7 +268,7 @@ defaults:
 		fmt.Fprintf(out, "✅ Repaired — %d item(s) added.\n", created) //nolint:errcheck
 	}
 
-	// --- Phase 5: Create first skill if requested ---
+	// --- Phase 5: Create skill if requested ---
 	skillName = strings.TrimSpace(skillName)
 	if createSkill && skillName != "" {
 		origDir, err := os.Getwd()
