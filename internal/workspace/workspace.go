@@ -29,7 +29,7 @@ type SkillInfo struct {
 	Name      string // skill name from SKILL.md frontmatter
 	Dir       string // absolute path to the skill directory (containing SKILL.md)
 	SkillPath string // absolute path to SKILL.md
-	EvalPath  string // absolute path to eval.yaml; not populated by DetectContext — use FindEval()
+	EvalPath  string // absolute path to eval.yaml (empty if not found)
 }
 
 // WorkspaceContext represents the detected workspace.
@@ -49,14 +49,6 @@ func DetectContext(dir string) (*WorkspaceContext, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, fmt.Errorf("resolving absolute path: %w", err)
-	}
-
-	info, err := os.Stat(absDir)
-	if err != nil {
-		return nil, fmt.Errorf("workspace directory %q: %w", absDir, err)
-	}
-	if !info.IsDir() {
-		return nil, fmt.Errorf("workspace path %q is not a directory", absDir)
 	}
 
 	// 1. Check if SKILL.md exists in the given directory
@@ -119,9 +111,6 @@ func DetectContext(dir string) (*WorkspaceContext, error) {
 
 // FindSkill locates a named skill in the workspace.
 func FindSkill(ctx *WorkspaceContext, name string) (*SkillInfo, error) {
-	if ctx == nil {
-		return nil, fmt.Errorf("workspace context is nil")
-	}
 	for i := range ctx.Skills {
 		if ctx.Skills[i].Name == name {
 			return &ctx.Skills[i], nil
@@ -136,9 +125,6 @@ func FindSkill(ctx *WorkspaceContext, name string) (*SkillInfo, error) {
 // 3. {skill-dir}/eval.yaml                (co-located/legacy)
 // Returns empty string if none found (not an error).
 func FindEval(ctx *WorkspaceContext, skillName string) (string, error) {
-	if ctx == nil {
-		return "", fmt.Errorf("workspace context is nil")
-	}
 	si, err := FindSkill(ctx, skillName)
 	if err != nil {
 		return "", err
@@ -188,7 +174,6 @@ func tryParseSkill(dir string) (SkillInfo, bool) {
 func scanForSkills(parentDir string) []SkillInfo {
 	entries, err := os.ReadDir(parentDir)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: cannot read directory %q: %v\n", parentDir, err)
 		return nil
 	}
 
@@ -230,4 +215,13 @@ func isFile(path string) bool {
 func isDir(path string) bool {
 	fi, err := os.Stat(path)
 	return err == nil && fi.IsDir()
+}
+
+// LooksLikePath returns true if the string appears to be a file path
+// rather than a skill name. Exported so that CLI packages (cmd/waza,
+// cmd/waza/dev) can share the same heuristic without duplication.
+func LooksLikePath(s string) bool {
+	return strings.ContainsAny(s, `/\`) ||
+		filepath.Ext(s) != "" ||
+		s == "."
 }

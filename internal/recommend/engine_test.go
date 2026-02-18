@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/spboyer/waza/internal/models"
+	"github.com/stretchr/testify/require"
 )
 
 func makeOutcome(aggScore float64, successRate float64, stdDev float64, durationMs int64) *models.EvaluationOutcome {
@@ -26,9 +27,7 @@ func TestRecommend_TwoModels(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation, got nil")
-	}
+	require.NotNil(t, rec)
 	if rec.RecommendedModel != "claude-sonnet-4" {
 		t.Errorf("expected claude-sonnet-4, got %s", rec.RecommendedModel)
 	}
@@ -92,9 +91,7 @@ func TestRecommend_TiedScores(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation for tied models, got nil")
-	}
+	require.NotNil(t, rec)
 	// First in input order wins ties (stable sort)
 	if rec.RecommendedModel != "model-a" {
 		t.Errorf("expected model-a (first in order) for tie, got %s", rec.RecommendedModel)
@@ -113,9 +110,7 @@ func TestRecommend_ThreeModels(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation, got nil")
-	}
+	require.NotNil(t, rec)
 	if rec.RecommendedModel != "model-b" {
 		t.Errorf("expected model-b as winner, got %s", rec.RecommendedModel)
 	}
@@ -141,9 +136,7 @@ func TestRecommend_WeightsApplied(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation, got nil")
-	}
+	require.NotNil(t, rec)
 
 	// Verify weights are set correctly
 	if rec.Weights.AggregateScore != 0.40 {
@@ -229,9 +222,7 @@ func TestRecommend_ZeroScores(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation for zero scores, got nil")
-	}
+	require.NotNil(t, rec)
 	// Both should have equal scores; first in order wins
 	if rec.RecommendedModel != "model-a" {
 		t.Errorf("expected model-a for tied zero scores, got %s", rec.RecommendedModel)
@@ -247,9 +238,7 @@ func TestRecommend_ComponentScoresInRange(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation, got nil")
-	}
+	require.NotNil(t, rec)
 
 	for _, ms := range rec.ModelScores {
 		for key, score := range ms.Scores {
@@ -286,9 +275,7 @@ func TestRecommend_HeuristicScoreMax(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation, got nil")
-	}
+	require.NotNil(t, rec)
 	for _, ms := range rec.ModelScores {
 		if ms.HeuristicScore > 10.0 {
 			t.Errorf("%s heuristic score %f exceeds 10.0", ms.ModelID, ms.HeuristicScore)
@@ -307,9 +294,7 @@ func TestRecommend_MarginCalculation(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation, got nil")
-	}
+	require.NotNil(t, rec)
 	if rec.WinnerMarginPct <= 0 {
 		t.Errorf("expected positive margin, got %f", rec.WinnerMarginPct)
 	}
@@ -327,9 +312,7 @@ func TestRecommend_MarginZeroRunnerUp(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation, got nil")
-	}
+	require.NotNil(t, rec)
 	// When runner-up score is 0, margin can't be computed as percentage
 	if math.IsNaN(rec.WinnerMarginPct) || math.IsInf(rec.WinnerMarginPct, 0) {
 		t.Errorf("margin should not be NaN or Inf, got %f", rec.WinnerMarginPct)
@@ -347,9 +330,7 @@ func TestRecommend_DuplicateModelIDs(t *testing.T) {
 	}
 
 	rec := engine.Recommend(results)
-	if rec == nil {
-		t.Fatal("expected recommendation, got nil")
-	}
+	require.NotNil(t, rec)
 	if len(rec.ModelScores) != 2 {
 		t.Fatalf("expected 2 model scores, got %d", len(rec.ModelScores))
 	}

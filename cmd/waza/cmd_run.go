@@ -19,6 +19,7 @@ import (
 	"github.com/spboyer/waza/internal/reporting"
 	"github.com/spboyer/waza/internal/trigger"
 	"github.com/spboyer/waza/internal/utils"
+	"github.com/spboyer/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -47,13 +48,20 @@ type modelResult struct {
 
 func newRunCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "run <eval.yaml>",
+		Use:   "run [eval.yaml | skill-name]",
 		Short: "Run an evaluation benchmark",
 		Long: `Run an evaluation benchmark from a spec file.
 
 The spec file defines the benchmark configuration, test cases, and validation rules.
-Resources are loaded from the context directory (defaults to ./fixtures).`,
-		Args: cobra.ExactArgs(1),
+Resources are loaded from the context directory (defaults to ./fixtures).
+
+With no arguments, uses workspace detection to find eval.yaml automatically:
+  - Single-skill workspace → runs that skill's eval
+  - Multi-skill workspace → runs ALL evals sequentially with summary
+
+You can also specify a skill name to run its eval:
+  waza run code-explainer`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: runCommandE,
 	}
 
@@ -76,7 +84,121 @@ Resources are loaded from the context directory (defaults to ./fixtures).`,
 }
 
 func runCommandE(cmd *cobra.Command, args []string) error {
-	specPath := args[0]
+	// Resolve spec path: explicit arg or workspace detection
+	specPaths, err := resolveSpecPaths(args)
+	if err != nil {
+		return err
+	}
+
+	if len(specPaths) == 1 {
+		return runCommandForSpec(cmd, specPaths[0])
+	}
+
+	// Multi-skill run — run each eval sequentially
+	var allSkillResults []skillRunResult
+	var lastErr error
+	for _, sp := range specPaths {
+		fmt.Printf("\n=== %s ===\n\n", sp.skillName)
+		result := skillRunResult{skillName: sp.skillName}
+		if err := runCommandForSpec(cmd, sp); err != nil {
+			var testErr *TestFailureError
+			if errors.As(err, &testErr) {
+				result.err = err
+				lastErr = err
+			} else {
+				return err
+			}
+		}
+		allSkillResults = append(allSkillResults, result)
+	}
+
+	if len(allSkillResults) > 1 {
+		printSkillRunSummary(allSkillResults)
+	}
+
+	return lastErr
+}
+
+type skillSpecPath struct {
+	specPath  string
+	skillName string
+}
+
+type skillRunResult struct {
+	skillName string
+	err       error
+}
+
+// resolveSpecPaths resolves eval.yaml paths from args or workspace detection.
+func resolveSpecPaths(args []string) ([]skillSpecPath, error) {
+	if len(args) > 0 {
+		arg := args[0]
+		// If it looks like a path, use directly
+		if workspace.LooksLikePath(arg) {
+			return []skillSpecPath{{specPath: arg}}, nil
+		}
+		// Treat as skill name
+		skills, err := resolveSkillsFromArgs(args)
+		if err != nil {
+			return nil, err
+		}
+		if len(skills) == 0 {
+			return nil, fmt.Errorf("skill %q not found", arg)
+		}
+		evalPath, err := resolveEvalPath(&skills[0])
+		if err != nil {
+			return nil, err
+		}
+		return []skillSpecPath{{specPath: evalPath, skillName: skills[0].Name}}, nil
+	}
+
+	// No args — workspace detection
+	skills, err := resolveSkillsFromArgs(nil)
+	if err != nil {
+		return nil, fmt.Errorf("no eval.yaml specified and workspace detection failed: %w", err)
+	}
+
+	var paths []skillSpecPath
+	for _, si := range skills {
+		evalPath, err := resolveEvalPath(&si)
+		if err != nil {
+			if len(skills) == 1 {
+				return nil, err
+			}
+			fmt.Printf("⚠️  Skipping %s: %v\n", si.Name, err)
+			continue
+		}
+		paths = append(paths, skillSpecPath{specPath: evalPath, skillName: si.Name})
+	}
+
+	if len(paths) == 0 {
+		return nil, fmt.Errorf("no eval.yaml found for any detected skills")
+	}
+
+	return paths, nil
+}
+
+func printSkillRunSummary(results []skillRunResult) {
+	fmt.Println()
+	fmt.Println("═══════════════════════════════════════════════")
+	fmt.Println(" MULTI-SKILL RUN SUMMARY")
+	fmt.Println("═══════════════════════════════════════════════")
+	fmt.Println()
+	fmt.Printf("%-25s %s\n", "Skill", "Status")
+	fmt.Println(strings.Repeat("─", 40))
+	for _, r := range results {
+		status := "✅ Passed"
+		if r.err != nil {
+			status = "❌ Failed"
+		}
+		fmt.Printf("%-25s %s\n", r.skillName, status)
+	}
+	fmt.Println()
+}
+
+// runCommandForSpec runs the evaluation for a single spec path.
+func runCommandForSpec(cmd *cobra.Command, sp skillSpecPath) error {
+	specPath := sp.specPath
 
 	// Load spec
 	spec, err := models.LoadBenchmarkSpec(specPath)
