@@ -5,18 +5,20 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spboyer/waza/internal/hooks"
 	"gopkg.in/yaml.v3"
 )
 
 // BenchmarkSpec represents a complete evaluation specification
 type BenchmarkSpec struct {
 	SpecIdentity `yaml:",inline"`
-	SkillName    string           `yaml:"skill"`
-	Version      string           `yaml:"version"`
-	Config       Config           `yaml:"config"`
-	Graders      []GraderConfig   `yaml:"graders"`
-	Metrics      []MeasurementDef `yaml:"metrics"`
-	Tasks        []string         `yaml:"tasks"`
+	SkillName    string            `yaml:"skill"`
+	Version      string            `yaml:"version"`
+	Config       Config            `yaml:"config"`
+	Hooks        hooks.HooksConfig `yaml:"hooks,omitempty"`
+	Graders      []GraderConfig    `yaml:"graders"`
+	Metrics      []MeasurementDef  `yaml:"metrics"`
+	Tasks        []string          `yaml:"tasks"`
 }
 
 type SpecIdentity struct {
@@ -36,6 +38,7 @@ type Config struct {
 	SkillPaths     []string       `yaml:"skill_directories,omitempty" json:"skill_paths,omitempty"`
 	RequiredSkills []string       `yaml:"required_skills,omitempty" json:"required_skills,omitempty"`
 	ServerConfigs  map[string]any `yaml:"mcp_servers,omitempty" json:"server_configs,omitempty"`
+	MaxAttempts    int            `yaml:"max_attempts,omitempty" json:"max_attempts,omitempty"`
 }
 
 // GraderConfig defines a validator/grader
