@@ -231,14 +231,16 @@ func TestRootCommand_HasInitSubcommand(t *testing.T) {
 func TestEnsureDir_Creates(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "new-dir")
-	status := ensureDir(target)
+	status, err := ensureDir(target)
+	require.NoError(t, err)
 	assert.Equal(t, "✅ created", status)
 	assert.DirExists(t, target)
 }
 
 func TestEnsureDir_Exists(t *testing.T) {
 	dir := t.TempDir()
-	status := ensureDir(dir)
+	status, err := ensureDir(dir)
+	require.NoError(t, err)
 	assert.Equal(t, "✓ exists", status)
 }
 

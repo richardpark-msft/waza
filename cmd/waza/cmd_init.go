@@ -47,7 +47,7 @@ If no directory is specified, the current directory is used.`,
 	return cmd
 }
 
-func initCommandE(cmd *cobra.Command, args []string, _ bool, noSkill bool) error {
+func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill bool) error {
 	dir := "."
 	if len(args) > 0 {
 		dir = args[0]
@@ -60,6 +60,9 @@ func initCommandE(cmd *cobra.Command, args []string, _ bool, noSkill bool) error
 	out := cmd.OutOrStdout()
 	projectName := filepath.Base(absOrDefault(dir))
 
+	if interactive {
+		fmt.Fprintln(out, "Note: interactive project setup coming soon. Using defaults.") //nolint:errcheck
+	}
 	fmt.Fprintf(out, "Initializing waza project in %s\n\n", dir) //nolint:errcheck
 
 	// Ensure required directories
@@ -67,7 +70,10 @@ func initCommandE(cmd *cobra.Command, args []string, _ bool, noSkill bool) error
 		filepath.Join(dir, "skills"),
 		filepath.Join(dir, "evals"),
 	} {
-		status := ensureDir(d)
+		status, err := ensureDir(d)
+		if err != nil {
+			return err
+		}
 		fmt.Fprintf(out, "  %s %s\n", status, d) //nolint:errcheck
 	}
 
@@ -102,15 +108,15 @@ func initCommandE(cmd *cobra.Command, args []string, _ bool, noSkill bool) error
 }
 
 // ensureDir creates a directory if it doesn't exist and returns a status indicator.
-func ensureDir(path string) string {
+func ensureDir(path string) (string, error) {
 	if info, err := os.Stat(path); err == nil && info.IsDir() {
-		return "✓ exists"
+		return "✓ exists", nil
 	}
 
 	if err := os.MkdirAll(path, 0o755); err != nil {
-		return "✗ failed"
+		return "", fmt.Errorf("failed to create directory %s: %w", path, err)
 	}
-	return "✅ created"
+	return "✅ created", nil
 }
 
 // ensureFile creates a file with content if it doesn't exist.
