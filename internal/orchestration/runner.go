@@ -568,6 +568,7 @@ func (r *TestRunner) runTestUncached(ctx context.Context, tc *models.TestCase, t
 	return models.TestOutcome{
 		TestID:      tc.TestID,
 		DisplayName: tc.DisplayName,
+		Group:       r.resolveGroup(),
 		Status:      status,
 		Runs:        runs,
 		Stats:       stats,
@@ -936,6 +937,9 @@ func (r *TestRunner) buildOutcome(testOutcomes []models.TestOutcome, startTime t
 	aggregateScore := r.computeAggregateScore(testOutcomes)
 	digestMin, digestMax, digestStdDev := r.computeDigestScoreStats(testOutcomes)
 
+	// Compute group stats if grouping is configured
+	groupStats := computeGroupStats(testOutcomes)
+
 	return &models.EvaluationOutcome{
 		RunID:       fmt.Sprintf("run-%d", time.Now().Unix()),
 		SkillTested: spec.SkillName,
@@ -959,6 +963,7 @@ func (r *TestRunner) buildOutcome(testOutcomes []models.TestOutcome, startTime t
 			MaxScore:       digestMax,
 			StdDev:         digestStdDev,
 			DurationMs:     time.Since(startTime).Milliseconds(),
+			Groups:         groupStats,
 		},
 		Measures:     make(map[string]models.MeasureResult),
 		TestOutcomes: testOutcomes,
@@ -1008,4 +1013,72 @@ func (r *TestRunner) computeDigestScoreStats(testOutcomes []models.TestOutcome) 
 	}
 
 	return minScore, maxScore, models.ComputeStdDev(scores)
+}
+
+// resolveGroup returns the group value for the current benchmark configuration.
+// Currently only "model" is supported; CSV column grouping will be added with #187.
+func (r *TestRunner) resolveGroup() string {
+	spec := r.cfg.Spec()
+	switch spec.Config.GroupBy {
+	case "model":
+		return spec.Config.ModelID
+	case "":
+		return ""
+	default:
+		fmt.Printf("[WARN] unknown group_by value %q, grouping disabled\n", spec.Config.GroupBy)
+		return ""
+	}
+}
+
+// computeGroupStats aggregates per-group statistics from test outcomes.
+func computeGroupStats(outcomes []models.TestOutcome) []models.GroupStats {
+	type accumulator struct {
+		passed     int
+		total      int
+		scoreTotal float64
+		scoreCount int
+	}
+
+	groups := make(map[string]*accumulator)
+	var order []string
+
+	for _, to := range outcomes {
+		if to.Group == "" {
+			continue
+		}
+		acc, exists := groups[to.Group]
+		if !exists {
+			acc = &accumulator{}
+			groups[to.Group] = acc
+			order = append(order, to.Group)
+		}
+		acc.total++
+		if to.Status == models.StatusPassed {
+			acc.passed++
+		}
+		if to.Stats != nil {
+			acc.scoreTotal += to.Stats.AvgScore
+			acc.scoreCount++
+		}
+	}
+
+	if len(groups) == 0 {
+		return nil
+	}
+
+	result := make([]models.GroupStats, 0, len(order))
+	for _, name := range order {
+		acc := groups[name]
+		avg := 0.0
+		if acc.scoreCount > 0 {
+			avg = acc.scoreTotal / float64(acc.scoreCount)
+		}
+		result = append(result, models.GroupStats{
+			Name:     name,
+			Passed:   acc.passed,
+			Total:    acc.total,
+			AvgScore: avg,
+		})
+	}
+	return result
 }
