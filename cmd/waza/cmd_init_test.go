@@ -18,7 +18,7 @@ func TestInitCommand_CreatesProjectStructure(t *testing.T) {
 	var buf bytes.Buffer
 	cmd := newInitCommand()
 	cmd.SetOut(&buf)
-	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd.SetArgs([]string{target, "--no-skill"})
 	require.NoError(t, cmd.Execute())
 
@@ -50,7 +50,7 @@ func TestInitCommand_Idempotent(t *testing.T) {
 	// Run init first time
 	cmd1 := newInitCommand()
 	cmd1.SetOut(&bytes.Buffer{})
-	cmd1.SetIn(strings.NewReader("skip\n"))
+	cmd1.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd1.SetArgs([]string{target, "--no-skill"})
 	require.NoError(t, cmd1.Execute())
 
@@ -58,7 +58,7 @@ func TestInitCommand_Idempotent(t *testing.T) {
 	var buf bytes.Buffer
 	cmd2 := newInitCommand()
 	cmd2.SetOut(&buf)
-	cmd2.SetIn(strings.NewReader("skip\n"))
+	cmd2.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd2.SetArgs([]string{target, "--no-skill"})
 	require.NoError(t, cmd2.Execute())
 
@@ -77,7 +77,7 @@ func TestInitCommand_NeverOverwrites(t *testing.T) {
 
 	cmd := newInitCommand()
 	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd.SetArgs([]string{target, "--no-skill"})
 	require.NoError(t, cmd.Execute())
 
@@ -100,7 +100,7 @@ func TestInitCommand_DefaultDir(t *testing.T) {
 	var buf bytes.Buffer
 	cmd := newInitCommand()
 	cmd.SetOut(&buf)
-	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd.SetArgs([]string{"--no-skill"})
 	require.NoError(t, cmd.Execute())
 
@@ -136,7 +136,7 @@ func TestInitCommand_SkillPromptSkip(t *testing.T) {
 	var buf bytes.Buffer
 	cmd := newInitCommand()
 	cmd.SetOut(&buf)
-	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd.SetArgs([]string{dir})
 	require.NoError(t, cmd.Execute())
 
@@ -149,12 +149,20 @@ func TestInitCommand_SkillPromptSkip(t *testing.T) {
 func TestInitCommand_SkillPromptCreatesSkill(t *testing.T) {
 	dir := t.TempDir()
 
+	// Pre-create .waza.yaml so init skips config prompts (only skill prompt runs)
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".waza.yaml"),
+		[]byte("defaults:\n  engine: mock\n  model: gpt-4o\n"), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "skills"), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "evals"), 0o755))
+
 	var buf bytes.Buffer
 	cmd := newInitCommand()
 	cmd.SetOut(&buf)
 	cmd.SetIn(strings.NewReader("test-skill\n"))
 	cmd.SetArgs([]string{dir})
-	require.NoError(t, cmd.Execute())
+	err := cmd.Execute()
+	t.Logf("Output: %s", buf.String())
+	require.NoError(t, err)
 
 	// newCommandE should have created the skill in-project
 	assert.FileExists(t, filepath.Join(dir, "skills", "test-skill", "SKILL.md"))
@@ -166,7 +174,7 @@ func TestInitCommand_CIWorkflowContent(t *testing.T) {
 
 	cmd := newInitCommand()
 	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd.SetArgs([]string{dir, "--no-skill"})
 	require.NoError(t, cmd.Execute())
 
@@ -185,7 +193,7 @@ func TestInitCommand_GitignoreContent(t *testing.T) {
 
 	cmd := newInitCommand()
 	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd.SetArgs([]string{dir, "--no-skill"})
 	require.NoError(t, cmd.Execute())
 
@@ -204,7 +212,7 @@ func TestInitCommand_ReadmeContent(t *testing.T) {
 
 	cmd := newInitCommand()
 	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd.SetArgs([]string{target, "--no-skill"})
 	require.NoError(t, cmd.Execute())
 
@@ -224,7 +232,7 @@ func TestInitCommand_WazaYAMLContent(t *testing.T) {
 
 	cmd := newInitCommand()
 	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetIn(strings.NewReader("skip\n"))
+	cmd.SetIn(strings.NewReader("1\n\nskip\n"))
 	cmd.SetArgs([]string{target, "--no-skill"})
 	require.NoError(t, cmd.Execute())
 

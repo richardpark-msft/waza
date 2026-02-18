@@ -1,13 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 )
 
@@ -77,12 +76,95 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 		fmt.Fprintf(out, "  %s %s\n", status, d) //nolint:errcheck
 	}
 
-	// Ensure required files
+	// Ensure required files — .waza.yaml needs special handling for prompts
+	wazaConfigPath := filepath.Join(dir, ".waza.yaml")
+	_, wazaExists := os.Stat(wazaConfigPath)
+
+	needConfigPrompt := wazaExists != nil
+	needSkillPrompt := !noSkill
+
+	// Collect all prompt values
+	var engine, model, skillName string
+	engine = "copilot-sdk"
+	model = "gpt-4o"
+
+	// Build a single form with all needed prompts to avoid reader buffering issues
+	var groups []*huh.Group
+
+	if needConfigPrompt {
+		groups = append(groups, huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Default evaluation engine").
+				Description("Used when generating eval.yaml files with 'waza new'").
+				Options(
+					huh.NewOption("Copilot SDK (real model execution)", "copilot-sdk"),
+					huh.NewOption("Mock (fast iteration, no API calls)", "mock"),
+				).
+				Value(&engine),
+
+			huh.NewInput().
+				Title("Default model").
+				Description("Model identifier for evaluations").
+				Placeholder("gpt-4o").
+				Value(&model),
+		))
+	}
+
+	if needSkillPrompt {
+		groups = append(groups, huh.NewGroup(
+			huh.NewInput().
+				Title("Create your first skill?").
+				Description("Enter a skill name, or leave empty to skip").
+				Placeholder("my-skill").
+				Value(&skillName),
+		))
+	}
+
+	if len(groups) > 0 {
+		form := huh.NewForm(groups...).
+			WithAccessible(true).
+			WithInput(cmd.InOrStdin()).
+			WithOutput(cmd.OutOrStdout())
+
+		if err := form.Run(); err != nil {
+			// Non-interactive — use defaults, skip skill creation
+			engine = "copilot-sdk"
+			model = "gpt-4o"
+			skillName = ""
+		}
+	}
+
+	if strings.TrimSpace(model) == "" {
+		model = "gpt-4o"
+	}
+
+	// Write .waza.yaml if needed
+	if needConfigPrompt {
+		content := fmt.Sprintf(`# yaml-language-server: $schema=https://raw.githubusercontent.com/spboyer/waza/main/schemas/waza-config.schema.json
+# Waza project configuration
+# These defaults are used by 'waza new' when generating eval.yaml files
+# and by 'waza run' as fallback values when not specified in eval.yaml.
+defaults:
+  engine: %s
+  model: %s
+`, engine, model)
+		if err := os.MkdirAll(filepath.Dir(wazaConfigPath), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(wazaConfigPath, []byte(content), 0o644); err != nil {
+			return err
+		}
+	}
+	wazaStatus := "✓ exists "
+	if needConfigPrompt {
+		wazaStatus = "✅ created"
+	}
+	fmt.Fprintf(out, "  %s %s\n", wazaStatus, wazaConfigPath) //nolint:errcheck
+
 	fileEntries := []struct {
 		path    string
 		content string
 	}{
-		{filepath.Join(dir, ".waza.yaml"), initWazaConfig()},
 		{filepath.Join(dir, ".github", "workflows", "eval.yml"), initCIWorkflow()},
 		{filepath.Join(dir, ".gitignore"), initGitignore()},
 		{filepath.Join(dir, "README.md"), initReadme(projectName)},
@@ -98,11 +180,24 @@ func initCommandE(cmd *cobra.Command, args []string, interactive bool, noSkill b
 
 	fmt.Fprintln(out) //nolint:errcheck
 
-	// Prompt for first skill unless --no-skill
-	if !noSkill {
-		if err := promptFirstSkill(cmd, dir); err != nil {
-			return err
+	// Create first skill if requested
+	skillName = strings.TrimSpace(skillName)
+	if skillName != "" && !strings.EqualFold(skillName, "skip") {
+		origDir, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get working directory: %w", err)
 		}
+		absDir, err := filepath.Abs(dir)
+		if err != nil {
+			return fmt.Errorf("failed to resolve directory: %w", err)
+		}
+		if err := os.Chdir(absDir); err != nil {
+			return fmt.Errorf("failed to change to project directory: %w", err)
+		}
+		defer os.Chdir(origDir) //nolint:errcheck
+
+		fmt.Fprintln(cmd.OutOrStdout()) //nolint:errcheck
+		return newCommandE(cmd, []string{skillName}, false, "")
 	}
 
 	return nil
@@ -137,55 +232,6 @@ func ensureFile(path, content string) (string, error) {
 	return "✅ created", nil
 }
 
-// promptFirstSkill asks the user to create their first skill.
-func promptFirstSkill(cmd *cobra.Command, dir string) error {
-	out := cmd.OutOrStdout()
-	in := cmd.InOrStdin()
-
-	fmt.Fprint(out, "Create your first skill? (name or skip): ") //nolint:errcheck
-
-	name, err := readLine(in)
-	if err != nil {
-		return nil // EOF or error means skip
-	}
-
-	name = strings.TrimSpace(name)
-	if name == "" || strings.EqualFold(name, "skip") {
-		return nil
-	}
-
-	// Change to the target directory so newCommandE sees skills/ as project root
-	origDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get working directory: %w", err)
-	}
-
-	absDir, err := filepath.Abs(dir)
-	if err != nil {
-		return fmt.Errorf("failed to resolve directory: %w", err)
-	}
-
-	if err := os.Chdir(absDir); err != nil {
-		return fmt.Errorf("failed to change to project directory: %w", err)
-	}
-	defer os.Chdir(origDir) //nolint:errcheck
-
-	fmt.Fprintln(out) //nolint:errcheck
-	return newCommandE(cmd, []string{name}, false, "")
-}
-
-// readLine reads a single line from the reader.
-func readLine(r io.Reader) (string, error) {
-	scanner := bufio.NewScanner(r)
-	if scanner.Scan() {
-		return scanner.Text(), nil
-	}
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-	return "", io.EOF
-}
-
 // absOrDefault returns the absolute path, falling back to the input on error.
 func absOrDefault(path string) string {
 	abs, err := filepath.Abs(path)
@@ -196,17 +242,6 @@ func absOrDefault(path string) string {
 }
 
 // --- Init template content ---
-
-func initWazaConfig() string {
-	return `# yaml-language-server: $schema=https://raw.githubusercontent.com/spboyer/waza/main/schemas/waza-config.schema.json
-# Waza project configuration
-# These defaults are used by 'waza new' when generating eval.yaml files
-# and by 'waza run' as fallback values when not specified in eval.yaml.
-defaults:
-  engine: copilot-sdk
-  model: gpt-4o
-`
-}
 
 func initCIWorkflow() string {
 	return `name: Run Skill Evaluations
