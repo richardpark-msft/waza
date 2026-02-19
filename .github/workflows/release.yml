@@ -60,7 +60,7 @@ jobs:
           fi
 
           # Validate semver format (major.minor.patch with optional pre-release)
-          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$'; then
             echo "::error::Invalid semver: $VERSION"
             exit 1
           fi
@@ -266,6 +266,18 @@ jobs:
       - name: Enable azd Extensions
         run: azd config set alpha.extensions on
 
+      - name: Release Extension
+        run: |
+          azd x release \
+            --repo spboyer/waza \
+            --version "$VERSION" \
+            --title "Waza azd Extension v${VERSION}" \
+            --notes-file "./CHANGELOG.md" \
+            --artifacts "./artifacts/*.zip,./artifacts/*.tar.gz" \
+            --confirm
+        env:
+          VERSION: ${{ needs.setup-version.outputs.version }}
+
       - name: Publish Extension
         run: |
           azd x publish \
@@ -323,7 +335,7 @@ jobs:
   # ──────────────────────────────────────────────
   sync-versions:
     name: Sync Versions
-    needs: [setup-version, create-release]
+    needs: [setup-version, create-release, publish-extension]
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -350,7 +362,7 @@ jobs:
           # Update extension.yaml version field if different
           CURRENT_EXT=$(grep '^version:' extension.yaml | awk '{print $2}')
           if [ "$CURRENT_EXT" != "$VERSION" ]; then
-            sed -i "s/^version: .*/version: $VERSION/" extension.yaml
+            sed "s/^version: .*/version: $VERSION/" extension.yaml > extension.yaml.tmp && mv extension.yaml.tmp extension.yaml
             CHANGED=true
             echo "Updated extension.yaml: $CURRENT_EXT -> $VERSION"
           fi
