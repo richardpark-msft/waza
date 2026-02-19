@@ -108,8 +108,10 @@ func detectExistingSkillMD(projectRoot string, inProject bool, skillName string)
 	}
 
 	if _, err := os.Stat(skillMDPath); err == nil {
-		// Try to parse for validation; either way keep existing content
-		generate.ParseSkillMD(skillMDPath) //nolint:errcheck // validation only; we keep existing content regardless
+		if _, parseErr := generate.ParseSkillMD(skillMDPath); parseErr != nil {
+			// Invalid/corrupt SKILL.md — treat as non-existent so we scaffold fresh.
+			return "", false
+		}
 		data, readErr := os.ReadFile(skillMDPath)
 		if readErr == nil {
 			return string(data), true

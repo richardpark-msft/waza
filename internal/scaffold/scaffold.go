@@ -14,6 +14,15 @@ func ValidateName(name string) error {
 	if name == "" {
 		return fmt.Errorf("skill name must not be empty")
 	}
+	// Reject raw input containing path separators or traversal segments
+	// before filepath.Clean can mask them (e.g. "a/.." cleans to ".").
+	if strings.Contains(name, "/") || strings.Contains(name, "\\") {
+		return fmt.Errorf("skill name %q contains invalid path characters", name)
+	}
+	if name == "." || name == ".." || strings.Contains(name, "..") {
+		return fmt.Errorf("skill name %q contains invalid path characters", name)
+	}
+	// Defense-in-depth: reject if Clean still produces traversal.
 	cleaned := filepath.Clean(name)
 	if cleaned == ".." || strings.Contains(cleaned, "/") || strings.Contains(cleaned, "\\") {
 		return fmt.Errorf("skill name %q contains invalid path characters", name)

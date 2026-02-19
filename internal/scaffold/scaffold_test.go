@@ -22,6 +22,10 @@ func TestValidateName(t *testing.T) {
 		{"path traversal dots", "../evil", true, "invalid path characters"},
 		{"forward slash", "a/b", true, "invalid path characters"},
 		{"backslash", "a\\b", true, "invalid path characters"},
+		{"traversal masked by clean", "a/..", true, "invalid path characters"},
+		{"nested traversal", "a/../b", true, "invalid path characters"},
+		{"dot only", ".", true, "invalid path characters"},
+		{"double dot embedded", "foo..bar", true, "invalid path characters"},
 	}
 
 	for _, tc := range tests {

@@ -29,7 +29,7 @@ it is resolved via workspace detection to find the SKILL.md path.`,
 		RunE: generateCommandE,
 	}
 
-	cmd.Flags().StringVarP(&generateOutputDir, "output-dir", "d", "", "Output directory (default: ./eval-{skill-name}/)")
+	cmd.Flags().StringVarP(&generateOutputDir, "output-dir", "d", "", "Output directory (uses legacy generator; default: ./eval-{skill-name}/)")
 
 	return cmd
 }
