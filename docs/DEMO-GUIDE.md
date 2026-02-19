@@ -616,7 +616,7 @@ tasks:
 EOF
 
 # Run the demo
-/path/to/waza/waza-bin run waza-prompt-demo/eval.yaml \
+./waza-bin run waza-prompt-demo/eval.yaml \
   --context-dir waza-prompt-demo/fixtures \
   -v
 ```
