@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/charmbracelet/huh"
+	"github.com/spboyer/waza/internal/scaffold"
 	"golang.org/x/term"
 )
 
@@ -54,10 +55,10 @@ description: >
 `
 
 // RunSkillWizard runs an interactive huh form to collect skill metadata.
-// It reads from the provided reader and writes prompts to the provided writer.
-func RunSkillWizard(in io.Reader, out io.Writer) (*SkillSpec, error) {
+// If initialName is non-empty, it pre-populates the name field.
+func RunSkillWizard(in io.Reader, out io.Writer, initialName string) (*SkillSpec, error) {
 	var (
-		name            string
+		name            = initialName
 		description     string
 		triggersRaw     string
 		antiTriggersRaw string
@@ -72,10 +73,7 @@ func RunSkillWizard(in io.Reader, out io.Writer) (*SkillSpec, error) {
 				Placeholder("my-skill").
 				Value(&name).
 				Validate(func(s string) error {
-					if strings.TrimSpace(s) == "" {
-						return fmt.Errorf("skill name is required")
-					}
-					return nil
+					return scaffold.ValidateName(strings.TrimSpace(s))
 				}),
 			huh.NewInput().
 				Title("Description").

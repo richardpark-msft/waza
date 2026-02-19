@@ -17,7 +17,7 @@ func newNewCommand() *cobra.Command {
 	var template string
 
 	cmd := &cobra.Command{
-		Use:   "new <skill-name>",
+		Use:   "new [skill-name]",
 		Short: "Create a new skill with its eval suite",
 		Long: `Create a new skill and its evaluation suite with a compliant directory structure.
 
@@ -36,8 +36,9 @@ Two modes of operation:
     .gitignore, and README.md.
 
 When running in a terminal (TTY), launches an interactive wizard for skill
-metadata collection. In non-interactive environments (CI, pipes), uses defaults.`,
-		Args: cobra.ExactArgs(1),
+metadata collection. In non-interactive environments (CI, pipes), the skill
+name must be provided as an argument; remaining fields use defaults.`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return newCommandE(cmd, args, template)
 		},
@@ -49,10 +50,12 @@ metadata collection. In non-interactive environments (CI, pipes), uses defaults.
 }
 
 func newCommandE(cmd *cobra.Command, args []string, templatePack string) error {
-	skillName := args[0]
-
-	if err := scaffold.ValidateName(skillName); err != nil {
-		return err
+	initialName := ""
+	if len(args) > 0 {
+		initialName = args[0]
+		if err := scaffold.ValidateName(initialName); err != nil {
+			return err
+		}
 	}
 
 	if templatePack != "" {
@@ -62,30 +65,39 @@ func newCommandE(cmd *cobra.Command, args []string, templatePack string) error {
 	// Determine mode based on skills/ directory presence
 	projectRoot, inProject := findProjectRoot()
 
-	// Check if SKILL.md already exists — if so, skip wizard/generation
-	skillMDContent, skillMDExists := detectExistingSkillMD(projectRoot, inProject, skillName)
+	var skillName string
+	var skillMDContent string
 
-	if !skillMDExists {
-		// Check TTY from the command's input stream, not os.Stdin directly.
-		inReader := cmd.InOrStdin()
-		isTTY := false
-		if f, ok := inReader.(*os.File); ok {
-			isTTY = term.IsTerminal(int(f.Fd()))
+	// Check TTY
+	inReader := cmd.InOrStdin()
+	isTTY := false
+	if f, ok := inReader.(*os.File); ok {
+		isTTY = term.IsTerminal(int(f.Fd()))
+	}
+
+	if isTTY {
+		spec, err := wizard.RunSkillWizard(cmd.InOrStdin(), cmd.OutOrStdout(), initialName)
+		if err != nil {
+			return fmt.Errorf("wizard failed: %w", err)
 		}
-		if isTTY {
-			spec, err := wizard.RunSkillWizard(cmd.InOrStdin(), cmd.OutOrStdout())
-			if err != nil {
-				return fmt.Errorf("wizard failed: %w", err)
-			}
-			if spec.Name != "" && spec.Name != skillName {
-				return fmt.Errorf("wizard name %q does not match CLI argument %q", spec.Name, skillName)
-			}
-			spec.Name = skillName
-			content, err := wizard.GenerateSkillMD(spec)
-			if err != nil {
-				return fmt.Errorf("failed to generate SKILL.md: %w", err)
-			}
-			skillMDContent = content
+		skillName = spec.Name
+		if err := scaffold.ValidateName(skillName); err != nil {
+			return fmt.Errorf("invalid skill name: %w", err)
+		}
+		content, err := wizard.GenerateSkillMD(spec)
+		if err != nil {
+			return fmt.Errorf("failed to generate SKILL.md: %w", err)
+		}
+		skillMDContent = content
+	} else {
+		if initialName == "" {
+			return fmt.Errorf("skill name is required in non-interactive mode (provide as argument)")
+		}
+		skillName = initialName
+		// Check for existing SKILL.md
+		existingContent, exists := detectExistingSkillMD(projectRoot, inProject, skillName)
+		if exists {
+			skillMDContent = existingContent
 		} else {
 			skillMDContent = defaultSkillMD(skillName)
 		}
