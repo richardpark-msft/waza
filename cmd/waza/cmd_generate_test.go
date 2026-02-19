@@ -50,11 +50,13 @@ func TestGenerateCommand_ValidSkill(t *testing.T) {
 	err := cmd.Execute()
 	require.NoError(t, err)
 
-	assert.FileExists(t, filepath.Join(outDir, "eval.yaml"))
-	assert.FileExists(t, filepath.Join(outDir, "tasks", "test-gen-basic.yaml"))
-	assert.FileExists(t, filepath.Join(outDir, "fixtures", "sample.txt"))
+	// With the unified path, standalone scaffolding creates {skill}/evals/...
+	assert.FileExists(t, filepath.Join(outDir, "test-gen", "SKILL.md"))
+	assert.FileExists(t, filepath.Join(outDir, "test-gen", "evals", "eval.yaml"))
+	assert.FileExists(t, filepath.Join(outDir, "test-gen", "evals", "tasks", "basic-usage.yaml"))
+	assert.FileExists(t, filepath.Join(outDir, "test-gen", "evals", "fixtures", "sample.py"))
 
-	// Verify deprecation notice
+	// Verify alias notice
 	assert.Contains(t, buf.String(), "alias for 'waza new'")
 }
 
@@ -109,7 +111,7 @@ func TestGenerateCommand_DeprecationNotice(t *testing.T) {
 	cmd.SetArgs([]string{skillPath})
 	require.NoError(t, cmd.Execute())
 
-	assert.Contains(t, buf.String(), "Note: 'waza generate' is an alias for 'waza new'. Use 'waza new <name>' instead.")
+	assert.Contains(t, buf.String(), "Note: 'waza generate' is an alias for 'waza new'.")
 }
 
 func TestGenerateCommand_RegisteredInRoot(t *testing.T) {
