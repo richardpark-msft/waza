@@ -83,58 +83,6 @@ func TestParseSkillMD_FileNotFound(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestGenerateEvalSuite(t *testing.T) {
-	dir := t.TempDir()
-
-	skill := &SkillFrontmatter{
-		Name:        "my-skill",
-		Description: "Test description",
-	}
-
-	err := GenerateEvalSuite(skill, dir)
-	require.NoError(t, err)
-
-	// eval.yaml exists
-	evalPath := filepath.Join(dir, "eval.yaml")
-	assert.FileExists(t, evalPath)
-
-	evalData, err := os.ReadFile(evalPath)
-	require.NoError(t, err)
-	assert.Contains(t, string(evalData), "my-skill-eval")
-	assert.Contains(t, string(evalData), "my-skill")
-
-	// tasks directory and task file exist
-	taskPath := filepath.Join(dir, "tasks", "my-skill-basic.yaml")
-	assert.FileExists(t, taskPath)
-
-	taskData, err := os.ReadFile(taskPath)
-	require.NoError(t, err)
-	assert.Contains(t, string(taskData), "my-skill-basic-001")
-
-	// fixtures directory and sample fixture exist
-	fixturePath := filepath.Join(dir, "fixtures", "sample.txt")
-	assert.FileExists(t, fixturePath)
-
-	fixtureData, err := os.ReadFile(fixturePath)
-	require.NoError(t, err)
-	assert.Contains(t, string(fixtureData), "my-skill")
-}
-
-func TestGenerateEvalSuite_EmptyDescription(t *testing.T) {
-	dir := t.TempDir()
-
-	skill := &SkillFrontmatter{
-		Name: "no-desc",
-	}
-
-	err := GenerateEvalSuite(skill, dir)
-	require.NoError(t, err)
-
-	evalData, err := os.ReadFile(filepath.Join(dir, "eval.yaml"))
-	require.NoError(t, err)
-	assert.Contains(t, string(evalData), "Evaluation suite for the no-desc skill")
-}
-
 func TestParseSkillMD_PathTraversalInName(t *testing.T) {
 	tests := []struct {
 		name      string

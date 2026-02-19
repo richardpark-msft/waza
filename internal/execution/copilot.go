@@ -26,7 +26,8 @@ type CopilotEngine struct {
 	sessionsIDsMu sync.Mutex
 	sessionsIDs   []string
 
-	workspace string
+	workspace     string
+	oldWorkspaces []string // previous workspaces to clean up at Shutdown
 }
 
 // CopilotEngineBuilder builds a CopilotEngine with options
@@ -64,12 +65,11 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 
 	start := time.Now()
 
-	// Clean up any previous workspace and create fresh one
+	// Track previous workspace for cleanup at Shutdown — don't delete now
+	// because the SDK client may still hold file locks (especially on Windows).
 	if e.workspace != "" {
-		if err := os.RemoveAll(e.workspace); err != nil {
-			// Log but don't fail - try to create new workspace anyway
-			fmt.Fprintf(os.Stderr, "Warning: failed to remove old workspace %s: %v\n", e.workspace, err)
-		}
+		e.oldWorkspaces = append(e.oldWorkspaces, e.workspace)
+		e.workspace = ""
 	}
 
 	tmpDir, err := os.MkdirTemp("", "waza-*")
@@ -222,12 +222,15 @@ func (e *CopilotEngine) Shutdown(ctx context.Context) error {
 		e.client = nil
 	}
 
-	if e.workspace != "" {
-		if err := os.RemoveAll(e.workspace); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to remove workspace %s during shutdown: %v\n", e.workspace, err)
+	// Clean up all workspaces (current + old ones from between tasks)
+	allWorkspaces := append(e.oldWorkspaces, e.workspace)
+	for _, ws := range allWorkspaces {
+		if ws != "" {
+			os.RemoveAll(ws) //nolint:errcheck // best-effort cleanup
 		}
-		e.workspace = ""
 	}
+	e.workspace = ""
+	e.oldWorkspaces = nil
 
 	return nil
 }

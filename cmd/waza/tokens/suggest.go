@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,7 +17,9 @@ import (
 
 	"github.com/spboyer/waza/cmd/waza/tokens/internal"
 	"github.com/spboyer/waza/internal/execution"
+	"github.com/spboyer/waza/internal/spinner"
 	"github.com/spboyer/waza/internal/tokens"
+	"github.com/spboyer/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -38,13 +39,17 @@ var newChatEngine = func(modelID string) execution.AgentEngine {
 
 func newSuggestCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "suggest [paths...]",
+		Use:   "suggest [skill-name | paths...]",
 		Short: "Get optimization suggestions",
 		Long: `Analyze markdown files for token optimization opportunities.
 
 Paths may be files or directories (scanned recursively for .md/.mdx files).
 A relative path is resolved from the working directory; an absolute path is
-used as-is. When no path is given, the working directory is scanned.`,
+used as-is. When no path is given, the working directory is scanned.
+
+If the first argument looks like a skill name (no path separators or file
+extension), it is resolved via workspace detection to scope suggestions to
+that skill's directory.`,
 		Args:          cobra.ArbitraryArgs,
 		RunE:          runSuggest,
 		SilenceErrors: true,
@@ -102,6 +107,20 @@ func runSuggest(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("getting current directory: %w", err)
 	}
 
+	// If the first arg looks like a skill name (not a path), resolve via workspace
+	if len(args) > 0 && !workspace.LooksLikePath(args[0]) {
+		ctx, ctxErr := workspace.DetectContext(rootDir)
+		if ctxErr != nil {
+			return fmt.Errorf("detecting workspace: %w", ctxErr)
+		}
+		si, findErr := workspace.FindSkill(ctx, args[0])
+		if findErr != nil {
+			return findErr
+		}
+		rootDir = si.Dir
+		args = nil
+	}
+
 	cfg, err := internal.LoadConfig(rootDir)
 	if err != nil {
 		return err
@@ -134,7 +153,7 @@ func runSuggest(cmd *cobra.Command, args []string) error {
 		}
 		ch := make(chan result, len(files))
 		sem := make(chan struct{}, maxCopilotWorkers)
-		stopSpinner := startSpinner(errOut)
+		stopSpinner := spinner.Start(errOut, "🤖 Analyzing with Copilot...")
 
 		var wg sync.WaitGroup
 		for _, f := range files {
@@ -489,31 +508,6 @@ func suggestionJSON(analyses []fileAnalysis) (string, error) {
 	enc.SetIndent("", "  ")
 	err := enc.Encode(out)
 	return buf.String(), err
-}
-
-func startSpinner(w io.Writer) func() {
-	done := make(chan struct{})
-	cleared := make(chan struct{})
-	msg := "  🤖 Analyzing with Copilot..."
-	go func() {
-		frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-		i := 0
-		for {
-			select {
-			case <-done:
-				fmt.Fprintf(w, "\r%s\r", strings.Repeat(" ", len(msg)+1)) //nolint:errcheck
-				close(cleared)
-				return
-			case <-time.After(80 * time.Millisecond):
-				fmt.Fprintf(w, "\r%s%s", frames[i%len(frames)], msg) //nolint:errcheck
-				i++
-			}
-		}
-	}()
-	return func() {
-		close(done)
-		<-cleared
-	}
 }
 
 //go:embed suggestion_prompt.md
