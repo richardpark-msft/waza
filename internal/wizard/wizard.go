@@ -72,8 +72,15 @@ func RunSkillWizard(in io.Reader, out io.Writer, initialName string) (*SkillSpec
 				Placeholder("my-skill").
 				Value(&name).
 				Validate(func(s string) error {
-					if strings.TrimSpace(s) == "" {
+					s = strings.TrimSpace(s)
+					if s == "" {
 						return fmt.Errorf("skill name is required")
+					}
+					if strings.ContainsAny(s, `/\ `) {
+						return fmt.Errorf("skill name cannot contain spaces or path separators")
+					}
+					if s == ".." || strings.Contains(s, "..") {
+						return fmt.Errorf("skill name cannot contain path traversal")
 					}
 					return nil
 				}),
