@@ -50,3 +50,20 @@
 ## 📌 Team update (2026-02-20): Model policy overhaul
 
 All code roles now use `claude-opus-4.6`. Docs/Scribe/diversity use `gemini-3-pro-preview`. Heavy code gen uses `gpt-5.2-codex`. Decided by Scott Boyer. See decisions.md for full details.
+### #224 — Consolidate waza new and waza generate (PR pending)
+- **Date:** 2026-02-19
+- **Branch:** `squad/224-consolidate-new-generate`
+- **Files changed:** `cmd/waza/cmd_new.go`, `cmd/waza/cmd_new_test.go`, `cmd/waza/root.go`, `cmd/waza/cmd_init.go`
+- **Files deleted:** `cmd/waza/cmd_generate.go`, `cmd/waza/cmd_generate_test.go`
+- **What:** Made `generate` a Cobra alias on `new` command. Added `--output-dir`/`-d` flag. TTY mode now skips wizard when SKILL.md already exists. Updated `writeFiles` to use lipgloss-styled ✓/+ indicators and summary output matching `waza init`.
+
+## Learnings
+
+### Consolidated Command Pattern
+- Cobra `Aliases` field is the right way to merge commands — keeps one implementation, no duplicate registration
+- `newCommandE` signature includes `outputDir` parameter; callers (cmd_init.go) must be updated when signature changes
+- TTY wizard skip logic: check `detectExistingSkillMD` before launching wizard, fall through to wizard if no existing content
+- lipgloss styled output works identically in test buffers (ANSI codes included); test assertions use raw ✓ character which is present inside ANSI sequences
+
+📌 Team update (2026-02-19): waza generate consolidated into waza new as alias — decided by Linus
+
