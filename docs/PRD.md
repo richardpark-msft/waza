@@ -261,6 +261,6 @@ Skills are scored on frontmatter compliance. Target: **Medium-High** or better f
 | Source | Description |
 |--------|-------------|
 | [microsoft/skills](https://github.com/microsoft/skills) | Target repository, contribution conventions |
-| [waza repo](https://github.com/spboyer/evals-for-skills) | Current implementation |
+| [waza repo](https://github.com/spboyer/waza) | Current implementation |
 | [Squad Proposal](https://github.com/spboyer/azure-mcp-v-skills/blob/main/squad-proposal.md) | Original proposal document |
 | [AZD Extension Framework](https://github.com/Azure/azure-dev/blob/main/cli/azd/docs/extensions/extension-framework.md) | Extension packaging guide |

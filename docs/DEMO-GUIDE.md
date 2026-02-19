@@ -15,7 +15,7 @@ Before any demo, ensure waza is installed:
 curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
 
 # Option B: Build from source
-cd /path/to/evals-for-skills
+cd /path/to/waza
 make build
 
 # Verify installation
@@ -38,7 +38,7 @@ waza run --help
 
 ```bash
 # Navigate to project root
-cd /path/to/evals-for-skills
+cd /path/to/waza
 
 # Show the example structure
 echo "📁 Example directory structure:"
