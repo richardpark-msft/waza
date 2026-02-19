@@ -5,14 +5,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-
-	"github.com/spboyer/waza/internal/scaffold"
 )
 
 func newInitCommand() *cobra.Command {
@@ -75,7 +72,7 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 	needSkillPrompt := !noSkill
 
 	// --- Phase 2: Prompts (before showing checklist) ---
-	var engine, model, skillName string
+	var engine, model string
 	var createSkill bool
 	engine = "copilot-sdk"
 	model = "claude-sonnet-4.6"
@@ -138,26 +135,6 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 					Negative("No").
 					Value(&createSkill),
 			))
-
-			groups = append(groups, huh.NewGroup(
-				huh.NewInput().
-					Title("Skill name").
-					Description("A kebab-case name for your skill (e.g. azure-deploy)").
-					Placeholder("my-skill").
-					Value(&skillName).
-					Validate(func(s string) error {
-						s = strings.TrimSpace(s)
-						if s == "" {
-							return fmt.Errorf("skill name is required")
-						}
-						if strings.ContainsAny(s, `/\ `) {
-							return fmt.Errorf("skill name cannot contain spaces or path separators")
-						}
-						return nil
-					}),
-			).WithHideFunc(func() bool {
-				return !createSkill
-			}))
 		}
 
 		if len(groups) > 0 {
@@ -268,11 +245,7 @@ defaults:
 	}
 
 	// --- Phase 5: Create skill if requested ---
-	skillName = strings.TrimSpace(skillName)
-	if createSkill && skillName != "" {
-		if err := scaffold.ValidateName(skillName); err != nil {
-			return err
-		}
+	if createSkill {
 		origDir, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("failed to get working directory: %w", err)
@@ -287,31 +260,27 @@ defaults:
 		defer os.Chdir(origDir) //nolint:errcheck
 
 		fmt.Fprintln(out) //nolint:errcheck
-		skillContent := defaultSkillMD(skillName)
-		if err := scaffoldInProject(cmd, absDir, skillName, skillContent); err != nil {
+		if err := newCommandE(cmd, nil, ""); err != nil {
 			return err
 		}
 	}
 
 	// --- Phase 6: Next steps (first run only, TTY only) ---
 	if created > 0 && isTTY {
-		printNextSteps(out, skillName)
+		printNextSteps(out)
 	}
 
 	return nil
 }
 
-func printNextSteps(out io.Writer, skillName string) {
-	fmt.Fprintln(out)                //nolint:errcheck
-	fmt.Fprintln(out, "Next steps:") //nolint:errcheck
-	fmt.Fprintln(out)                //nolint:errcheck
-	skill := "my-skill"
-	if skillName != "" {
-		skill = skillName
-	}
-	fmt.Fprintf(out, "  waza dev %s       Improve skill compliance\n", skill) //nolint:errcheck
-	fmt.Fprintf(out, "  waza run %s       Run evaluations\n", skill)          //nolint:errcheck
-	fmt.Fprintf(out, "  waza check %s     Check skill readiness\n", skill)    //nolint:errcheck
+func printNextSteps(out io.Writer) {
+	fmt.Fprintln(out)                                                         //nolint:errcheck
+	fmt.Fprintln(out, "Next steps:")                                          //nolint:errcheck
+	fmt.Fprintln(out)                                                         //nolint:errcheck
+	fmt.Fprintln(out, "  waza new <name>          Create another skill")      //nolint:errcheck
+	fmt.Fprintln(out, "  waza dev <name>          Improve skill compliance")  //nolint:errcheck
+	fmt.Fprintln(out, "  waza run                 Run all evaluations")       //nolint:errcheck
+	fmt.Fprintln(out, "  waza check               Check all skill readiness") //nolint:errcheck
 	fmt.Fprintln(out)                                                         //nolint:errcheck
 }
 

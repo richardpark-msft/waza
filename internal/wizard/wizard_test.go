@@ -115,7 +115,7 @@ func TestRunSkillWizard_ValidInput(t *testing.T) {
 	in := pipeInput(t, "my-skill", "A great skill", "trigger1, trigger2", "anti1, anti2", "1")
 	out := &bytes.Buffer{}
 
-	spec, err := RunSkillWizard(in, out)
+	spec, err := RunSkillWizard(in, out, "")
 	require.NoError(t, err)
 
 	assert.Equal(t, "my-skill", spec.Name)
@@ -130,7 +130,7 @@ func TestRunSkillWizard_EmptyInput(t *testing.T) {
 	in := strings.NewReader("")
 	out := &bytes.Buffer{}
 
-	spec, err := RunSkillWizard(in, out)
+	spec, err := RunSkillWizard(in, out, "")
 	require.NoError(t, err)
 	assert.Empty(t, spec.Name)
 	assert.Equal(t, SkillType("workflow"), spec.Type) // default to first option
@@ -141,7 +141,7 @@ func TestRunSkillWizard_IncompleteInput(t *testing.T) {
 	in := pipeInput(t, "my-skill")
 	out := &bytes.Buffer{}
 
-	spec, err := RunSkillWizard(in, out)
+	spec, err := RunSkillWizard(in, out, "")
 	require.NoError(t, err)
 	assert.Equal(t, "my-skill", spec.Name)
 	assert.Empty(t, spec.Description)
@@ -152,7 +152,7 @@ func TestRunSkillWizard_SelectAnalysis(t *testing.T) {
 	in := pipeInput(t, "test-skill", "A test skill", "", "", "3")
 	out := &bytes.Buffer{}
 
-	spec, err := RunSkillWizard(in, out)
+	spec, err := RunSkillWizard(in, out, "")
 	require.NoError(t, err)
 	assert.Equal(t, SkillTypeAnalysis, spec.Type)
 }

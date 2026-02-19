@@ -54,10 +54,10 @@ description: >
 `
 
 // RunSkillWizard runs an interactive huh form to collect skill metadata.
-// It reads from the provided reader and writes prompts to the provided writer.
-func RunSkillWizard(in io.Reader, out io.Writer) (*SkillSpec, error) {
+// If initialName is non-empty, it pre-populates the name field.
+func RunSkillWizard(in io.Reader, out io.Writer, initialName string) (*SkillSpec, error) {
 	var (
-		name            string
+		name            = initialName
 		description     string
 		triggersRaw     string
 		antiTriggersRaw string
