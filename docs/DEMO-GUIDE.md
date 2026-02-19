@@ -633,7 +633,7 @@ EOF
 1. **Qualitative Validation:** "Use prompt graders when you need judgment-based checks, not just exact string matches."
 2. **Policy Enforcement:** "Prompt graders are great for rubric-like requirements: style, completeness, safety, and adherence."
 3. **Composable:** "Combine prompt graders with code/regex/file graders for both hard constraints and soft quality criteria."
-4. **Model Flexibility:** "Run the task model and judge model independently (`config.model` inside the prompt grader)."
+4. **Model Flexibility:** "Run the task model and judge model independently (using the model field in the grader's config, separate from the top-level `config.model`)."
 5. **Explicit Verdicts:** "Your judge prompt should always call `set_waza_grade_pass` or `set_waza_grade_fail` with reasoning."
 
 ---
