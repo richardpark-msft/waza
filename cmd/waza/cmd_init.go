@@ -10,6 +10,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+
+	"github.com/spboyer/waza/internal/scaffold"
+	"github.com/spboyer/waza/internal/workspace"
 )
 
 func newInitCommand() *cobra.Command {
@@ -58,6 +61,7 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 	out := cmd.OutOrStdout()
 	projectName := filepath.Base(absOrDefault(dir))
 	isTTY := term.IsTerminal(int(os.Stdin.Fd()))
+	absDir := absOrDefault(dir)
 
 	// Styled indicators
 	greenCheck := lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Render("✓")
@@ -65,25 +69,60 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 
 	fmt.Fprintf(out, "🔧 Initializing waza project: %s\n", projectName) //nolint:errcheck
 
-	// --- Phase 1: Determine what needs to be created ---
-	wazaConfigPath := filepath.Join(dir, ".waza.yaml")
+	// --- Phase 1: Inventory — scan for existing skills and eval status ---
+	wazaConfigPath := filepath.Join(absDir, ".waza.yaml")
 	_, wazaStatErr := os.Stat(wazaConfigPath)
 	needConfigPrompt := wazaStatErr != nil
 	needSkillPrompt := !noSkill
 
-	// --- Phase 2: Prompts (before showing checklist) ---
+	type skillEntry struct {
+		Name     string
+		Dir      string
+		HasEval  bool
+		EvalPath string
+	}
+	var inventory []skillEntry
+
+	wsCtx, _ := workspace.DetectContext(absDir)
+	if wsCtx != nil {
+		for _, si := range wsCtx.Skills {
+			evalPath, _ := workspace.FindEval(wsCtx, si.Name)
+			inventory = append(inventory, skillEntry{
+				Name:     si.Name,
+				Dir:      si.Dir,
+				HasEval:  evalPath != "",
+				EvalPath: evalPath,
+			})
+		}
+	}
+
+	skillsMissingEvals := 0
+	for _, inv := range inventory {
+		if !inv.HasEval {
+			skillsMissingEvals++
+		}
+	}
+
+	if len(inventory) > 0 {
+		fmt.Fprintf(out, "\nDiscovered %d skill(s), %d missing evals\n", len(inventory), skillsMissingEvals) //nolint:errcheck
+	}
+
+	// --- Phase 2: Unified form — all questions in a single group ---
 	var engine, model string
-	var createSkill bool
+	var createSkill, scaffoldMissing bool
 	engine = "copilot-sdk"
 	model = "claude-sonnet-4.6"
 
 	if isTTY {
 		var groups []*huh.Group
 
-		if needConfigPrompt {
-			fmt.Fprintf(out, "\nConfigure project defaults:\n\n") //nolint:errcheck
+		// Main group: engine + conditional questions (shown as one page)
+		var mainFields []huh.Field
 
-			groups = append(groups, huh.NewGroup(
+		if needConfigPrompt {
+			fmt.Fprintf(out, "\nConfigure project:\n\n") //nolint:errcheck
+
+			mainFields = append(mainFields,
 				huh.NewSelect[string]().
 					Title("Default evaluation engine").
 					Description("Choose how evals are executed").
@@ -92,10 +131,41 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 						huh.NewOption("Mock — fast iteration, no API calls", "mock"),
 					).
 					Value(&engine),
-			))
+			)
+		}
 
-			// Model selection — only shown when engine is copilot-sdk
-			// Note: Copilot SDK (v0.1.22) has no model enumeration API.
+		if skillsMissingEvals > 0 {
+			scaffoldMissing = true
+			mainFields = append(mainFields,
+				huh.NewConfirm().
+					Title(fmt.Sprintf("Set up default evals for %d skill(s) missing them?", skillsMissingEvals)).
+					Affirmative("Yes").
+					Negative("No").
+					Value(&scaffoldMissing),
+			)
+		}
+
+		if needSkillPrompt {
+			createSkill = true // default to Yes
+			title := "Create a new skill?"
+			if len(inventory) > 0 {
+				title = "Create another skill?"
+			}
+			mainFields = append(mainFields,
+				huh.NewConfirm().
+					Title(title).
+					Affirmative("Yes").
+					Negative("No").
+					Value(&createSkill),
+			)
+		}
+
+		if len(mainFields) > 0 {
+			groups = append(groups, huh.NewGroup(mainFields...))
+		}
+
+		// Model group: hidden when engine ≠ copilot-sdk (auto-skipped)
+		if needConfigPrompt {
 			groups = append(groups, huh.NewGroup(
 				huh.NewSelect[string]().
 					Title("Default model").
@@ -126,17 +196,6 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 			}))
 		}
 
-		if needSkillPrompt {
-			createSkill = true // default to Yes
-			groups = append(groups, huh.NewGroup(
-				huh.NewConfirm().
-					Title("Create a new skill?").
-					Affirmative("Yes").
-					Negative("No").
-					Value(&createSkill),
-			))
-		}
-
 		if len(groups) > 0 {
 			form := huh.NewForm(groups...).
 				WithInput(cmd.InOrStdin()).
@@ -146,11 +205,13 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 				engine = "copilot-sdk"
 				model = "claude-sonnet-4.6"
 				createSkill = false
+				scaffoldMissing = false
 			}
 		}
 	} else {
-		// Non-TTY: use defaults, no prompts
+		// Non-TTY: use defaults, skip form, still run inventory and report
 		fmt.Fprintf(out, "\nUsing defaults: engine=%s, model=%s\n", engine, model) //nolint:errcheck
+		scaffoldMissing = skillsMissingEvals > 0
 	}
 
 	// --- Phase 3: Create/verify project structure ---
@@ -179,12 +240,32 @@ defaults:
 	}
 
 	items := []initItem{
-		{filepath.Join(dir, "skills"), "Skill definitions", true, ""},
-		{filepath.Join(dir, "evals"), "Evaluation suites", true, ""},
-		{filepath.Join(dir, ".waza.yaml"), configLabel, false, wazaConfigContent},
-		{filepath.Join(dir, ".github", "workflows", "eval.yml"), "CI pipeline", false, initCIWorkflow()},
-		{filepath.Join(dir, ".gitignore"), "Build artifacts excluded", false, initGitignore()},
-		{filepath.Join(dir, "README.md"), "Getting started guide", false, initReadme(projectName)},
+		{filepath.Join(absDir, "skills"), "Skill definitions", true, ""},
+		{filepath.Join(absDir, "evals"), "Evaluation suites", true, ""},
+		{filepath.Join(absDir, ".waza.yaml"), configLabel, false, wazaConfigContent},
+		{filepath.Join(absDir, ".github", "workflows", "eval.yml"), "CI pipeline", false, initCIWorkflow()},
+		{filepath.Join(absDir, ".gitignore"), "Build artifacts excluded", false, initGitignore()},
+		{filepath.Join(absDir, "README.md"), "Getting started guide", false, initReadme(projectName)},
+	}
+
+	// Append discovered skills and their eval status
+	for _, inv := range inventory {
+		items = append(items, initItem{
+			path:  filepath.Join(inv.Dir, "SKILL.md"),
+			label: fmt.Sprintf("Skill: %s", inv.Name),
+		})
+		if inv.HasEval {
+			items = append(items, initItem{
+				path:  inv.EvalPath,
+				label: fmt.Sprintf("Eval: %s", inv.Name),
+			})
+		} else if scaffoldMissing {
+			items = append(items, initItem{
+				path:    filepath.Join(absDir, "evals", inv.Name, "eval.yaml"),
+				label:   fmt.Sprintf("Eval: %s", inv.Name),
+				content: scaffold.EvalYAML(inv.Name, engine, model),
+			})
+		}
 	}
 
 	fmt.Fprintf(out, "\nProject structure:\n\n") //nolint:errcheck
@@ -217,7 +298,7 @@ defaults:
 
 		// Relative path for display
 		relPath := item.path
-		if rel, err := filepath.Rel(dir, item.path); err == nil {
+		if rel, err := filepath.Rel(absDir, item.path); err == nil {
 			relPath = rel
 		}
 		if item.isDir {
@@ -232,6 +313,18 @@ defaults:
 		}
 
 		fmt.Fprintf(out, "  %s %-35s %s\n", status, relPath, item.label) //nolint:errcheck
+	}
+
+	// Create supporting eval files (tasks, fixtures) for newly scaffolded evals.
+	// Reuses scaffold package functions — same templates as waza new.
+	if scaffoldMissing {
+		for _, inv := range inventory {
+			if !inv.HasEval {
+				if err := scaffoldEvalSupportFiles(absDir, inv.Name); err != nil {
+					return fmt.Errorf("failed to scaffold eval files for %s: %w", inv.Name, err)
+				}
+			}
+		}
 	}
 
 	// --- Phase 4: Summary ---
@@ -250,10 +343,6 @@ defaults:
 		if err != nil {
 			return fmt.Errorf("failed to get working directory: %w", err)
 		}
-		absDir, err := filepath.Abs(dir)
-		if err != nil {
-			return fmt.Errorf("failed to resolve directory: %w", err)
-		}
 		if err := os.Chdir(absDir); err != nil {
 			return fmt.Errorf("failed to change to project directory: %w", err)
 		}
@@ -268,6 +357,38 @@ defaults:
 	// --- Phase 6: Next steps (first run only, TTY only) ---
 	if created > 0 && isTTY {
 		printNextSteps(out)
+	}
+
+	return nil
+}
+
+// scaffoldEvalSupportFiles creates task files and fixtures for a skill's eval suite.
+// Reuses scaffold package functions (same templates as waza new). Idempotent.
+func scaffoldEvalSupportFiles(projectRoot, skillName string) error {
+	evalDir := filepath.Join(projectRoot, "evals", skillName)
+	tasksDir := filepath.Join(evalDir, "tasks")
+	fixturesDir := filepath.Join(evalDir, "fixtures")
+
+	for _, d := range []string{tasksDir, fixturesDir} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			return fmt.Errorf("failed to create %s: %w", d, err)
+		}
+	}
+
+	files := map[string]string{
+		filepath.Join(fixturesDir, "sample.py"): scaffold.Fixture(),
+	}
+	for name, content := range scaffold.TaskFiles(skillName) {
+		files[filepath.Join(tasksDir, name)] = content
+	}
+
+	for fpath, content := range files {
+		if _, err := os.Stat(fpath); err == nil {
+			continue
+		}
+		if err := os.WriteFile(fpath, []byte(content), 0o644); err != nil {
+			return fmt.Errorf("failed to write %s: %w", fpath, err)
+		}
 	}
 
 	return nil
