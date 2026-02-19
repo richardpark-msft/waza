@@ -45,3 +45,39 @@
 - `toolCallId` correlation links Start ↔ Complete events
 - Graceful fallback to grader-based heuristic when transcript is empty
 - Depends on #237 (transcript + session digest in API)
+
+## Learnings
+
+### Release Infrastructure Audit (Issue #223, Feb 20)
+
+**Version Management State:**
+- `version.txt` (source-of-truth candidate): 0.4.0-alpha.1
+- `extension.yaml`: 0.3.0 (STALE, 2 patch releases behind)
+- `registry.json`: max version 0.3.0 (missing 0.4.0-alpha.1, blocking extension users)
+- Go binary version: injected via ldflags `-X main.version=${VERSION}` during build
+
+**Key Files & Their Purpose:**
+- `.github/workflows/go-release.yml` — Standalone CLI release (builds 6 platform matrix, creates GitHub Release on `v*` tag) — **ACTIVE, currently used**
+- `.github/workflows/azd-ext-release.yml` — Extension release (triggers on version.txt/extension.yaml changes, publishes to azd registry via `azd x publish`) — **ACTIVE, currently used**
+- `.github/workflows/release.yml` — NEW unified workflow (both CLI + extension from single trigger, includes version sync job) — **PREPARED BUT NOT YET ACTIVATED**
+- `.github/workflows/squad-release.yml` — Package.json-based release (NOT relevant to waza-go)
+- `Makefile` — Local build with `VERSION?=0.1.0` (default, overridable)
+- `build.sh` — Cross-platform binary builder for extension (VERSION env var driven)
+- `cmd/waza/root.go` — Version variable: `var version = "dev"` (overwritten at build-time)
+
+**Critical Issues Identified:**
+1. **No unified release trigger** — CLI and extension release independently, easy to desync
+2. **Version sync failure** — extension.yaml not bumped when CLI version.txt is updated
+3. **registry.json desynchronization** — stale, depends on manual azd-ext-release workflow execution
+4. **release.yml has logical flaw** — sync-versions job runs AFTER build jobs, too late to affect artifact versions
+5. **Dual tag schemes** — CLI uses `v*`, extension uses `azd-ext-microsoft-azd-waza_*`, confusing
+6. **No pre-flight validation** — easy for files to drift; no check before build
+
+**Recommended Architecture:**
+- Single canonical trigger: git tag `v*.*.*` 
+- release.yml should be the sole release coordinator (retire go-release.yml + azd-ext-release.yml once stable)
+- Pre-flight job in release.yml to validate version.txt == tag before proceeding
+- Sync-versions job should run BEFORE builds, not after
+- Document the flow in docs/RELEASE.md
+
+**Immediate Action:** registry.json is blocking extension users on 0.4.0-alpha.1. Should manually trigger release.yml or azd-ext-release.yml to sync.
