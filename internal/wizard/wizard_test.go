@@ -156,3 +156,15 @@ func TestRunSkillWizard_SelectAnalysis(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, SkillTypeAnalysis, spec.Type)
 }
+
+func TestRunSkillWizard_InitialName(t *testing.T) {
+	// When initialName is provided, the name field is pre-populated.
+	// User submits the pre-populated name and fills in other fields.
+	in := pipeInput(t, "azure-deploy", "My pre-named skill", "use for testing", "", "1")
+	out := &bytes.Buffer{}
+
+	spec, err := RunSkillWizard(in, out, "azure-deploy")
+	require.NoError(t, err)
+	assert.Equal(t, "azure-deploy", spec.Name)
+	assert.Equal(t, "My pre-named skill", spec.Description)
+}

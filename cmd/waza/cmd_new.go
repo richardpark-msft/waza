@@ -36,7 +36,8 @@ Two modes of operation:
     .gitignore, and README.md.
 
 When running in a terminal (TTY), launches an interactive wizard for skill
-metadata collection. In non-interactive environments (CI, pipes), uses defaults.`,
+metadata collection. In non-interactive environments (CI, pipes), the skill
+name must be provided as an argument; remaining fields use defaults.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return newCommandE(cmd, args, template)
