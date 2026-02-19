@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/spboyer/waza/internal/generate"
 	"github.com/spboyer/waza/internal/workspace"
@@ -15,25 +14,33 @@ var generateOutputDir string
 func newGenerateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "generate <skill-name | SKILL.md>",
-		Short: "Generate an eval suite from a SKILL.md file",
+		Short: "Generate an eval suite from a SKILL.md file (alias for 'waza new')",
 		Long: `Generate evaluation files from a SKILL.md file.
 
+Note: 'waza generate' is an alias for 'waza new'.
+
 Parses the YAML frontmatter (name, description) from the given SKILL.md and
-creates an eval.yaml, starter task files, and a fixtures directory.
+creates an eval.yaml, starter task files, and a fixtures directory using the
+same idempotent scaffolding as 'waza new'.
 
 If the argument looks like a skill name (no path separators or file extension),
-it is resolved via workspace detection to find the SKILL.md path.`,
+it is resolved via workspace detection to find the SKILL.md path.
+
+When --output-dir is specified, scaffolding is written into that directory
+instead of the current working directory.`,
 		Args: cobra.ExactArgs(1),
 		RunE: generateCommandE,
 	}
 
-	cmd.Flags().StringVarP(&generateOutputDir, "output-dir", "d", "", "Output directory (default: ./eval-{skill-name}/)")
+	cmd.Flags().StringVarP(&generateOutputDir, "output-dir", "d", "", "Directory to scaffold into (default: current directory)")
 
 	return cmd
 }
 
-func generateCommandE(_ *cobra.Command, args []string) error {
+func generateCommandE(cmd *cobra.Command, args []string) error {
 	skillPath := args[0]
+
+	fmt.Fprintln(cmd.OutOrStdout(), "Note: 'waza generate' is an alias for 'waza new'.") //nolint:errcheck
 
 	// If arg looks like a skill name (not a path), resolve via workspace
 	if !workspace.LooksLikePath(skillPath) {
@@ -57,28 +64,21 @@ func generateCommandE(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse SKILL.md: %w", err)
 	}
 
-	outDir := generateOutputDir
-	if outDir == "" {
-		outDir = filepath.Join(".", fmt.Sprintf("eval-%s", skill.Name))
+	// If --output-dir is specified, chdir so scaffolding writes there
+	if generateOutputDir != "" {
+		if err := os.MkdirAll(generateOutputDir, 0o755); err != nil {
+			return fmt.Errorf("creating output directory: %w", err)
+		}
+		origDir, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("getting working directory: %w", err)
+		}
+		if err := os.Chdir(generateOutputDir); err != nil {
+			return fmt.Errorf("changing to output directory: %w", err)
+		}
+		defer os.Chdir(origDir) //nolint:errcheck
 	}
 
-	fmt.Printf("Generating eval suite for skill: %s\n", skill.Name)
-	fmt.Printf("Output directory: %s\n", outDir)
-
-	if err := generate.GenerateEvalSuite(skill, outDir); err != nil {
-		return fmt.Errorf("failed to generate eval suite: %w", err)
-	}
-
-	fmt.Println()
-	fmt.Println("Generated files:")
-	fmt.Printf("  %s/eval.yaml\n", outDir)
-	fmt.Printf("  %s/tasks/%s-basic.yaml\n", outDir, skill.Name)
-	fmt.Printf("  %s/fixtures/sample.txt\n", outDir)
-	fmt.Println()
-	fmt.Println("Next steps:")
-	fmt.Printf("  1. Edit the task files in %s/tasks/\n", outDir)
-	fmt.Printf("  2. Add real fixtures to %s/fixtures/\n", outDir)
-	fmt.Printf("  3. Run: waza run %s/eval.yaml\n", outDir)
-
-	return nil
+	// Delegate to waza new's unified code path
+	return newCommandE(cmd, []string{skill.Name}, "")
 }
