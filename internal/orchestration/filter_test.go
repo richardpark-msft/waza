@@ -91,21 +91,18 @@ func TestFilterTestCases_Tags(t *testing.T) {
 			MatchedIDs: []string{"tc-001", "tc-002"},
 		},
 		{
-			Name: "exact",
-			Patterns: []string{
-				"fast", // exact match
-				"red",  // same test case matches
-			},
+			Name:       "matches_multiple_tags",
+			Patterns:   []string{"fast", "red"},
 			MatchedIDs: []string{"tc-001", "tc-002"},
 		},
 		{
-			Name:       "partial",
-			Patterns:   []string{"gree*"}, // partial match
+			Name:       "wildcard_match",
+			Patterns:   []string{"gree*"},
 			MatchedIDs: []string{"tc-003"},
 		},
 		{
-			Name:       "none",
-			Patterns:   []string{"yellow"}, // no matches
+			Name:       "no_match",
+			Patterns:   []string{"yellow"},
 			MatchedIDs: nil,
 		},
 	}
@@ -129,19 +126,19 @@ func TestFilterTestCases_TagsAndTasks_Intersection(t *testing.T) {
 		MatchedIDs   []string
 	}{
 		{
-			Name:         "exact",
-			TaskPatterns: []string{"*001"}, // wildcard match
-			TagPatterns:  []string{"fast"}, // exact match
+			Name:         "matches_tag_and_file",
+			TaskPatterns: []string{"*001"},
+			TagPatterns:  []string{"fast"},
 			MatchedIDs:   []string{"tc-001"},
 		},
 		{
-			Name:         "matches task but not tag",
+			Name:         "matches_task_but_not_tag",
 			TaskPatterns: []string{"*001"},
 			TagPatterns:  []string{"nobody matches this"},
 			MatchedIDs:   nil,
 		},
 		{
-			Name:         "matches tag but not task",
+			Name:         "matches_tag_but_not_task",
 			TaskPatterns: []string{"*999"},
 			TagPatterns:  []string{"fast"},
 			MatchedIDs:   nil,
