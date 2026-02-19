@@ -1,5 +1,4 @@
 # Unified release workflow for Waza CLI + azd extension
-# Supersedes go-release.yml and azd-ext-release.yml
 #
 # Two independent flows:
 #   Flow 1: Standalone CLI — parallel matrix build → GitHub Release
