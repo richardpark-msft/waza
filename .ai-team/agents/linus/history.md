@@ -67,3 +67,26 @@ All code roles now use `claude-opus-4.6`. Docs/Scribe/diversity use `gemini-3-pr
 
 📌 Team update (2026-02-19): waza generate consolidated into waza new as alias — decided by Linus
 
+### #263 — waza init: skill inventory, unified form, summary (PR #265)
+- **Date:** 2026-02-20
+- **Branch:** `squad/263-init-skill-inventory`
+- **Files changed:** `cmd/waza/cmd_init.go`, `cmd/waza/cmd_init_test.go`
+- **What:** Added inventory phase using `workspace.DetectContext` + `workspace.FindEval`, unified form with conditional model group, auto-scaffolding of evals for skills missing them using `scaffold` package functions, and ✓/+ summary report
+
+## Learnings
+
+### huh v0.8.0 Form Patterns
+- `WithHideFunc` is a Group-level method, NOT field-level — cannot conditionally hide individual fields within a group
+- To conditionally show fields, put them in separate groups and use `WithHideFunc` on the group
+- Groups are "pages" — one group = one page in the form. Hidden groups are auto-skipped.
+- To minimize pages: put most fields in one group, put conditionally-hidden fields in their own group
+
+### workspace.DetectContext Usage
+- Returns `ContextNone` with empty Skills slice when no skills exist (safe for fresh projects)
+- `SkillInfo.EvalPath` is NOT populated by `DetectContext` — must call `workspace.FindEval` separately for each skill
+- `FindEval` checks three locations: separated (`evals/{name}/eval.yaml`), nested (`{skill-dir}/evals/eval.yaml`), co-located (`{skill-dir}/eval.yaml`)
+
+### Path Consistency in cmd_init.go
+- Use `absOrDefault(dir)` for all item path construction to avoid mixed relative/absolute path issues with `filepath.Rel`
+- On Windows, `filepath.Rel(".", "C:\absolute\path")` fails due to volume mismatch — always use absolute base with absolute target
+
