@@ -3,7 +3,6 @@
 #
 # Triggers:
 #   - Tag push matching v*.*.*
-#   - Manual workflow_dispatch with version and build toggles
 #
 # See docs/RELEASE.md for usage details.
 
@@ -13,27 +12,6 @@ on:
   push:
     tags:
       - 'v*.*.*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g. 1.2.3 — without v prefix)'
-        required: true
-        type: string
-      build_cli:
-        description: 'Build standalone CLI binaries'
-        required: false
-        type: boolean
-        default: true
-      build_extension:
-        description: 'Build azd extension binaries'
-        required: false
-        type: boolean
-        default: true
-      publish_extension:
-        description: 'Publish extension to azd registry'
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -53,11 +31,7 @@ jobs:
       - name: Determine Version
         id: version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION="${GITHUB_REF_NAME#v}"
-          fi
+          VERSION="${GITHUB_REF_NAME#v}"
 
           # Validate semver format (major.minor.patch with optional pre-release)
           if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$'; then
@@ -65,10 +39,9 @@ jobs:
             exit 1
           fi
 
-          TAG="v${VERSION}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Releasing version: $VERSION (tag: $TAG)"
+          echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          echo "Releasing version: $VERSION (tag: $GITHUB_REF_NAME)"
 
   # ──────────────────────────────────────────────
   # 2. Build standalone CLI binaries (matrix)
@@ -76,7 +49,6 @@ jobs:
   build-cli:
     name: CLI ${{ matrix.os }}/${{ matrix.arch }}
     needs: setup-version
-    if: inputs.build_cli != false
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -146,7 +118,6 @@ jobs:
   build-extension:
     name: Extension Build
     needs: setup-version
-    if: inputs.build_extension != false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -201,7 +172,6 @@ jobs:
   create-cli-release:
     name: Create CLI Release
     needs: [setup-version, build-cli]
-    if: inputs.build_cli != false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -223,15 +193,6 @@ jobs:
           echo "Generated checksums:"
           cat checksums.txt
 
-      - name: Create Tag (workflow_dispatch only)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          TAG="${{ needs.setup-version.outputs.tag }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
-
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -249,9 +210,7 @@ jobs:
   publish-extension:
     name: Publish Extension
     needs: [setup-version, build-extension]
-    if: |
-      needs.build-extension.result == 'success' &&
-      (inputs.publish_extension == true || github.event_name == 'push')
+    if: needs.build-extension.result == 'success'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
