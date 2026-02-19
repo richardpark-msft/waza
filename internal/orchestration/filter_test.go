@@ -94,7 +94,7 @@ func TestFilterTestCases_Tags(t *testing.T) {
 			Name: "exact",
 			Patterns: []string{
 				"fast", // exact match
-				"red",  // same test case matche
+				"red",  // same test case matches
 			},
 			MatchedIDs: []string{"tc-001", "tc-002"},
 		},
