@@ -190,7 +190,10 @@ func detectExistingSkillMD(projectRoot string, inProject bool, skillName string)
 	}
 
 	if _, err := os.Stat(skillMDPath); err != nil {
-		return "", skillMDNotFound
+		if os.IsNotExist(err) {
+			return "", skillMDNotFound
+		}
+		return "", skillMDMalformed
 	}
 
 	data, readErr := os.ReadFile(skillMDPath)
