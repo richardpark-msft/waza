@@ -16,6 +16,14 @@ import (
 	"github.com/spboyer/waza/internal/workspace"
 )
 
+// skillEntry holds inventory information about a discovered skill.
+type skillEntry struct {
+	Name     string
+	Dir      string
+	HasEval  bool
+	EvalPath string
+}
+
 func newInitCommand() *cobra.Command {
 	var noSkill bool
 
@@ -49,6 +57,56 @@ If no directory is specified, the current directory is used.`,
 	return cmd
 }
 
+// displayInventory scans the workspace and prints a structured inventory table.
+// Returns the discovered skill entries for downstream logic.
+func displayInventory(out io.Writer, absDir string) []skillEntry {
+	var inventory []skillEntry
+
+	wsCtx, wsErr := workspace.DetectContext(absDir)
+	if wsErr == nil && wsCtx != nil {
+		for _, si := range wsCtx.Skills {
+			evalPath, _ := workspace.FindEval(wsCtx, si.Name) //nolint:errcheck // missing eval is expected
+			inventory = append(inventory, skillEntry{
+				Name:     si.Name,
+				Dir:      si.Dir,
+				HasEval:  evalPath != "",
+				EvalPath: evalPath,
+			})
+		}
+	}
+
+	if len(inventory) == 0 {
+		fmt.Fprintf(out, "\nNo skills found yet.\n") //nolint:errcheck
+		return inventory
+	}
+
+	greenCheck := lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Render("✓")
+	redCross := lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("✗")
+
+	missing := 0
+	for _, inv := range inventory {
+		if !inv.HasEval {
+			missing++
+		}
+	}
+
+	fmt.Fprintf(out, "\nSkills in this project:\n") //nolint:errcheck
+	for _, inv := range inventory {
+		if inv.HasEval {
+			relEval := inv.EvalPath
+			if rel, err := filepath.Rel(absDir, inv.EvalPath); err == nil {
+				relEval = rel
+			}
+			fmt.Fprintf(out, "  %s %-22s eval: %s\n", greenCheck, inv.Name, relEval) //nolint:errcheck
+		} else {
+			fmt.Fprintf(out, "  %s %-22s missing eval\n", redCross, inv.Name) //nolint:errcheck
+		}
+	}
+	fmt.Fprintf(out, "\n%d skills found, %d missing eval\n", len(inventory), missing) //nolint:errcheck
+
+	return inventory
+}
+
 func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 	dir := "."
 	if len(args) > 0 {
@@ -70,32 +128,8 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 
 	fmt.Fprintf(out, "🔧 Initializing waza project: %s\n", projectName) //nolint:errcheck
 
-	// --- Phase 1: Inventory — scan for existing skills and eval status ---
-	wazaConfigPath := filepath.Join(absDir, ".waza.yaml")
-	_, wazaStatErr := os.Stat(wazaConfigPath)
-	needConfigPrompt := wazaStatErr != nil
-	needSkillPrompt := !noSkill
-
-	type skillEntry struct {
-		Name     string
-		Dir      string
-		HasEval  bool
-		EvalPath string
-	}
-	var inventory []skillEntry
-
-	wsCtx, wsErr := workspace.DetectContext(absDir)
-	if wsErr == nil && wsCtx != nil {
-		for _, si := range wsCtx.Skills {
-			evalPath, _ := workspace.FindEval(wsCtx, si.Name) //nolint:errcheck // missing eval is expected
-			inventory = append(inventory, skillEntry{
-				Name:     si.Name,
-				Dir:      si.Dir,
-				HasEval:  evalPath != "",
-				EvalPath: evalPath,
-			})
-		}
-	}
+	// --- Phase 1: Discover & Display Inventory ---
+	inventory := displayInventory(out, absDir)
 
 	skillsMissingEvals := 0
 	for _, inv := range inventory {
@@ -104,11 +138,12 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 		}
 	}
 
-	if len(inventory) > 0 {
-		fmt.Fprintf(out, "\nDiscovered %d skill(s), %d missing evals\n", len(inventory), skillsMissingEvals) //nolint:errcheck
-	}
+	wazaConfigPath := filepath.Join(absDir, ".waza.yaml")
+	_, wazaStatErr := os.Stat(wazaConfigPath)
+	needConfigPrompt := wazaStatErr != nil
+	needSkillPrompt := !noSkill
 
-	// --- Phase 2: Unified form — all questions in a single group ---
+	// --- Phase 2: Configuration (if .waza.yaml missing) ---
 	var engine, model string
 	var createSkill, scaffoldMissing bool
 	engine = "copilot-sdk"
@@ -135,107 +170,134 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 	}
 
 	if isTTY {
-		var groups []*huh.Group
-
-		// Main group: engine + conditional questions (shown as one page)
-		var mainFields []huh.Field
-
+		// Engine selector (separate form)
 		if needConfigPrompt {
 			fmt.Fprintf(out, "\nConfigure project:\n\n") //nolint:errcheck
 
-			mainFields = append(mainFields,
-				huh.NewSelect[string]().
-					Title("Default evaluation engine").
-					Description("Choose how evals are executed").
-					Options(
-						huh.NewOption("Copilot SDK — real model execution", "copilot-sdk"),
-						huh.NewOption("Mock — fast iteration, no API calls", "mock"),
-					).
-					Value(&engine),
-			)
+			engineForm := huh.NewForm(
+				huh.NewGroup(
+					huh.NewSelect[string]().
+						Title("Default evaluation engine").
+						Description("Choose how evals are executed").
+						Options(
+							huh.NewOption("Copilot SDK — real model execution", "copilot-sdk"),
+							huh.NewOption("Mock — fast iteration, no API calls", "mock"),
+						).
+						Value(&engine),
+				),
+			).WithInput(cmd.InOrStdin()).WithOutput(out)
+
+			if err := engineForm.Run(); err != nil {
+				engine = "copilot-sdk"
+			}
+
+			// Model selector (hidden when engine ≠ copilot-sdk)
+			if engine == "copilot-sdk" {
+				modelForm := huh.NewForm(
+					huh.NewGroup(
+						huh.NewSelect[string]().
+							Title("Default model").
+							Description("Model used for evaluations").
+							Options(
+								huh.NewOption("claude-sonnet-4.6", "claude-sonnet-4.6"),
+								huh.NewOption("claude-sonnet-4.5", "claude-sonnet-4.5"),
+								huh.NewOption("claude-haiku-4.5", "claude-haiku-4.5"),
+								huh.NewOption("claude-opus-4.6", "claude-opus-4.6"),
+								huh.NewOption("claude-opus-4.6-fast", "claude-opus-4.6-fast"),
+								huh.NewOption("claude-opus-4.5", "claude-opus-4.5"),
+								huh.NewOption("claude-sonnet-4", "claude-sonnet-4"),
+								huh.NewOption("gemini-3-pro-preview", "gemini-3-pro-preview"),
+								huh.NewOption("gpt-5.3-codex", "gpt-5.3-codex"),
+								huh.NewOption("gpt-5.2-codex", "gpt-5.2-codex"),
+								huh.NewOption("gpt-5.2", "gpt-5.2"),
+								huh.NewOption("gpt-5.1-codex-max", "gpt-5.1-codex-max"),
+								huh.NewOption("gpt-5.1-codex", "gpt-5.1-codex"),
+								huh.NewOption("gpt-5.1", "gpt-5.1"),
+								huh.NewOption("gpt-5", "gpt-5"),
+								huh.NewOption("gpt-5.1-codex-mini", "gpt-5.1-codex-mini"),
+								huh.NewOption("gpt-5-mini", "gpt-5-mini"),
+								huh.NewOption("gpt-4.1", "gpt-4.1"),
+							).
+							Value(&model),
+					),
+				).WithInput(cmd.InOrStdin()).WithOutput(out)
+
+				if err := modelForm.Run(); err != nil {
+					model = "claude-sonnet-4.6"
+				}
+			}
 		}
 
-		if skillsMissingEvals > 0 {
+		// --- Phase 3: Fix Missing Evals (separate prompt) ---
+		if len(inventory) > 0 && skillsMissingEvals > 0 {
 			scaffoldMissing = true
-			mainFields = append(mainFields,
-				huh.NewConfirm().
-					Title(fmt.Sprintf("Set up default evals for %d skill(s) missing them?", skillsMissingEvals)).
-					Affirmative("Yes").
-					Negative("No").
-					Value(&scaffoldMissing),
-			)
+			confirmEvals := huh.NewForm(
+				huh.NewGroup(
+					huh.NewConfirm().
+						Title(fmt.Sprintf("Set up default evals for %d skill(s) missing them?", skillsMissingEvals)).
+						Affirmative("Yes").
+						Negative("No").
+						Value(&scaffoldMissing),
+				),
+			).WithInput(cmd.InOrStdin()).WithOutput(out)
+
+			if err := confirmEvals.Run(); err != nil {
+				scaffoldMissing = false
+			}
+
+			if scaffoldMissing {
+				scaffoldMissingEvals(absDir, inventory, engine, model)
+				// Re-display inventory showing updated state
+				inventory = displayInventory(out, absDir)
+				skillsMissingEvals = 0
+				for _, inv := range inventory {
+					if !inv.HasEval {
+						skillsMissingEvals++
+					}
+				}
+			}
 		}
 
+		// --- Phase 4: Create New Skill (separate prompt) ---
 		if needSkillPrompt {
 			createSkill = true // default to Yes
 			title := "Create a new skill?"
 			if len(inventory) > 0 {
 				title = "Create another skill?"
 			}
-			mainFields = append(mainFields,
-				huh.NewConfirm().
-					Title(title).
-					Affirmative("Yes").
-					Negative("No").
-					Value(&createSkill),
-			)
-		}
+			confirmSkill := huh.NewForm(
+				huh.NewGroup(
+					huh.NewConfirm().
+						Title(title).
+						Affirmative("Yes").
+						Negative("No").
+						Value(&createSkill),
+				),
+			).WithInput(cmd.InOrStdin()).WithOutput(out)
 
-		if len(mainFields) > 0 {
-			groups = append(groups, huh.NewGroup(mainFields...))
-		}
-
-		// Model group: hidden when engine ≠ copilot-sdk (auto-skipped)
-		if needConfigPrompt {
-			groups = append(groups, huh.NewGroup(
-				huh.NewSelect[string]().
-					Title("Default model").
-					Description("Model used for evaluations").
-					Options(
-						huh.NewOption("claude-sonnet-4.6", "claude-sonnet-4.6"),
-						huh.NewOption("claude-sonnet-4.5", "claude-sonnet-4.5"),
-						huh.NewOption("claude-haiku-4.5", "claude-haiku-4.5"),
-						huh.NewOption("claude-opus-4.6", "claude-opus-4.6"),
-						huh.NewOption("claude-opus-4.6-fast", "claude-opus-4.6-fast"),
-						huh.NewOption("claude-opus-4.5", "claude-opus-4.5"),
-						huh.NewOption("claude-sonnet-4", "claude-sonnet-4"),
-						huh.NewOption("gemini-3-pro-preview", "gemini-3-pro-preview"),
-						huh.NewOption("gpt-5.3-codex", "gpt-5.3-codex"),
-						huh.NewOption("gpt-5.2-codex", "gpt-5.2-codex"),
-						huh.NewOption("gpt-5.2", "gpt-5.2"),
-						huh.NewOption("gpt-5.1-codex-max", "gpt-5.1-codex-max"),
-						huh.NewOption("gpt-5.1-codex", "gpt-5.1-codex"),
-						huh.NewOption("gpt-5.1", "gpt-5.1"),
-						huh.NewOption("gpt-5", "gpt-5"),
-						huh.NewOption("gpt-5.1-codex-mini", "gpt-5.1-codex-mini"),
-						huh.NewOption("gpt-5-mini", "gpt-5-mini"),
-						huh.NewOption("gpt-4.1", "gpt-4.1"),
-					).
-					Value(&model),
-			).WithHideFunc(func() bool {
-				return engine != "copilot-sdk"
-			}))
-		}
-
-		if len(groups) > 0 {
-			form := huh.NewForm(groups...).
-				WithInput(cmd.InOrStdin()).
-				WithOutput(out)
-
-			if err := form.Run(); err != nil {
-				engine = "copilot-sdk"
-				model = "claude-sonnet-4.6"
+			if err := confirmSkill.Run(); err != nil {
 				createSkill = false
-				scaffoldMissing = false
 			}
 		}
 	} else {
-		// Non-TTY: use defaults, skip form, still run inventory and report
-		fmt.Fprintf(out, "\nUsing defaults: engine=%s, model=%s\n", engine, model) //nolint:errcheck
+		// Non-TTY: use defaults, skip forms
+		fmt.Fprintf(out, "\nUsing defaults: engine=%s, model=%s, scaffold missing evals=yes, create skill=no\n", engine, model) //nolint:errcheck
 		scaffoldMissing = skillsMissingEvals > 0
+
+		if scaffoldMissing {
+			scaffoldMissingEvals(absDir, inventory, engine, model)
+			// Re-display inventory after scaffolding
+			inventory = displayInventory(out, absDir)
+			skillsMissingEvals = 0
+			for _, inv := range inventory {
+				if !inv.HasEval {
+					skillsMissingEvals++
+				}
+			}
+		}
 	}
 
-	// --- Phase 3: Create/verify project structure ---
+	// --- Phase 5: Create/verify project structure ---
 	type initItem struct {
 		path    string
 		label   string
@@ -276,26 +338,6 @@ defaults:
 			items = append(items, initItem{
 				path:  inv.EvalPath,
 				label: fmt.Sprintf("Eval: %s", inv.Name),
-			})
-		} else if scaffoldMissing {
-			evalDir := filepath.Join(absDir, "evals", inv.Name)
-			items = append(items, initItem{
-				path:    filepath.Join(evalDir, "eval.yaml"),
-				label:   fmt.Sprintf("Eval: %s", inv.Name),
-				content: scaffold.EvalYAML(inv.Name, engine, model),
-			})
-			// Add task and fixture files to summary
-			for name, content := range scaffold.TaskFiles(inv.Name) {
-				items = append(items, initItem{
-					path:    filepath.Join(evalDir, "tasks", name),
-					label:   fmt.Sprintf("Task: %s/%s", inv.Name, name),
-					content: content,
-				})
-			}
-			items = append(items, initItem{
-				path:    filepath.Join(evalDir, "fixtures", "sample.py"),
-				label:   fmt.Sprintf("Fixture: %s/sample.py", inv.Name),
-				content: scaffold.Fixture(),
 			})
 		}
 	}
@@ -347,7 +389,7 @@ defaults:
 		fmt.Fprintf(out, "  %s %-35s %s\n", status, relPath, item.label) //nolint:errcheck
 	}
 
-	// --- Phase 4: Summary ---
+	// --- Phase 5b: Summary ---
 	fmt.Fprintln(out) //nolint:errcheck
 	if created == 0 {
 		fmt.Fprintf(out, "%s Project up to date.\n", greenCheck) //nolint:errcheck
@@ -357,7 +399,7 @@ defaults:
 		fmt.Fprintf(out, "✅ Repaired — %d item(s) added.\n", created) //nolint:errcheck
 	}
 
-	// --- Phase 5: Create skill if requested ---
+	// --- Phase 5c: Create skill if requested ---
 	if createSkill {
 		origDir, err := os.Getwd()
 		if err != nil {
@@ -372,6 +414,9 @@ defaults:
 		if err := newCommandE(cmd, nil, "", ""); err != nil {
 			return err
 		}
+
+		// Re-display final inventory after skill creation
+		displayInventory(out, absDir)
 	}
 
 	// --- Phase 6: Next steps (first run only, TTY only) ---
@@ -380,6 +425,27 @@ defaults:
 	}
 
 	return nil
+}
+
+// scaffoldMissingEvals creates eval suites for skills that lack them.
+func scaffoldMissingEvals(absDir string, inventory []skillEntry, engine, model string) {
+	for _, inv := range inventory {
+		if inv.HasEval {
+			continue
+		}
+		evalDir := filepath.Join(absDir, "evals", inv.Name)
+		tasksDir := filepath.Join(evalDir, "tasks")
+		fixturesDir := filepath.Join(evalDir, "fixtures")
+
+		for _, d := range []string{tasksDir, fixturesDir} {
+			os.MkdirAll(d, 0o755) //nolint:errcheck
+		}
+		os.WriteFile(filepath.Join(evalDir, "eval.yaml"), []byte(scaffold.EvalYAML(inv.Name, engine, model)), 0o644) //nolint:errcheck
+		for name, content := range scaffold.TaskFiles(inv.Name) {
+			os.WriteFile(filepath.Join(tasksDir, name), []byte(content), 0o644) //nolint:errcheck
+		}
+		os.WriteFile(filepath.Join(fixturesDir, "sample.py"), []byte(scaffold.Fixture()), 0o644) //nolint:errcheck
+	}
 }
 
 func printNextSteps(out io.Writer) {

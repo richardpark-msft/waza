@@ -277,7 +277,7 @@ description: |
 	require.NoError(t, cmd.Execute())
 
 	output := buf.String()
-	assert.Contains(t, output, "Discovered 1 skill(s), 1 missing evals")
+	assert.Contains(t, output, "1 skills found, 1 missing eval")
 	assert.Contains(t, output, "Skill: my-analyzer")
 }
 
@@ -347,7 +347,7 @@ description: |
 	require.NoError(t, cmd.Execute())
 
 	output := buf.String()
-	assert.Contains(t, output, "Discovered 1 skill(s), 0 missing evals")
+	assert.Contains(t, output, "1 skills found, 0 missing eval")
 	assert.Contains(t, output, "Skill: summarizer")
 	assert.Contains(t, output, "Eval: summarizer")
 
@@ -383,7 +383,7 @@ func TestInitCommand_InventoryMixedSkills(t *testing.T) {
 	require.NoError(t, cmd.Execute())
 
 	output := buf.String()
-	assert.Contains(t, output, "Discovered 2 skill(s), 1 missing evals")
+	assert.Contains(t, output, "2 skills found, 1 missing eval")
 
 	// Beta's eval should be scaffolded
 	assert.FileExists(t, filepath.Join(dir, "evals", "beta", "eval.yaml"))
