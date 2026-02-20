@@ -409,14 +409,14 @@ func TestInitCommand_ScaffoldedEvalContent(t *testing.T) {
 	cmd.SetArgs([]string{dir, "--no-skill"})
 	require.NoError(t, cmd.Execute())
 
-	// Verify eval.yaml content uses the defaults (non-TTY uses defaults)
+	// Verify eval.yaml content uses values from existing .waza.yaml
 	data, err := os.ReadFile(filepath.Join(dir, "evals", "test-skill", "eval.yaml"))
 	require.NoError(t, err)
 	content := string(data)
 	assert.Contains(t, content, "name: test-skill-eval")
 	assert.Contains(t, content, "skill: test-skill")
-	assert.Contains(t, content, "executor: copilot-sdk")
-	assert.Contains(t, content, "model: claude-sonnet-4.6")
+	assert.Contains(t, content, "executor: mock")
+	assert.Contains(t, content, "model: gpt-5")
 }
 
 func TestRootCommand_HasInitSubcommand(t *testing.T) {

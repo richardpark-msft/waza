@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -112,6 +113,26 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 	var createSkill, scaffoldMissing bool
 	engine = "copilot-sdk"
 	model = "claude-sonnet-4.6"
+
+	// If .waza.yaml exists, read engine/model from it so scaffolded evals
+	// match the project's actual config instead of hardcoded defaults.
+	if !needConfigPrompt {
+		if data, err := os.ReadFile(wazaConfigPath); err == nil {
+			for _, line := range strings.Split(string(data), "\n") {
+				line = strings.TrimSpace(line)
+				if strings.HasPrefix(line, "engine:") {
+					if v := strings.TrimSpace(strings.TrimPrefix(line, "engine:")); v != "" {
+						engine = v
+					}
+				}
+				if strings.HasPrefix(line, "model:") {
+					if v := strings.TrimSpace(strings.TrimPrefix(line, "model:")); v != "" {
+						model = v
+					}
+				}
+			}
+		}
+	}
 
 	if isTTY {
 		var groups []*huh.Group
@@ -234,10 +255,7 @@ defaults:
 `, engine, model)
 	}
 
-	configLabel := "Project defaults"
-	if engine != "" {
-		configLabel = fmt.Sprintf("Project defaults (%s, %s)", engine, model)
-	}
+	configLabel := fmt.Sprintf("Project defaults (%s, %s)", engine, model)
 
 	items := []initItem{
 		{filepath.Join(absDir, "skills"), "Skill definitions", true, ""},
@@ -260,10 +278,24 @@ defaults:
 				label: fmt.Sprintf("Eval: %s", inv.Name),
 			})
 		} else if scaffoldMissing {
+			evalDir := filepath.Join(absDir, "evals", inv.Name)
 			items = append(items, initItem{
-				path:    filepath.Join(absDir, "evals", inv.Name, "eval.yaml"),
+				path:    filepath.Join(evalDir, "eval.yaml"),
 				label:   fmt.Sprintf("Eval: %s", inv.Name),
 				content: scaffold.EvalYAML(inv.Name, engine, model),
+			})
+			// Add task and fixture files to summary
+			for name, content := range scaffold.TaskFiles(inv.Name) {
+				items = append(items, initItem{
+					path:    filepath.Join(evalDir, "tasks", name),
+					label:   fmt.Sprintf("Task: %s/%s", inv.Name, name),
+					content: content,
+				})
+			}
+			items = append(items, initItem{
+				path:    filepath.Join(evalDir, "fixtures", "sample.py"),
+				label:   fmt.Sprintf("Fixture: %s/sample.py", inv.Name),
+				content: scaffold.Fixture(),
 			})
 		}
 	}
@@ -315,18 +347,6 @@ defaults:
 		fmt.Fprintf(out, "  %s %-35s %s\n", status, relPath, item.label) //nolint:errcheck
 	}
 
-	// Create supporting eval files (tasks, fixtures) for newly scaffolded evals.
-	// Reuses scaffold package functions — same templates as waza new.
-	if scaffoldMissing {
-		for _, inv := range inventory {
-			if !inv.HasEval {
-				if err := scaffoldEvalSupportFiles(absDir, inv.Name); err != nil {
-					return fmt.Errorf("failed to scaffold eval files for %s: %w", inv.Name, err)
-				}
-			}
-		}
-	}
-
 	// --- Phase 4: Summary ---
 	fmt.Fprintln(out) //nolint:errcheck
 	if created == 0 {
@@ -357,38 +377,6 @@ defaults:
 	// --- Phase 6: Next steps (first run only, TTY only) ---
 	if created > 0 && isTTY {
 		printNextSteps(out)
-	}
-
-	return nil
-}
-
-// scaffoldEvalSupportFiles creates task files and fixtures for a skill's eval suite.
-// Reuses scaffold package functions (same templates as waza new). Idempotent.
-func scaffoldEvalSupportFiles(projectRoot, skillName string) error {
-	evalDir := filepath.Join(projectRoot, "evals", skillName)
-	tasksDir := filepath.Join(evalDir, "tasks")
-	fixturesDir := filepath.Join(evalDir, "fixtures")
-
-	for _, d := range []string{tasksDir, fixturesDir} {
-		if err := os.MkdirAll(d, 0o755); err != nil {
-			return fmt.Errorf("failed to create %s: %w", d, err)
-		}
-	}
-
-	files := map[string]string{
-		filepath.Join(fixturesDir, "sample.py"): scaffold.Fixture(),
-	}
-	for name, content := range scaffold.TaskFiles(skillName) {
-		files[filepath.Join(tasksDir, name)] = content
-	}
-
-	for fpath, content := range files {
-		if _, err := os.Stat(fpath); err == nil {
-			continue
-		}
-		if err := os.WriteFile(fpath, []byte(content), 0o644); err != nil {
-			return fmt.Errorf("failed to write %s: %w", fpath, err)
-		}
 	}
 
 	return nil
