@@ -84,10 +84,10 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 	}
 	var inventory []skillEntry
 
-	wsCtx, _ := workspace.DetectContext(absDir)
-	if wsCtx != nil {
+	wsCtx, wsErr := workspace.DetectContext(absDir)
+	if wsErr == nil && wsCtx != nil {
 		for _, si := range wsCtx.Skills {
-			evalPath, _ := workspace.FindEval(wsCtx, si.Name)
+			evalPath, _ := workspace.FindEval(wsCtx, si.Name) //nolint:errcheck // missing eval is expected
 			inventory = append(inventory, skillEntry{
 				Name:     si.Name,
 				Dir:      si.Dir,
