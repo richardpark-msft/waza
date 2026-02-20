@@ -8,6 +8,12 @@ import (
 )
 
 func TestResolvePaths(t *testing.T) {
+	root := t.TempDir()
+	abs1 := filepath.Join(root, "abs", "path1")
+	abs2 := filepath.Join(root, "abs", "path2")
+	baseDir := filepath.Join(root, "base")
+	baseSub := filepath.Join(root, "base", "sub")
+
 	tests := []struct {
 		name     string
 		paths    []string
@@ -17,32 +23,32 @@ func TestResolvePaths(t *testing.T) {
 		{
 			name:     "empty list",
 			paths:    []string{},
-			baseDir:  "/base",
+			baseDir:  baseDir,
 			expected: nil,
 		},
 		{
 			name:     "nil list",
 			paths:    nil,
-			baseDir:  "/base",
+			baseDir:  baseDir,
 			expected: nil,
 		},
 		{
 			name:     "absolute paths unchanged",
-			paths:    []string{"/abs/path1", "/abs/path2"},
-			baseDir:  "/base",
-			expected: []string{"/abs/path1", "/abs/path2"},
+			paths:    []string{abs1, abs2},
+			baseDir:  baseDir,
+			expected: []string{abs1, abs2},
 		},
 		{
 			name:     "relative paths resolved",
 			paths:    []string{"rel1", "rel2/sub"},
-			baseDir:  "/base",
-			expected: []string{"/base/rel1", "/base/rel2/sub"},
+			baseDir:  baseDir,
+			expected: []string{filepath.Join(baseDir, "rel1"), filepath.Join(baseDir, "rel2", "sub")},
 		},
 		{
 			name:     "mixed paths",
-			paths:    []string{"/abs", "rel", "../parent"},
-			baseDir:  "/base/sub",
-			expected: []string{"/abs", "/base/sub/rel", "/base/parent"},
+			paths:    []string{abs1, "rel", "../parent"},
+			baseDir:  baseSub,
+			expected: []string{abs1, filepath.Join(baseSub, "rel"), filepath.Join(root, "base", "parent")},
 		},
 	}
 
