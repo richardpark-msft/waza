@@ -131,10 +131,11 @@ func newCommandE(cmd *cobra.Command, args []string, templatePack, outputDir stri
 			}
 			// After wizard collects name, check for existing SKILL.md
 			_, postStatus := detectExistingSkillMD(projectRoot, inProject, skillName)
-			if postStatus == skillMDValid {
+			switch postStatus {
+			case skillMDValid:
 				fmt.Fprintf(cmd.OutOrStdout(), "Skill '%s' already exists — checking inventory...\n", skillName) //nolint:errcheck
 				existingSkill = true
-			} else if postStatus == skillMDMalformed {
+			case skillMDMalformed:
 				overwriteSkillMD = true
 			}
 			// Generate SKILL.md content from wizard (used for new or malformed)
@@ -335,7 +336,7 @@ func writeFiles(cmd *cobra.Command, files []fileEntry, skillName string, existin
 	}
 	fmt.Fprintf(cmd.OutOrStdout(), "\nSkill structure:\n\n") //nolint:errcheck
 
-	baseDir, _ := os.Getwd()
+	baseDir, _ := os.Getwd() //nolint:errcheck // best-effort for display paths
 	created := 0
 	for _, f := range files {
 		relPath := f.path

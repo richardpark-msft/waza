@@ -63,7 +63,7 @@ Port existing Python waza functionality to Go for single-binary distribution.
 |----|------------|---------------------|
 | E1-01 | As a developer, I can run evaluations with `waza run` | Parses eval.yaml, executes tasks, outputs results |
 | E1-02 | As a developer, I can initialize new eval suites with `waza init` | Creates compliant directory structure |
-| E1-03 | As a developer, I can generate evals from SKILL.md with `waza generate` | Parses SKILL.md, creates tasks and fixtures |
+| E1-03 | As a developer, I can create new skills with `waza new` | Scaffolds skill structure, supports --output-dir flag |
 | E1-04 | As a developer, I can compare results across models with `waza compare` | Loads multiple result files, generates comparison report |
 | E1-05 | As a developer, I can use all 8 grader types | code, model, regex, file, keyword, json, script, composite |
 | E1-06 | As a developer, I can execute against Copilot SDK | Full integration with streaming responses |

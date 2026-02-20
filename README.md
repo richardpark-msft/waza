@@ -85,8 +85,7 @@ waza new skill-name
 # Check if a skill is ready for submission
 waza check skills/my-skill
 
-# Generate evals from a SKILL.md
-waza generate skills/my-skill/SKILL.md
+# Note: 'generate' is available as an alias for 'new' (see below for new command)
 
 # Run evaluations
 waza run examples/code-explainer/eval.yaml --context-dir examples/code-explainer/fixtures -v
@@ -245,13 +244,7 @@ waza run eval.yaml --format github-comment > comment.md
 gh pr comment $PR_NUMBER --body-file comment.md
 ```
 
-### `waza generate <SKILL.md>`
-
-Parse a SKILL.md file and generate an eval suite from its frontmatter.
-
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--output-dir <dir>` | `-d` | Output directory (default: `./eval-{skill-name}/`) |
+**Note:** `waza generate` is an alias for `waza new`. Both commands support the same functionality with the `--output-dir` flag for specifying custom output locations.
 
 ### `waza compare <file1> <file2> [files...]`
 
@@ -433,7 +426,6 @@ cmd/waza/              CLI entrypoint and command definitions
 internal/
   config/              Configuration with functional options
   execution/           AgentEngine interface (mock, copilot)
-  generate/            SKILL.md → eval suite generation
   graders/             Validator registry and built-in graders
   metrics/             Scoring metrics
   models/              Data structures (BenchmarkSpec, TestCase, EvaluationOutcome)

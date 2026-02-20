@@ -205,7 +205,7 @@ func TestNewCommand_EmptySkillMD_NonTTY_OverwritesWithDefaults(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	// Pre-create an empty SKILL.md (0 bytes)
 	skillDir := filepath.Join(dir, "skills", "my-skill")
@@ -240,7 +240,7 @@ func TestNewCommand_MalformedSkillMD_NonTTY_OverwritesWithDefaults(t *testing.T)
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	// Pre-create a SKILL.md with invalid content (no frontmatter)
 	skillDir := filepath.Join(dir, "skills", "my-skill")
@@ -269,7 +269,7 @@ func TestNewCommand_ValidSkillMD_NonTTY_SkipsToInventory(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	// Pre-create a valid SKILL.md
 	skillDir := filepath.Join(dir, "skills", "my-skill")
@@ -304,7 +304,7 @@ func TestNewCommand_NoSkillMD_NonTTY_CreatesEverything(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	var buf bytes.Buffer
 	cmd := newNewCommand()
@@ -330,7 +330,7 @@ func TestNewCommand_EmptySkillMD_EvalFilesPreExist(t *testing.T) {
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 	require.NoError(t, os.Chdir(dir))
-	t.Cleanup(func() { _ = os.Chdir(origDir) })
+	t.Cleanup(func() { _ = os.Chdir(origDir) }) //nolint:errcheck // best-effort cleanup
 
 	// Pre-create empty SKILL.md AND some eval files
 	skillDir := filepath.Join(dir, "skills", "my-skill")
