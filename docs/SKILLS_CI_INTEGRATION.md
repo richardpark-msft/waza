@@ -103,12 +103,12 @@ waza init eval --interactive
 # Follow the prompts to configure your evaluation
 ```
 
-### Method 2: Generate from SKILL.md
+### Method 2: Generate from Skill Name
 
-If your SKILL.md has evaluation metadata in its frontmatter:
+If you have a skill, create the eval suite using `waza new`:
 
 ```bash
-waza generate SKILL.md --output-dir eval
+waza new my-skill --output-dir eval
 ```
 
 ### Method 3: Manual Creation

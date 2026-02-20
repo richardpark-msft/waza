@@ -14,96 +14,34 @@ This tutorial walks you through creating evaluations for your Agent Skills.
 
 You have several options to create your eval suite:
 
-### Option A: Auto-Generate from SKILL.md (Recommended)
+### Option A: Create a New Skill (Recommended)
 
-The fastest way to get started is to generate from a skill in a GitHub repo:
+The fastest way to get started:
 
 ```bash
-# Generate eval for a specific skill in a repo (recommended)
-waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./azure-functions-eval
+# Create a new skill with eval suite
+waza new my-awesome-skill
 
-# Or from a local file
-waza generate ./path/to/SKILL.md -o ./my-waza
+# Or use the alias
+waza generate my-awesome-skill
 
-# The generator creates:
-# my-waza/
-# ├── eval.yaml           # Main eval configuration
-# ├── trigger_tests.yaml  # Trigger accuracy tests  
-# ├── tasks/              # Generated task definitions
-# │   ├── task-001.yaml
-# │   ├── task-002.yaml
-# │   └── task-003.yaml
-# └── fixtures/           # Sample project files for context
-#     ├── function_app.py
-#     ├── host.json
-#     └── requirements.txt
+# Scaffold into a specific directory
+waza new my-awesome-skill --output-dir ./my-evals
 ```
 
-### Option A+ : LLM-Assisted Generation (Best Quality)
+`waza new` is idempotent — run it again on an existing skill and it checks what's missing, filling in only the gaps without overwriting your work.
 
-For more realistic and comprehensive test cases, use LLM-assisted generation:
+<!-- Future feature: LLM-assisted generation (--assist flag) for smarter test cases -->
+<!-- Future feature: GitHub repo discovery (--repo, --skill, --scan flags) -->
 
-```bash
-# Use --assist to have an LLM analyze the skill and generate better tests
-waza generate ./SKILL.md -o ./my-waza --assist
-
-# Specify a different model if desired
-waza generate ./SKILL.md -o ./my-waza --assist --model gpt-4o
-
-# Available models: claude-sonnet-4-20250514 (default), claude-opus-4.5, gpt-4o, gpt-5
-```
-
-LLM-assisted generation:
-- Creates more natural, realistic user prompts
-- Generates domain-appropriate fixture files
-- Suggests relevant graders and assertions
-- Produces 5 diverse tasks testing different scenarios
-- Falls back to pattern-based generation if LLM fails
-
-### Option A++: Discover Skills from GitHub Repos
-
-You can scan a GitHub repo to discover all skills and generate evals for them:
+### Option B: Initialize a Project First
 
 ```bash
-# Scan a GitHub repo and interactively select skills
-waza generate --repo microsoft/GitHub-Copilot-for-Azure
-
-# Generate eval for a SPECIFIC skill (recommended - avoids long URLs!)
-waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions -o ./eval
-
-# Generate evals for ALL discovered skills (CI-friendly)
-waza generate --repo microsoft/GitHub-Copilot-for-Azure --all --output ./evals
-
-# Scan local directory for SKILL.md files
-waza generate --scan
-
-# Combine with LLM-assisted generation
-waza generate --repo microsoft/GitHub-Copilot-for-Azure --skill azure-functions --assist
-```
-
-This is particularly useful for:
-- Targeting a specific skill without needing the full raw GitHub URL
-- Testing entire skill libraries at once
-- CI/CD pipelines with `--all` flag
-- Discovering skills you didn't know existed
-
-### Option B: Blank Scaffold
-```bash
-# Create eval scaffolding from scratch
+# Create a waza project with directory structure
 waza init my-awesome-skill
 
-# This creates:
-# my-awesome-skill/
-# ├── eval.yaml           # Main eval configuration
-# ├── trigger_tests.yaml  # Trigger accuracy tests
-# └── tasks/
-#     └── example-task.yaml
-```
-
-### Option C: Init with SKILL.md Integration
-```bash
-# Scaffold AND generate from SKILL.md in one step
-waza init my-skill --from-skill ./path/to/SKILL.md
+# Then create skills within it
+waza new my-skill
 ```
 
 ## Step 2: Configure Your Eval Specification
