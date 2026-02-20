@@ -38,7 +38,6 @@ performance against predefined test cases.`,
 	// Add subcommands
 	cmd.AddCommand(newRunCommand())
 	cmd.AddCommand(newInitCommand())
-	cmd.AddCommand(newGenerateCommand())
 	cmd.AddCommand(tokens.NewCommand())
 	cmd.AddCommand(newCompareCommand())
 	cmd.AddCommand(dev.NewCommand())

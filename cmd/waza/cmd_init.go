@@ -260,7 +260,7 @@ defaults:
 		defer os.Chdir(origDir) //nolint:errcheck
 
 		fmt.Fprintln(out) //nolint:errcheck
-		if err := newCommandE(cmd, nil, ""); err != nil {
+		if err := newCommandE(cmd, nil, "", ""); err != nil {
 			return err
 		}
 	}
