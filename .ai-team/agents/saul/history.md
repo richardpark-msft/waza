@@ -40,5 +40,3 @@
 ## 📌 Team update (2026-02-20): Model policy overhaul
 
 All code roles now use `claude-opus-4.6`. Docs/Scribe/diversity use `gemini-3-pro-preview`. Heavy code gen uses `gpt-5.2-codex`. Decided by Scott Boyer. See decisions.md for full details.
-📌 Team update (2026-02-19): waza generate consolidated into waza new as alias — decided by Linus
-

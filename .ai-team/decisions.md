@@ -70,14 +70,6 @@ Added Documentation Impact Matrix mapping code paths to required doc updates, sh
 
 **Impact:** All code PRs (`cmd/waza/`, `internal/`, `web/src/`) now automatically routed to Saul for doc-impact review. All doc PRs (`docs/`, `README.md`, `DEMO-SCRIPT.md`) routed to Saul for consistency check. Clear accountability: Saul owns the matrix and updates it as new paths are discovered. Screenshot maintenance can be automated via Playwright tests.
 
-## 2026-02-19: Consolidated waza new and waza generate
-
-**By:** Linus
-
-**What:** `waza generate` is now a Cobra alias on `waza new`, not a separate command. The `--output-dir`/`-d` flag migrated to `new`. `cmd_generate.go` and its tests are deleted. `newCommandE` signature now takes `outputDir` as a fourth parameter — any callers (e.g., `cmd_init.go`) must pass it.
-
-**Why:** Issue #224 — having two commands with overlapping functionality confused users and created maintenance burden. A single `new` command with an alias keeps backward compatibility while reducing code duplication. The `generate` command's SKILL.md-path-as-argument behavior is dropped; workspace detection handles skill resolution.
-
 ## 2026-02-19: --tokenizer flag should be available on all token commands
 
 **By:** Rusty (Lead / Architect)  
