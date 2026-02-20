@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -130,7 +130,7 @@ func NewTokenizerForEncoding(encoding string, extraSpecialTokens map[string]int)
 		specialTokens = mergeSpecialTokens(specialTokens, extraSpecialTokens)
 	}
 
-	f, err := modelFS.Open(filepath.Join("models", fileName))
+	f, err := modelFS.Open(path.Join("models", fileName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open embedded model file %s: %w", fileName, err)
 	}
