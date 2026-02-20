@@ -81,3 +81,36 @@ Added Documentation Impact Matrix mapping code paths to required doc updates, sh
 **Why:** If a user needs the fast estimate for CI (where speed matters more than precision), they should be able to use it from any token command — not just `count`. The current design forces BPE on `check` and `compare` with no escape hatch.
 
 **Status:** Follow-up work, not blocking PR #260.
+
+## 2026-02-20: Unified Release Trigger & Version Single Source-of-Truth
+
+**By:** Rusty (Lead / Architect)
+**Date:** 2026-02-20
+**Status:** PROPOSED
+**Impact:** Release process, artifact consistency, extension users
+
+**What:** Unify the release process under a single `release.yml` workflow triggered by `v*.*.*` Git tags. Retire `go-release.yml` and `azd-ext-release.yml` once stable. Pre-flight validation ensures `version.txt == tag`. Version sync runs before builds, not after.
+
+**Why:** Current two-workflow approach causes version desync (extension.yaml lags CLI), stale registry.json, dual tag schemes, and no validation. Tag-driven approach is Git-native, immutable, auditable.
+
+**See Also:** Issue #223, `.ai-team/agents/rusty/history.md`
+
+## 2026-02-20: Model assignment overhaul — quality-first policy
+
+**By:** Scott Boyer (via Copilot)
+**Date:** 2026-02-20
+**Status:** APPROVED
+
+**What:** Full model reassignment — cost is not a constraint, optimize for quality/speed per role:
+1. Rusty (Lead) → `claude-opus-4.6` — always premium, no downgrade for triage
+2. Linus (Backend Dev) → `claude-opus-4.6` — highest SWE-bench (81%), best debugging
+3. Basher (Frontend Dev) → `claude-opus-4.6` — same quality advantage for components
+4. Livingston (Tester) → `claude-opus-4.6` — best logical reasoning for edge cases
+5. Saul (Documentation Lead) → `gemini-3-pro-preview` — 1M context, good for large docs
+6. Scribe (Session Logger) → `gemini-3-pro-preview` — mechanical ops, Gemini handles fine
+7. Diversity reviews → `gemini-3-pro-preview` — different provider = different perspective
+8. Heavy code gen (500+ lines) → `gpt-5.2-codex` — 3.8× faster, 400K context
+
+**Why:** User directive: "Cost is not an issue — optimize for best/fastest per role." Benchmarks consulted: SWE-bench Verified (Feb 2026). Claude Opus 4.6 leads at 81%, GPT-5.2 Codex wins speed, Gemini 3 Pro wins context window + provider diversity.
+
+**Supersedes:** "Model selection directive (updated)" from 2026-02-18 and "Web UI model assignments" from 2026-02-18.

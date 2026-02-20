@@ -59,3 +59,8 @@
 - **Total E2E count:** 37 tests (4 screenshot + 33 existing), all passing on Chromium
 
 📌 Team update (2026-02-19): Screenshot conventions formalized (viewport, paths, naming, mock reuse) — decided by Basher (#251)
+
+
+## 📌 Team update (2026-02-20): Model policy overhaul
+
+All code roles now use `claude-opus-4.6`. Docs/Scribe/diversity use `gemini-3-pro-preview`. Heavy code gen uses `gpt-5.2-codex`. Decided by Scott Boyer. See decisions.md for full details.
