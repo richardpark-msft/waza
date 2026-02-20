@@ -51,3 +51,8 @@
 - Features: live updates, search, filtering by status/tags/date, export, dark mode
 
 📌 Team update (2026-02-19): Documentation maintenance gates established (Saul reviews PRs for doc impact) — decided by Saul (#256)
+
+
+## 📌 Team update (2026-02-20): Model policy overhaul
+
+All code roles now use `claude-opus-4.6`. Docs/Scribe/diversity use `gemini-3-pro-preview`. Heavy code gen uses `gpt-5.2-codex`. Decided by Scott Boyer. See decisions.md for full details.

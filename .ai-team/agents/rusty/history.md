@@ -81,3 +81,8 @@
 - Document the flow in docs/RELEASE.md
 
 **Immediate Action:** registry.json is blocking extension users on 0.4.0-alpha.1. Should manually trigger release.yml or azd-ext-release.yml to sync.
+
+
+## 📌 Team update (2026-02-20): Model policy overhaul
+
+All code roles now use `claude-opus-4.6`. Docs/Scribe/diversity use `gemini-3-pro-preview`. Heavy code gen uses `gpt-5.2-codex`. Decided by Scott Boyer. See decisions.md for full details.
