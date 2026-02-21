@@ -56,8 +56,8 @@ test.describe("Screenshots", () => {
     await expect(page.getByText("explain-fibonacci")).toBeVisible();
     await expect(page.getByText("Metrics Comparison")).toBeVisible();
 
-    // Use taller viewport to capture run cards, metrics, and per-task table
-    await page.setViewportSize({ width: 1280, height: 900 });
+    // Use taller viewport to capture run cards, metrics, and full per-task table
+    await page.setViewportSize({ width: 1280, height: 1050 });
 
     await page.screenshot({
       path: "../docs/images/explore/compare-runs.png",
