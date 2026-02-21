@@ -82,3 +82,12 @@ All code roles now use `claude-opus-4.6`. Docs/Scribe/diversity use `gemini-3-pr
 - **Backward compatible:** Empty `JudgeModel` = no override, existing per-grader model or SDK default used
 - **Gotcha:** Prior session on same branch had partially committed changes — always check `git log` for existing commits on branch before starting work
 - **Test count:** 7 new tests (5 injectJudgeModel unit + 2 spec YAML deserialization), all passing
+
+### SkillsBench Advisory Checks (PR #324, Issue #315)
+- **Branch:** `squad/315-skillsbench-advisory`
+- **Feature:** `AdvisoryScorer` added to `waza dev` scoring pipeline — 5 research-backed SkillsBench checks
+- **Checks:** module-count (≥4 warns), complexity (>2500 tokens), negative-delta-risk (500-800 range), procedural-content (≥3 steps = positive), over-specificity (>50 code blocks)
+- **Pattern:** New scorer type (`AdvisoryScorer`) follows existing `HeuristicScorer`/`SpecScorer` pattern but uses `AdvisoryResult` with `Advisory` structs (Check/Message/Kind) instead of `Issue` — "positive" kind is new for beneficial signals
+- **Display:** `DisplayAdvisory()` integrated into `DisplayScore()` after spec compliance; uses ✅/⚠️/ℹ️ icons for positive/warning/info
+- **Counting helpers:** `countModules` (## and ### headings), `countNumberedSteps` (regex), `countCodeBlocks` (``` fence pairs)
+- **Test count:** 28 new tests in `advisory_test.go`, all passing alongside existing dev tests
