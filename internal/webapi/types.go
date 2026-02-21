@@ -25,13 +25,23 @@ type RunDetail struct {
 
 // TaskResult is a per-task result within a run.
 type TaskResult struct {
-	Name          string                    `json:"name"`
-	Outcome       string                    `json:"outcome"`
-	Score         float64                   `json:"score"`
-	Duration      float64                   `json:"duration"`
-	GraderResults []GraderResult            `json:"graderResults"`
-	Transcript    []TranscriptEventResponse `json:"transcript,omitempty"`
-	SessionDigest *SessionDigestResponse    `json:"sessionDigest,omitempty"`
+	Name          string                      `json:"name"`
+	Outcome       string                      `json:"outcome"`
+	Score         float64                     `json:"score"`
+	Duration      float64                     `json:"duration"`
+	GraderResults []GraderResult              `json:"graderResults"`
+	Transcript    []TranscriptEventResponse   `json:"transcript,omitempty"`
+	SessionDigest *SessionDigestResponse      `json:"sessionDigest,omitempty"`
+	BootstrapCI   *ConfidenceIntervalResponse `json:"bootstrapCI,omitempty"`
+	IsSignificant *bool                       `json:"isSignificant,omitempty"`
+}
+
+// ConfidenceIntervalResponse is the API representation of a bootstrap CI.
+type ConfidenceIntervalResponse struct {
+	Lower           float64 `json:"lower"`
+	Upper           float64 `json:"upper"`
+	Mean            float64 `json:"mean"`
+	ConfidenceLevel float64 `json:"confidenceLevel"`
 }
 
 // TranscriptEventResponse is the API representation of a transcript event.
