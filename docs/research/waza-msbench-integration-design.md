@@ -196,19 +196,42 @@ MSBench stores results in Kusto. waza dashboard expects JSON. Different schemas,
 3. **Write** `results.json` in waza format
 4. **Merge** with local runs (tagged as `source: msbench`)
 
-```
-MSBench Kusto Schema              waza results.json
-─────────────────────             ──────────────────
-RunId                    ───►     eval_id
-BenchmarkName            ───►     eval_name
-InstanceId               ───►     tasks[].id
-ResolveStatus            ───►     tasks[].status (passed/failed)
-TokenCount               ───►     tasks[].trials[].token_count
-Duration                 ───►     tasks[].trials[].duration_ms
-GraderOutput             ───►     tasks[].trials[].grader_results
-Trajectory (if ATIF)     ───►     tasks[].trials[].trajectory
-ModelName                ───►     config.model
-Timestamp                ───►     timestamp
+```mermaid
+flowchart LR
+    subgraph Kusto["MSBench Kusto Schema"]
+        K1["RunId"]
+        K2["BenchmarkName"]
+        K3["InstanceId"]
+        K4["ResolveStatus"]
+        K5["TokenCount"]
+        K6["Duration"]
+        K7["GraderOutput"]
+        K8["Trajectory (if ATIF)"]
+        K9["ModelName"]
+        K10["Timestamp"]
+    end
+    subgraph Waza["waza results.json"]
+        W1["eval_id"]
+        W2["eval_name"]
+        W3["tasks[].id"]
+        W4["tasks[].status (passed/failed)"]
+        W5["tasks[].trials[].token_count"]
+        W6["tasks[].trials[].duration_ms"]
+        W7["tasks[].trials[].grader_results"]
+        W8["tasks[].trials[].trajectory"]
+        W9["config.model"]
+        W10["timestamp"]
+    end
+    K1 --> W1
+    K2 --> W2
+    K3 --> W3
+    K4 --> W4
+    K5 --> W5
+    K6 --> W6
+    K7 --> W7
+    K8 --> W8
+    K9 --> W9
+    K10 --> W10
 ```
 
 ### What This Enables
@@ -253,19 +276,13 @@ type Validator interface {
 
 Package waza graders as executable scripts that MSBench can invoke through its Grader SDK:
 
-```
-┌──────────────────────────────────────────────────────┐
-│  MSBench Container                                    │
-│                                                       │
-│  ┌────────────────┐     ┌──────────────────────────┐ │
-│  │ MSBench Grader  │────►│ grader-shim (waza binary)│ │
-│  │ SDK v0 hook     │     │                          │ │
-│  │                 │◄────│ Reads: output, fixtures   │ │
-│  │ Pass/Fail +     │     │ Runs: waza validators     │ │
-│  │ score + details │     │ Returns: JSON verdict     │ │
-│  └────────────────┘     └──────────────────────────┘ │
-│                                                       │
-└──────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Container["MSBench Container"]
+        A["MSBench Grader<br/>SDK v0 hook"] -- "invoke" --> B["grader-shim<br/>(waza binary)"]
+        B -- "Reads: output, fixtures<br/>Runs: waza validators<br/>Returns: JSON verdict" --> A
+        A -- "Pass/Fail +<br/>score + details" --> Result(("Result"))
+    end
 ```
 
 **The shim is a stripped-down waza binary** that:
@@ -423,9 +440,10 @@ These are concrete capabilities MSBench doesn't have today that waza could provi
 
 ### Option A: waza as MSBench Frontend (Thin Adapter)
 
-```
-User ──► waza CLI ──► MSBench API ──► Compute Fleet
-                  ◄── Results ◄──── Kusto
+```mermaid
+flowchart LR
+    User --> waza["waza CLI"] --> API["MSBench API"] --> Fleet["Compute Fleet"]
+    Kusto --> Results --> waza
 ```
 
 **What it means:** waza becomes a client for MSBench. `waza run --backend msbench` sends evals to MSBench for execution instead of running locally. Results stream back into waza's dashboard.
@@ -446,11 +464,12 @@ User ──► waza CLI ──► MSBench API ──► Compute Fleet
 
 ### Option B: Shared Eval Format with Bidirectional Sync
 
-```
-                    ┌───────────────┐
-waza CLI ──export──►│  Shared Eval  │◄──import── MSBench CLI
-waza CLI ◄─import───│  Format (SEF) │──export──► MSBench CLI
-                    └───────────────┘
+```mermaid
+flowchart LR
+    waza["waza CLI"] -- "export" --> SEF["Shared Eval<br/>Format (SEF)"]
+    SEF -- "import" --> waza
+    MSBench["MSBench CLI"] -- "import" --> SEF
+    SEF -- "export" --> MSBench
 ```
 
 **What it means:** Define a "Shared Eval Format" that both tools can read and write. Neither depends on the other's API. The format is the contract.
@@ -472,9 +491,10 @@ waza CLI ◄─import───│  Format (SEF) │──export──► MSBench
 
 ### Option C: waza Generates MSBench Benchmarks (One-Way Export)
 
-```
-waza CLI ──export──► MSBench Benchmark Package ──► MSBench CLI
-waza CLI ◄─import─── MSBench Results (Kusto/JSON)
+```mermaid
+flowchart LR
+    waza["waza CLI"] -- "export" --> Pkg["MSBench Benchmark Package"] -- "run" --> MSBench["MSBench CLI"]
+    MSBench -- "Results (Kusto/JSON)" --> waza2["waza CLI"] 
 ```
 
 **What it means:** waza exports to MSBench format. MSBench results can be imported back. But MSBench never writes waza format. The flow is: author in waza → run at scale in MSBench → review in waza.
@@ -584,14 +604,15 @@ The Azure CLI benchmarks use **Docker containers to package**:
 4. Grading logic (as executable scripts)
 
 **Container flow:**
-```
-Dockerfile ──build──► Harbor Image ──deploy──► MSBench Compute Fleet
-                                                (50-100 parallel runs)
-                                                │
-                                                ├─► Container instance 1
-                                                ├─► Container instance 2
-                                                └─► Container instance N
-                                                     (all run same test suite)
+```mermaid
+flowchart LR
+    DF["Dockerfile"] -- "build" --> Img["Harbor Image"] -- "deploy" --> Fleet["MSBench Compute Fleet<br/>(50-100 parallel runs)"]
+    Fleet --> C1["Container instance 1"]
+    Fleet --> C2["Container instance 2"]
+    Fleet --> CN["Container instance N"]
+    style C1 fill:#fff3e0
+    style C2 fill:#fff3e0
+    style CN fill:#fff3e0
 ```
 
 Each container instance:
@@ -652,15 +673,11 @@ ENTRYPOINT ["/bin/bash", "-c", "waza-grader --config graders.yaml --output /tmp/
 
 ### Results Flow Through Containers
 
-```
-Container runs ──► stdout/stderr ──► MSBench sidecar ──► Kusto
-                                                           │
-                                   waza import ◄──────────┘
-                                   (extract via KQL)
-                                        │
-                                        ▼
-                                  results.json
-                                  (waza format)
+```mermaid
+flowchart TD
+    C["Container runs"] -- "stdout/stderr" --> S["MSBench sidecar"] --> K["Kusto"]
+    K -- "extract via KQL" --> W["waza import"]
+    W --> R["results.json<br/>(waza format)"]
 ```
 
 ### Reference Links
@@ -732,22 +749,35 @@ This is a cleaner integration point:
 
 ### Updated Architecture with Harbor
 
-```
-Inner Loop (waza)                    Outer Loop (MSBench + Harbor)
-┌─────────────────┐                  ┌──────────────────────────────┐
-│ waza init/new    │                  │ Harbor Runtime               │
-│ waza suggest     │                  │ ┌──────────────────────────┐ │
-│ waza run (1-5x)  │ waza export     │ │ Container Fleet          │ │
-│ waza serve       │ ──────────────→ │ │ • 50-100 parallel tasks  │ │
-│ waza dev         │ --target harbor │ │ • Docker isolation       │ │
-│                  │                  │ │ • Cloud orchestration    │ │
-│ Results ←────────│ waza import     │ │   (Daytona/Modal/Azure)  │ │
-│ Dashboard  ←─────│ ←────────────── │ │ • Real-world environments│ │
-│ Trajectory View  │ --from harbor   │ └──────────────────────────┘ │
-│ Compare Runs     │                  │                              │
-│                  │                  │ MSBench Compute (CES)        │
-│                  │                  │ Results → Kusto Analytics    │
-└─────────────────┘                  └──────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Inner["Inner Loop (waza)"]
+        I1["waza init/new"]
+        I2["waza suggest"]
+        I3["waza run (1-5x)"]
+        I4["waza serve"]
+        I5["waza dev"]
+        I6["Results"]
+        I7["Dashboard"]
+        I8["Trajectory View"]
+        I9["Compare Runs"]
+    end
+    subgraph Outer["Outer Loop (MSBench + Harbor)"]
+        subgraph Harbor["Harbor Runtime"]
+            H1["Container Fleet"]
+            H2["50-100 parallel tasks"]
+            H3["Docker isolation"]
+            H4["Cloud orchestration<br/>(Daytona/Modal/Azure)"]
+            H5["Real-world environments"]
+        end
+        M1["MSBench Compute (CES)"]
+        M2["Results → Kusto Analytics"]
+    end
+    Inner -- "waza export<br/>--target harbor" --> Outer
+    Outer -- "waza import<br/>--from harbor" --> Inner
+
+    style Inner fill:#fff3e0
+    style Outer fill:#f3e5f5
 ```
 
 ### Harbor Integration Roadmap
