@@ -7,8 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-02-21
+
 ### Added
 
+- **MCP Server** — `waza serve` now includes an always-on MCP server with 10 tools (eval.list, eval.get, eval.validate, eval.run, task.list, run.status, run.cancel, results.summary, results.runs, skill.check) via stdio transport (#286)
+- **`waza suggest` command** — LLM-powered eval suggestions: reads SKILL.md, proposes test cases, graders, and fixtures. Flags: `--model`, `--dry-run`, `--apply`, `--output-dir`, `--format` (#287)
+- **Interactive workflow skill** — `skills/waza-interactive/SKILL.md` with 5 workflow scenarios for conversational eval orchestration (#288)
+- **Grader weighting** — `weight` field on grader configs, `ComputeWeightedRunScore` method, dashboard weighted scores column (#299)
+- **Statistical confidence intervals** — Bootstrap CI with 10K resamples, 95% confidence, normalized gain. Dashboard CI bands and significance badges (#308)
+- **Judge model support** — `--judge-model` flag and `judge_model` config for separate LLM-as-judge model (#309)
+- **Spec compliance checks** — 8 agentskills.io compliance checks in `waza check` and `waza dev` (#314)
+- **SkillsBench advisory** — 5 advisory checks (module-count, complexity, negative-delta, procedural, over-specificity) (#315)
+- **MCP integration scoring** — 4 MCP integration checks in `waza dev` (#316)
+- **Batch skill processing** — `waza dev` processes multiple skills in one run (#317)
+- **Token compare --strict** — Budget enforcement mode for `waza tokens compare` (#318)
+- **Scaffold trigger tests** — Auto-generate trigger test YAML from SKILL.md frontmatter (#319)
+- **Skill profile** — `waza tokens profile` for static analysis of skill token distribution (#311)
+- **JUnit XML reporter** — `--format junit` output for CI integration (#312)
 - **Template Variables** — New `internal/template` package with `Render()` for Go text/template syntax in hooks and commands. System variables: `JobID`, `TaskName`, `Iteration`, `Attempt`, `Timestamp`. User variables via `vars` map (#186)
 - **GroupBy Results** — New `group_by` config field to organize results by dimension (e.g., model). CLI shows grouped output, JSON includes `GroupStats` with name/passed/total/avg_score (#188)
 - **Custom Input Variables** — New `inputs` section in eval.yaml for defining key-value pairs available as `{{.Vars.key}}` throughout evaluation. Accessible in hooks, task templates, and grader configs (#189)
@@ -32,9 +48,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Task evaluation rubrics: `task_completion`, `task_adherence`, `intent_resolution`, `response_completeness`
 - **MockEngine WorkspaceDir support** — test infrastructure for graders that need workspace access (#159)
 
+### Changed
+
+- **Dashboard** — Aspire-style trajectory waterfall, weighted scores column, CI bands with significance indicators, judge model badge (#303, #330, #331, #332)
+- **Docs site** — Dashboard explore page with 14+ screenshots, light/dark mode, navbar polish (#357, #358, #360)
+
 ### Fixed
 
 - **install.sh macOS checksum** — added `shasum -a 256` fallback for macOS (which lacks `sha256sum`) (#163)
+- Dashboard compare-runs screenshot now shows 2 runs selected with full comparison
+- GitHub icon alignment and search bar width on docs site
 
 ## [0.4.0-alpha.1] - 2026-02-17
 
@@ -210,7 +233,8 @@ pip install waza
 - YAML escaping for regex patterns with backslashes
 - Progress bar now shows 100% on completion
 
-[Unreleased]: https://github.com/spboyer/waza/compare/v0.4.0-alpha.1...HEAD
+[Unreleased]: https://github.com/spboyer/waza/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/spboyer/waza/compare/v0.4.0-alpha.1...v0.8.0
 [0.4.0-alpha.1]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_0.3.0...v0.4.0-alpha.1
 [0.3.0]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_0.2.1...azd-ext-microsoft-azd-waza_0.3.0
 [0.2.1]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_0.2.0...azd-ext-microsoft-azd-waza_0.2.1
