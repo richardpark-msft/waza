@@ -51,12 +51,16 @@ test.describe("Screenshots", () => {
     await selects.nth(0).selectOption("run-001");
     await selects.nth(1).selectOption("run-002");
 
-    // Wait for comparison table
+    // Wait for comparison table and metrics to fully render
     await expect(page.getByText("Per-Task Comparison")).toBeVisible();
     await expect(page.getByText("explain-fibonacci")).toBeVisible();
+    await expect(page.getByText("Metrics Comparison")).toBeVisible();
+
+    // Use taller viewport to capture run cards, metrics, and per-task table
+    await page.setViewportSize({ width: 1280, height: 900 });
 
     await page.screenshot({
-      path: "../docs/images/compare.png",
+      path: "../docs/images/explore/compare-runs.png",
       fullPage: false,
     });
   });
