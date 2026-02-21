@@ -142,11 +142,13 @@ Each task execution gets a **fresh temp workspace** with fixtures copied in:
 | `docs/PRD.md` | Product requirements | Feature scope changes |
 | `AGENTS.md` | Agent coding guidelines | Process/pattern changes |
 | `site/` (GitHub Pages) | Public docs site (spboyer.github.io/waza) | Any feature add/change |
+| `web/` (Dashboard) | Interactive eval dashboard | New data in results JSON, new views needed |
 
 ### Documentation Checklist
 
 When adding or updating any feature:
 - [ ] Check if `site/src/content/docs/` pages need updating (graders, CLI reference, guides, eval YAML)
+- [ ] Check if the dashboard (`web/`) needs updates or new views to surface the feature
 - [ ] Update `README.md` if user-facing
 - [ ] Update `waza-go/README.md` usage section if CLI changes
 - [ ] Build the docs site to verify: `cd site && npm run build`
@@ -177,6 +179,7 @@ Documentation must be updated in real-time as features change. This is enforced 
 | Changed eval YAML schema | README.md YAML section, `site/` eval-yaml reference, example files |
 | New validator/grader | README.md Validators section, `site/` graders page, docs/GUIDE.md |
 | New sensei/dev feature | `site/` sensei guide, README.md |
+| New data in results JSON | Check if dashboard (`web/`) needs a new view, column, or chart to surface it |
 
 ### Screenshot Maintenance
 
