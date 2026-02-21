@@ -100,6 +100,16 @@ make lint
 ./waza run ../examples/code-explainer/eval.yaml --context-dir ../examples/code-explainer/fixtures -v
 ```
 
+### Testing Requirements
+
+**Every PR must leave tests in a passing state.** This is non-negotiable:
+
+- **All existing tests must pass** — run `go test ./...` before pushing. If your change breaks an existing test, fix it.
+- **New features require new tests** — every new command, flag, grader, or internal function needs test coverage. No shipping untested code.
+- **Bug fixes require regression tests** — if you fix a bug, add a test that would have caught it.
+- **Playwright e2e tests** — if you change the dashboard (`web/`), run `cd web && npx playwright test --project=chromium` and fix any failures.
+- **CI is the gate** — `Build and Test Go Implementation` and `Lint Go Code` must pass. PRs with failing tests do not merge.
+
 ## CI/CD
 
 **Go CI is required for all PRs.** Branch protection enforces:
