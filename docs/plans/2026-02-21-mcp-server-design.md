@@ -10,36 +10,29 @@
 
 Waza embeds an MCP server that launches automatically with `waza serve`. The server uses a thin adapter layer over existing JSON-RPC handlers, providing two transport options:
 
+```mermaid
+graph TD
+    A["Copilot / Claude Desktop Client"]
+    B["Stdio<br/>Copilot"]
+    C["SSE on HTTP<br/>Browser"]
+    D["MCP Server Adapter<br/>internal/mcp/"]
+    E["JSON-RPC Registry<br/>internal/jsonrpc/"]
+    F["Eval / Task / Run Handlers<br/>existing business logic"]
+    
+    A --> B
+    A --> C
+    B --> D
+    C --> D
+    D --> E
+    E --> F
+    
+    style A fill:#e1f5ff
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+    style D fill:#f3e5f5
+    style E fill:#e8f5e9
+    style F fill:#fce4ec
 ```
-┌──────────────────────────────────────────────────┐
-│         Copilot / Claude Desktop Client          │
-└────────────────┬────────────────────────────────┘
-                 │
-        ┌────────┴────────┐
-        │                 │
-    ┌───▼───┐        ┌───▼──────────┐
-    │ Stdio │        │ SSE on HTTP  │
-    │(Copilot)│       │ (Browser)    │
-    └───┬───┘        └───┬──────────┘
-        │                │
-        └────────┬───────┘
-                 │
-        ┌────────▼────────────┐
-        │  MCP Server Adapter │
-        │  (internal/mcp/)    │
-        └────────┬────────────┘
-                 │
-        ┌────────▼────────────┐
-        │  JSON-RPC Registry  │
-        │ (internal/jsonrpc/) │
-        └────────┬────────────┘
-                 │
-        ┌────────▼────────────────────┐
-        │  Eval / Task / Run Handlers  │
-        │ (existing business logic)   │
-        └─────────────────────────────┘
-```
-
 ---
 
 ## 2. MCP Tools (10 existing + 2 new)

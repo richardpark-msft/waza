@@ -17,57 +17,33 @@ This isn't two competing platforms — it's one evaluation pipeline with two exe
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        EVAL DEFINITION LAYER                            │
-│                                                                         │
-│    eval.yaml ──► tasks/*.yaml ──► graders ──► fixtures/                 │
-│         ▲              ▲              ▲                                  │
-│         │              │              │                                  │
-│    waza init      waza new       waza suggest                           │
-│    waza dev       waza check     waza tokens                            │
-│                                                                         │
-└───────────────────────┬─────────────────────────────────────────────────┘
-                        │
-                   eval bundle
-                   (portable)
-                        │
-          ┌─────────────┼─────────────┐
-          │             │             │
-          ▼             │             ▼
-┌─────────────────┐     │     ┌─────────────────────────────────────────┐
-│  INNER LOOP     │     │     │  OUTER LOOP                             │
-│  (waza local)   │     │     │  (MSBench cloud)                        │
-│                 │     │     │                                         │
-│  1-5 trials     │     │     │  50-100 runs                            │
-│  seconds/min    │     │     │  Harbor containers                      │
-│  laptop/CI      │     │     │  Azure compute fleet                    │
-│  JSON results   │     │     │  Kusto data layer                       │
-│  dashboard UI   │     │     │  production-like envs                   │
-│                 │     │     │                                         │
-│  waza run       │     │     │  msbench-cli run                        │
-│  waza serve     │     │     │  msbench-cli report                     │
-│  waza compare   │     │     │  msbenchapp.azurewebsites.net           │
-└────────┬────────┘     │     └──────────────┬──────────────────────────┘
-         │              │                    │
-         │    ┌─────────┴──────────┐         │
-         │    │  BRIDGE LAYER      │         │
-         │    │                    │         │
-         └───►│  waza export       │◄────────┘
-              │  waza import       │
-              │  format adapters   │
-              │  grader shims      │
-              └────────────────────┘
-                        │
-                        ▼
-              ┌────────────────────┐
-              │  UNIFIED RESULTS   │
-              │                    │
-              │  waza dashboard    │
-              │  trajectory view   │
-              │  compare view      │
-              │  trends over time  │
-              └────────────────────┘
+```mermaid
+graph TD
+    A["EVAL DEFINITION LAYER<br/>eval.yaml → tasks/*.yaml → graders → fixtures/"] 
+    B["waza init<br/>waza dev<br/>waza check"]
+    C["waza new<br/>waza check"]
+    D["waza suggest<br/>waza tokens"]
+    
+    A --> E["eval bundle<br/>(portable)"]
+    
+    B --> A
+    C --> A
+    D --> A
+    
+    E --> F["INNER LOOP<br/>(waza local)<br/>1-5 trials<br/>seconds/min<br/>laptop/CI<br/>JSON results<br/>dashboard UI<br/>waza run/serve/compare"]
+    E --> G["BRIDGE LAYER<br/>waza export<br/>waza import<br/>format adapters<br/>grader shims"]
+    E --> H["OUTER LOOP<br/>(MSBench cloud)<br/>50-100 runs<br/>Harbor containers<br/>Azure compute fleet<br/>Kusto data layer<br/>production-like envs<br/>msbench-cli run/report"]
+    
+    F --> G
+    H --> G
+    
+    G --> I["UNIFIED RESULTS<br/>waza dashboard<br/>trajectory view<br/>compare view<br/>trends over time"]
+    
+    style A fill:#e1f5ff
+    style F fill:#fff3e0
+    style H fill:#f3e5f5
+    style G fill:#e8f5e9
+    style I fill:#fce4ec
 ```
 
 ---
