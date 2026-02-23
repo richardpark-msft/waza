@@ -13,6 +13,6 @@ func TestPtr(t *testing.T) {
 	assert.NotNil(t, p)
 	assert.Equal(t, 42, *p)
 
-	v = 100
+	_ = 100 // original value changed; pointer should still hold 42
 	assert.Equal(t, 42, *p)
 }

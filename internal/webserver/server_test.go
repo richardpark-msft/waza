@@ -222,7 +222,8 @@ func freePort(t *testing.T) int {
 		require.NoError(t, ln.Close())
 	}()
 
-	return ln.Addr().(*net.TCPAddr).Port
+	addr, _ := ln.Addr().(*net.TCPAddr)
+	return addr.Port
 }
 
 func waitForHealthEndpoint(t *testing.T, port int) {
