@@ -47,6 +47,9 @@ waza run [eval.yaml | skill-name]
 | `--format` | `-f` | string | `default` | Output format: `default`, `github-comment` |
 | `--reporter` | | string[] | | Output reporters: `json`, `junit:<path>` (repeatable) |
 | `--timeout` | | int | 300 | Task timeout in seconds |
+| `--baseline` | | bool | false | A/B testing mode — runs each task twice (without skill = baseline, with skill = normal) and computes improvement scores |
+| `--discover` | | string | | Auto skill discovery — walks directory tree for SKILL.md + eval.yaml pairs |
+| `--strict` | | bool | false | Fail if any SKILL.md lacks eval coverage (use with `--discover`) |
 
 ### Examples
 
@@ -80,6 +83,16 @@ waza run eval.yaml --cache --cache-dir .waza-cache
 
 # Generate JUnit XML for CI test reporting
 waza run eval.yaml --reporter junit:results.xml
+
+# A/B testing: baseline vs skill performance
+waza run eval.yaml --baseline -o results.json
+# Output includes improvement breakdown (quality, tokens, turns, time, completion)
+
+# Auto skill discovery
+waza run --discover ./skills/
+
+# Auto discovery with strict mode (fail if any SKILL.md lacks eval coverage)
+waza run --discover --strict ./skills/
 ```
 
 ## waza init
@@ -389,6 +402,67 @@ waza serve
 waza serve                    # http://localhost:3000
 waza serve --port 8080        # http://localhost:8080
 waza serve --tcp :9000        # JSON-RPC TCP server
+```
+
+## Graders
+
+Waza supports multiple grader types for comprehensive evaluation. See the complete [Grader Reference](../../guides/graders/) for detailed documentation.
+
+### Built-in Graders
+
+| Grader | Purpose |
+|--------|---------|
+| `code` | Python/JavaScript assertion-based validation |
+| `regex` | Pattern matching in output |
+| `file` | File existence and content validation |
+| `diff` | Workspace file comparison with snapshots |
+| `behavior` | Agent behavior constraints (tool calls, tokens, duration) |
+| `action_sequence` | Tool call sequence validation with F1 scoring |
+| `skill_invocation` | Skill orchestration sequence validation |
+| `prompt` | LLM-as-judge evaluation with rubrics |
+| `tool_constraint` | Validate tool usage constraints (e.g., allowed/disallowed tools, turn limits) |
+| `trigger_tests` | Prompt trigger accuracy detection |
+
+### tool_constraint Grader
+
+Validate agent tool usage constraints during evaluation.
+
+```yaml
+graders:
+  - type: tool_constraint
+    name: check_tools
+    config:
+      expect_tools: ["bash", "edit"]        # Required tools (any can be used)
+      reject_tools: ["create_file"]         # Prohibited tools
+      max_turns: 15                         # Maximum conversation turns
+      max_tokens: 5000                      # Maximum token usage
+```
+
+All config fields are optional. Omitted fields skip that constraint.
+
+### prompt Grader with Pairwise Mode
+
+Use the `prompt` grader for LLM-as-judge evaluation. In **pairwise mode**, compare two approaches side-by-side to reduce position bias.
+
+```yaml
+graders:
+  - type: prompt
+    name: code_quality_judge
+    config:
+      mode: pairwise                        # Enable pairwise comparison (requires --baseline flag)
+      rubric: "Compare these solutions for code quality and correctness"
+      max_tokens: 500
+```
+
+**Requirements:**
+- Pairwise mode requires the `--baseline` flag on `waza run`
+- Baseline execution must complete before pairwise comparison runs
+- Each task is evaluated twice: once without the skill (baseline) and once with it (treatment)
+
+**Example:**
+```bash
+waza run eval.yaml --baseline -o results.json
+# Output includes pairwise judge scores comparing baseline vs treatment approaches
 ```
 
 ## Exit Codes
