@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"runtime"
 	"testing"
 
 	copilot "github.com/github/copilot-sdk/go"
@@ -111,11 +112,15 @@ func TestCopilotEngine_Execute_SetupResourcesErrorRotatesWorkspace(t *testing.T)
 	engine := NewCopilotEngineBuilder("test-model").Build()
 	previousWorkspace := t.TempDir()
 	engine.workspace = previousWorkspace
-
+	// an absolute path causes Execute to return an error during resource setup
+	absPath := "/absolute/path.txt"
+	if runtime.GOOS == "windows" {
+		absPath = `C:\absolute\path.txt`
+	}
 	resp, err := engine.Execute(context.Background(), &ExecutionRequest{
 		Message: "hello",
 		Resources: []ResourceFile{{
-			Path:    "/absolute/path.txt",
+			Path:    absPath,
 			Content: "x",
 		}},
 		TimeoutSec: 1,
