@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-02-23
+
+### Added
+
+- **A/B baseline testing** — `--baseline` flag runs each task with and without skill, computes weighted improvement scores across quality, tokens, turns, time, and task completion (#307)
+- **Pairwise LLM judging** — `pairwise` mode on `prompt` grader with position-swap bias mitigation. Three modes: pairwise, independent, both. Magnitude scoring from much-better to much-worse (#310)
+- **Tool constraint grader** — New `tool_constraint` grader type with `expect_tools`, `reject_tools`, `max_turns`, `max_tokens` constraints. Validates agent tool usage behavior (#391)
+- **Auto skill discovery** — `--discover` flag walks directory trees for SKILL.md + eval.yaml pairs. `--strict` mode fails if any skill lacks eval coverage (#392)
+- **Releases page** — New docs site page at `reference/releases` with platform download links, install commands, and azd extension info (#383)
+
+### Fixed
+
+- **Lint warnings** — Resolved errcheck (webserver) and ineffassign (utils) lint warnings
+
+### Changed
+
+- **Competitive research** — Added OpenAI Evals analysis (`docs/research/waza-vs-openai-evals.md`), skill-validator analysis (`docs/research/waza-vs-skill-validator.md`), and eval registry design doc (`docs/research/waza-eval-registry-design.md`)
+- **Mermaid diagrams** — Converted remaining ASCII diagrams to Mermaid across all markdown files. Added Mermaid directive to AGENTS.md
+
 ## [0.8.0] - 2026-02-21
 
 ### Added
