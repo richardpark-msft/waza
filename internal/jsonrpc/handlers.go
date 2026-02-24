@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/spboyer/waza/internal/models"
+	"github.com/spboyer/waza/internal/validation"
 	"gopkg.in/yaml.v3"
 )
 
@@ -196,6 +197,17 @@ func (h *HandlerContext) handleEvalValidate(_ context.Context, params json.RawMe
 	if yerr := yaml.Unmarshal(data, &spec); yerr != nil {
 		errs = append(errs, fmt.Sprintf("parse error: %v", yerr))
 		return &EvalValidateResult{Valid: false, Errors: errs}, nil
+	}
+
+	// Schema validation via validation package
+	schemaEvalErrs, schemaTaskErrs, _ := validation.ValidateEvalFile(p.Path)
+	for _, e := range schemaEvalErrs {
+		errs = append(errs, fmt.Sprintf("schema: %s", e))
+	}
+	for file, fileErrs := range schemaTaskErrs {
+		for _, e := range fileErrs {
+			errs = append(errs, fmt.Sprintf("%s: %s", file, e))
+		}
 	}
 
 	if verr := spec.Validate(); verr != nil {

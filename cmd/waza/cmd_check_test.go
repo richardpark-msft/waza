@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/spboyer/waza/cmd/waza/dev"
+	"github.com/spboyer/waza/internal/scaffold"
+	"github.com/spboyer/waza/internal/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -262,4 +264,237 @@ func TestGenerateNextSteps(t *testing.T) {
 		assert.NotEmpty(t, steps)
 		assert.Contains(t, strings.Join(steps, " "), "Reduce SKILL.md by 100 tokens")
 	})
+}
+
+func TestCheckCommandWithValidEvalSchema(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create SKILL.md
+	skillContent := `---
+name: schema-test
+description: A test skill for schema validation.
+---
+
+# Schema Test Skill
+
+Body content.
+`
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "SKILL.md"), []byte(skillContent), 0644))
+
+	// Create valid eval.yaml
+	evalContent := `name: test-eval
+skill: schema-test
+version: "1.0"
+config:
+  trials_per_task: 1
+  timeout_seconds: 60
+  executor: mock
+  model: gpt-4o
+metrics:
+  - name: accuracy
+    weight: 1.0
+    threshold: 0.8
+tasks:
+  - "tasks/*.yaml"
+`
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "eval.yaml"), []byte(evalContent), 0644))
+
+	// Create valid task
+	tasksDir := filepath.Join(tmpDir, "tasks")
+	require.NoError(t, os.MkdirAll(tasksDir, 0755))
+	taskContent := `id: task-1
+name: Basic task
+inputs:
+  prompt: "Test prompt"
+`
+	require.NoError(t, os.WriteFile(filepath.Join(tasksDir, "basic.yaml"), []byte(taskContent), 0644))
+
+	cmd := newCheckCommand()
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetErr(&output)
+	cmd.SetArgs([]string{tmpDir})
+
+	err := cmd.Execute()
+	assert.NoError(t, err)
+
+	result := output.String()
+	assert.Contains(t, result, "eval.yaml schema valid")
+	assert.Contains(t, result, "1 task file(s) validated")
+	assert.NotContains(t, result, "Eval Schema:")
+}
+
+func TestCheckCommandWithInvalidEvalSchema(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create SKILL.md
+	skillContent := `---
+name: schema-test
+description: A test skill for schema validation.
+---
+
+# Schema Test Skill
+
+Body content.
+`
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "SKILL.md"), []byte(skillContent), 0644))
+
+	// Create invalid eval.yaml (bad executor)
+	evalContent := `name: test-eval
+skill: schema-test
+version: "1.0"
+config:
+  trials_per_task: 1
+  timeout_seconds: 60
+  executor: invalid-engine
+  model: gpt-4o
+metrics:
+  - name: accuracy
+    weight: 1.0
+    threshold: 0.8
+tasks:
+  - "tasks/*.yaml"
+`
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "eval.yaml"), []byte(evalContent), 0644))
+
+	cmd := newCheckCommand()
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetErr(&output)
+	cmd.SetArgs([]string{tmpDir})
+
+	err := cmd.Execute()
+	assert.NoError(t, err)
+
+	result := output.String()
+	assert.Contains(t, result, "Eval Schema:")
+	assert.Contains(t, result, "executor")
+	assert.Contains(t, result, "Fix")
+	assert.Contains(t, result, "schema error")
+}
+
+func TestCheckCommandNoEvalSkipsSchemaValidation(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create SKILL.md with no eval.yaml
+	skillContent := `---
+name: no-eval-test
+description: A test skill without eval.
+---
+
+# No Eval Skill
+
+Body content.
+`
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "SKILL.md"), []byte(skillContent), 0644))
+
+	cmd := newCheckCommand()
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetErr(&output)
+	cmd.SetArgs([]string{tmpDir})
+
+	err := cmd.Execute()
+	assert.NoError(t, err)
+
+	result := output.String()
+	assert.NotContains(t, result, "Schema Validation")
+	assert.NotContains(t, result, "Eval Schema")
+	assert.NotContains(t, result, "Task Schema")
+}
+
+func TestCheckCommand_ScaffoldedSkillPassesSchemaValidation(t *testing.T) {
+	// Build a workspace that mimics waza init + waza new output:
+	//   dir/
+	//     skills/my-skill/SKILL.md
+	//     evals/my-skill/eval.yaml
+	//     evals/my-skill/tasks/*.yaml
+	//     evals/my-skill/fixtures/sample.py
+	dir := t.TempDir()
+
+	skillName := "my-skill"
+	skillDir := filepath.Join(dir, "skills", skillName)
+	evalsDir := filepath.Join(dir, "evals", skillName)
+	tasksDir := filepath.Join(evalsDir, "tasks")
+	fixturesDir := filepath.Join(evalsDir, "fixtures")
+
+	require.NoError(t, os.MkdirAll(skillDir, 0o755))
+	require.NoError(t, os.MkdirAll(tasksDir, 0o755))
+	require.NoError(t, os.MkdirAll(fixturesDir, 0o755))
+
+	// SKILL.md with high-compliance frontmatter (150+ char description, triggers, anti-triggers)
+	skillContent := `---
+name: my-skill
+description: "A comprehensive skill that helps developers analyze and explain code patterns across multiple languages with clarity. USE FOR: code analysis, code explanation, pattern detection. DO NOT USE FOR: code execution, deployment, infrastructure management."
+---
+
+# My Skill
+
+This skill analyzes code and provides explanations.
+`
+	require.NoError(t, os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte(skillContent), 0o644))
+
+	// eval.yaml from scaffold
+	evalContent := scaffold.EvalYAML(skillName, "mock", "gpt-4o")
+	require.NoError(t, os.WriteFile(filepath.Join(evalsDir, "eval.yaml"), []byte(evalContent), 0o644))
+
+	// Task files from scaffold
+	for name, content := range scaffold.TaskFiles(skillName) {
+		require.NoError(t, os.WriteFile(filepath.Join(tasksDir, name), []byte(content), 0o644))
+	}
+
+	// Fixture file from scaffold
+	require.NoError(t, os.WriteFile(filepath.Join(fixturesDir, "sample.py"), []byte(scaffold.Fixture()), 0o644))
+
+	// cd into workspace root so workspace detection finds the eval
+	t.Chdir(dir)
+
+	// Directly call checkReadiness on the skill directory
+	report, err := checkReadiness(skillDir)
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.True(t, report.hasEval, "scaffolded workspace should have eval detected")
+	require.Empty(t, report.evalSchemaErrs, "scaffolded eval.yaml should have no schema errors: %v", report.evalSchemaErrs)
+	require.Empty(t, report.taskSchemaErrs, "scaffolded task files should have no schema errors: %v", report.taskSchemaErrs)
+
+	// Also run the check command and verify output
+	cmd := newCheckCommand()
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetErr(&output)
+	cmd.SetArgs([]string{skillName})
+
+	err = cmd.Execute()
+	require.NoError(t, err)
+
+	result := output.String()
+	assert.Contains(t, result, "eval.yaml schema valid")
+	assert.Contains(t, result, "task file(s) validated")
+	assert.NotContains(t, result, "Eval Schema:")
+	assert.NotContains(t, result, "Task Schema:")
+}
+
+func TestCheckCommand_ScaffoldedEvalMatchesSchema(t *testing.T) {
+	// Directly validate scaffold output against schema without full workspace
+	dir := t.TempDir()
+	tasksDir := filepath.Join(dir, "tasks")
+	require.NoError(t, os.MkdirAll(tasksDir, 0o755))
+
+	skillName := "schema-scaffold-test"
+
+	// Write scaffold eval.yaml
+	evalContent := scaffold.EvalYAML(skillName, "mock", "gpt-4o")
+	evalPath := filepath.Join(dir, "eval.yaml")
+	require.NoError(t, os.WriteFile(evalPath, []byte(evalContent), 0o644))
+
+	// Write scaffold task files
+	for name, content := range scaffold.TaskFiles(skillName) {
+		require.NoError(t, os.WriteFile(filepath.Join(tasksDir, name), []byte(content), 0o644))
+	}
+
+	// Validate using the validation package directly
+	evalErrs, taskErrs, err := validation.ValidateEvalFile(evalPath)
+	require.NoError(t, err)
+	require.Empty(t, evalErrs, "scaffolded eval.yaml should pass schema: %v", evalErrs)
+	require.Empty(t, taskErrs, "scaffolded task files should pass schema: %v", taskErrs)
 }
