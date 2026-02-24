@@ -8,7 +8,7 @@ Waza is a Go CLI tool for running evaluations on AI agent skills. It's designed 
 
 ## Prerequisites
 
-- **Go 1.25+**: Required for building/installing waza
+- **Go 1.26+**: Required for building/installing waza
 - **Git**: For cloning repositories
 - **GitHub Actions** (for CI): Standard ubuntu-latest runner
 
@@ -219,7 +219,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.26'
       
       - name: Install Waza
         run: go install github.com/spboyer/waza/cmd/waza@latest
@@ -454,12 +454,12 @@ Check:
 
 ### "Go version too old"
 
-Waza requires Go 1.25+:
+Waza requires Go 1.26+:
 
 ```yaml
 - uses: actions/setup-go@v5
   with:
-    go-version: '1.25'  # Not 1.22 or earlier
+    go-version: '1.26'  # Not 1.22 or earlier
 ```
 
 ## Example Workflows
@@ -479,7 +479,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.26'
       - run: go install github.com/spboyer/waza/cmd/waza@latest
       - run: waza run eval/eval.yaml --verbose
 ```
@@ -497,7 +497,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.26'
       - run: go install github.com/spboyer/waza/cmd/waza@latest
       - run: |
           sed -i "s/model: .*/model: ${{ matrix.model }}/" eval/eval.yaml
@@ -518,7 +518,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.26'
       - run: go install github.com/spboyer/waza/cmd/waza@latest
       - run: waza run eval/eval.yaml --verbose --output nightly-results.json
       - uses: actions/upload-artifact@v4

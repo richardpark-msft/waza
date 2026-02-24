@@ -18,7 +18,7 @@ Or download binaries directly from the [latest release](https://github.com/spboy
 
 ### Install from Source
 
-Requires Go 1.25+:
+Requires Go 1.26+:
 
 ```bash
 go install github.com/spboyer/waza/cmd/waza@latest
@@ -758,7 +758,7 @@ curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
 
 **Option 2: Install from source**
 ```bash
-# Requires Go 1.25+
+# Requires Go 1.26+
 go install github.com/spboyer/waza/cmd/waza@latest
 ```
 
@@ -791,7 +791,7 @@ jobs:
 
 | Requirement | Details |
 |-------------|---------|
-| **Go Version** | 1.25 or higher |
+| **Go Version** | 1.26 or higher |
 | **Executor** | Use `mock` executor for CI (no API keys needed) |
 | **GitHub Token** | Only required for `copilot-sdk` executor: set `GITHUB_TOKEN` env var |
 | **Exit Codes** | 0=success, 1=test failure, 2=config error |

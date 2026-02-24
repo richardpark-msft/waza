@@ -5,7 +5,7 @@ A complete walkthrough for creating, testing, and validating AI agent skills.
 ## Prerequisites
 
 - **waza** installed (see [Installation](../README.md#installation))
-- **Go 1.25+** (if building from source)
+- **Go 1.26+** (if building from source)
 - A text editor for SKILL.md and eval configuration
 
 ## Two Workflows: Project vs Standalone

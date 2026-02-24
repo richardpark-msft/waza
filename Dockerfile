@@ -1,7 +1,7 @@
 # Dockerfile for waza - AI agent skill evaluation CLI
 # This provides a containerized environment for running waza in CI/CD pipelines
 
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /build
 

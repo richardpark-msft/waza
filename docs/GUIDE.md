@@ -46,7 +46,7 @@ export PATH="$HOME/bin:$PATH"
 
 ### 2. Install from Source
 
-Requires **Go 1.25 or later**:
+Requires **Go 1.26 or later**:
 
 ```bash
 go install github.com/spboyer/waza/cmd/waza@latest
@@ -539,7 +539,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.25'
+          go-version: '1.26'
       - name: Install waza
         run: |
           curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
