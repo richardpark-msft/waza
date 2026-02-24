@@ -15,17 +15,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Run tests
-        run: node --test test/*.test.js
-
-      - name: Read version from package.json
+      - name: Read version from version.txt
         id: version
         run: |
-          VERSION=$(node -e "console.log(require('./package.json').version)")
+          VERSION=$(cat version.txt | tr -d '[:space:]')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 Version: $VERSION (tag: v$VERSION)"
