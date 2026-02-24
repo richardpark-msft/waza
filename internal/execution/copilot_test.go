@@ -174,7 +174,16 @@ func TestCopilotSendAndWaitReturnsErrorInResult(t *testing.T) {
 }
 
 func TestCopilotExecute_RequiredFields(t *testing.T) {
-	builder := NewCopilotEngineBuilder("gpt-4o-mini", nil)
+	ctrl := gomock.NewController(t)
+
+	client := NewMockcopilotClient(ctrl)
+	client.EXPECT().Start(gomock.Any())
+
+	builder := NewCopilotEngineBuilder("gpt-4o-mini", &CopilotEngineBuilderOptions{
+		NewCopilotClient: func(clientOptions *copilot.ClientOptions) copilotClient {
+			return client
+		},
+	})
 	engine := builder.Build()
 
 	testCases := []struct {
