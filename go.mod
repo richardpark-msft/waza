@@ -1,6 +1,6 @@
 module github.com/spboyer/waza
 
-go 1.25
+go 1.26
 
 require (
 	github.com/azure/azure-dev/cli/azd v0.0.0-20260211201144-50fce72b54ac

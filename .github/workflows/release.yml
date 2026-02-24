@@ -78,7 +78,7 @@ jobs:
       - name: Setup Go Environment
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.26'
           cache-dependency-path: go.sum
 
       - name: Setup Node.js (for web UI build)
@@ -174,7 +174,7 @@ jobs:
       - name: Setup Go Environment
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.26'
           cache-dependency-path: go.sum
 
       - name: Setup Node.js (for web UI build)

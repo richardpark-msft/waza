@@ -50,8 +50,8 @@ jobs:
       - name: Setup Go Environment
         uses: actions/setup-go@v5
         with:
-          # Waza requires Go 1.25+
-          go-version: '1.25'
+          # Waza requires Go 1.26+
+          go-version: '1.26'
       
       # Option 1: Install from source (recommended for CI)
       - name: Install Waza from Source
@@ -149,7 +149,7 @@ jobs:
   #     - name: Setup Go Environment
   #       uses: actions/setup-go@v5
   #       with:
-  #         go-version: '1.25'
+  #         go-version: '1.26'
   #     
   #     - name: Install Waza
   #       run: |

@@ -78,7 +78,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.26'
       - name: Build waza
         run: go build -o waza ./cmd/waza
       - name: Run eval

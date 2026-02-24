@@ -52,6 +52,16 @@ func (p *promptGrader) Grade(ctx context.Context, gradingContext *Context) (*mod
 	return p.gradeIndependent(ctx, gradingContext)
 }
 
+// Kind implements [Grader].
+func (p *promptGrader) Kind() models.GraderKind {
+	return models.GraderKindPrompt
+}
+
+// Name implements [Grader].
+func (p *promptGrader) Name() string {
+	return p.name
+}
+
 // gradeIndependent runs the standard single-output prompt grading.
 func (p *promptGrader) gradeIndependent(ctx context.Context, gradingContext *Context) (*models.GraderResults, error) {
 	return measureTime(func() (*models.GraderResults, error) {
@@ -144,16 +154,6 @@ func (p *promptGrader) gradeIndependent(ctx context.Context, gradingContext *Con
 			},
 		}, nil
 	})
-}
-
-// Kind implements [Grader].
-func (p *promptGrader) Kind() models.GraderKind {
-	return models.GraderKindPrompt
-}
-
-// Name implements [Grader].
-func (p *promptGrader) Name() string {
-	return p.name
 }
 
 func newWazaGraderTools() *struct {
@@ -404,9 +404,9 @@ func buildPairwisePrompt(rubric, outputA, outputB, labelA, labelB string) string
 	sb.WriteString("## Rubric\n")
 	sb.WriteString(rubric)
 	sb.WriteString("\n\n")
-	sb.WriteString(fmt.Sprintf("## Output %s\n```\n%s\n```\n\n", labelA, outputA))
-	sb.WriteString(fmt.Sprintf("## Output %s\n```\n%s\n```\n\n", labelB, outputB))
-	sb.WriteString(fmt.Sprintf("Compare both outputs against the rubric. Call set_pairwise_winner with your verdict: \"%s\", \"%s\", or \"tie\".\n", labelA, labelB))
+	fmt.Fprintf(&sb, "## Output %s\n```\n%s\n```\n\n", labelA, outputA)
+	fmt.Fprintf(&sb, "## Output %s\n```\n%s\n```\n\n", labelB, outputB)
+	fmt.Fprintf(&sb, "Compare both outputs against the rubric. Call set_pairwise_winner with your verdict: \"%s\", \"%s\", or \"tie\".\n", labelA, labelB)
 	return sb.String()
 }
 
