@@ -40,7 +40,8 @@ func NewCopilotEngineBuilder(defaultModelID string, options *CopilotEngineBuilde
 
 	copilotOptions := &copilot.ClientOptions{
 		// workspace is set at the session level, instead of at the client.
-		LogLevel: "error",
+		LogLevel:  "error",
+		AutoStart: copilot.Bool(false),
 	}
 
 	if options == nil || options.NewCopilotClient == nil {
@@ -65,9 +66,7 @@ func (b *CopilotEngineBuilder) Build() *CopilotEngine {
 
 // Initialize sets up the Copilot client
 func (e *CopilotEngine) Initialize(ctx context.Context) error {
-	// NOTE: the copilot client auto-starts on first call, so no need to explicitly init
-	// or start it here.
-	return nil
+	return e.client.Start(ctx)
 }
 
 // Execute runs a test with Copilot SDK

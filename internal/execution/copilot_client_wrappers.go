@@ -23,6 +23,9 @@ type copilotClient interface {
 	// CreateSession maps to [copilot.Client.CreateSession]
 	CreateSession(ctx context.Context, config *copilot.SessionConfig) (copilotSession, error)
 
+	// Start maps to [copilot.Client.Start]
+	Start(ctx context.Context) error
+
 	// Stop maps to [copilot.Client.Stop]
 	Stop() error
 
@@ -58,6 +61,10 @@ func (w *copilotClientWrapper) ResumeSessionWithOptions(ctx context.Context, ses
 	}
 
 	return &copilotSessionWrapper{inner: sess}, nil
+}
+
+func (w *copilotClientWrapper) Start(ctx context.Context) error {
+	return w.inner.Start(ctx)
 }
 
 func (w *copilotClientWrapper) Stop() error {

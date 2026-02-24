@@ -12,6 +12,7 @@ import (
 // AgentEngine is the interface for executing test prompts
 type AgentEngine interface {
 	// Initialize sets up the engine
+	// NOTE: Initialize MUST only be called a single time, per instance.
 	Initialize(ctx context.Context) error
 
 	// Execute runs a test with the given stimulus
