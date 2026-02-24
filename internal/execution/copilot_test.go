@@ -10,7 +10,10 @@ import (
 	copilot "github.com/github/copilot-sdk/go"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/sync/errgroup"
 )
+
+var enableCopilotTests = os.Getenv("ENABLE_COPILOT_TESTS") == "true"
 
 func TestCopilotNoSessionID(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -187,6 +190,35 @@ func TestCopilotExecute_RequiredFields(t *testing.T) {
 			require.ErrorContains(t, err, td.Error)
 			require.Empty(t, resp)
 		})
+	}
+}
+
+func TestCopilotExecuteParallel(t *testing.T) {
+	if !enableCopilotTests {
+		t.Skip("ENABLE_COPILOT_TESTS must be set in order to run live copilot tests")
+	}
+
+	for range 5 {
+		engine := NewCopilotEngineBuilder("gpt-4o-mini", nil).Build()
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		eg := errgroup.Group{}
+
+		for range 10 {
+			eg.Go(func() error {
+				_, err := engine.Execute(ctx, &ExecutionRequest{
+					Message: "hello!",
+					Timeout: 30 * time.Second,
+				})
+				return err
+			})
+		}
+
+		err := eg.Wait()
+		require.NoError(t, err)
+		require.NoError(t, engine.Shutdown(context.Background()))
 	}
 }
 
