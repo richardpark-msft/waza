@@ -20,7 +20,7 @@ func TestCopilotEngine_Initialize(t *testing.T) {
 	cancel()
 
 	err := engine.Initialize(ctx)
-	require.NoError(t, err)
+	require.Error(t, err) // looks like copilot not forwarding the context.Canceled error back to us but it does cancel
 }
 
 func TestCopilotEngine_SetupResources(t *testing.T) {
@@ -43,6 +43,7 @@ func TestCopilotEngine_Execute_CreateSessionError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	clientMock := NewMockcopilotClient(ctrl)
 
+	clientMock.EXPECT().Start(gomock.Any())
 	clientMock.EXPECT().CreateSession(gomock.Any(), gomock.Any()).Return(nil, errors.New("session create failed"))
 
 	engine := NewCopilotEngineBuilder("test", &CopilotEngineBuilderOptions{
@@ -62,6 +63,7 @@ func TestCopilotEngine_Execute_SendError(t *testing.T) {
 	clientMock := NewMockcopilotClient(ctrl)
 	sessionMock := NewMockcopilotSession(ctrl)
 
+	clientMock.EXPECT().Start(gomock.Any())
 	clientMock.EXPECT().CreateSession(gomock.Any(), gomock.Any()).Return(sessionMock, nil)
 
 	sessionMock.EXPECT().On(gomock.Any()).Return(func() {}).AnyTimes()

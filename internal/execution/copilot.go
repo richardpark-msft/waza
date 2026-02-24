@@ -19,6 +19,8 @@ type CopilotEngine struct {
 
 	client copilotClient
 
+	startOnce sync.Once
+
 	workspacesMu sync.Mutex
 	workspaces   []string // workspaces to clean up at Shutdown
 }
@@ -40,7 +42,8 @@ func NewCopilotEngineBuilder(defaultModelID string, options *CopilotEngineBuilde
 
 	copilotOptions := &copilot.ClientOptions{
 		// workspace is set at the session level, instead of at the client.
-		LogLevel: "error",
+		LogLevel:  "error",
+		AutoStart: copilot.Bool(false),
 	}
 
 	if options == nil || options.NewCopilotClient == nil {
@@ -65,15 +68,30 @@ func (b *CopilotEngineBuilder) Build() *CopilotEngine {
 
 // Initialize sets up the Copilot client
 func (e *CopilotEngine) Initialize(ctx context.Context) error {
-	// NOTE: the copilot client auto-starts on first call, so no need to explicitly init
-	// or start it here.
-	return nil
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return nil
+	}
 }
 
 // Execute runs a test with Copilot SDK
 func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*ExecutionResponse, error) {
 	if req == nil {
 		return nil, fmt.Errorf("nil req was passed to CopilotEngine.Execute")
+	}
+
+	var startErr error
+
+	e.startOnce.Do(func() {
+		// NOTE: this is a workaround, copilot client has an 'autostart' feature, but it runs into issues
+		// when it tries to autostart from separate goroutines.
+		startErr = e.client.Start(ctx)
+	})
+
+	if startErr != nil {
+		return nil, fmt.Errorf("copilot failed to start: %w", startErr)
 	}
 
 	modelID, sourceDir, err := e.extractReqParams(req)

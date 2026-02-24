@@ -10,7 +10,10 @@ import (
 	copilot "github.com/github/copilot-sdk/go"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/sync/errgroup"
 )
+
+var enableCopilotTests = os.Getenv("ENABLE_COPILOT_TESTS") == "true"
 
 func TestCopilotNoSessionID(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -33,6 +36,7 @@ func TestCopilotNoSessionID(t *testing.T) {
 		},
 	}
 
+	clientMock.EXPECT().Start(gomock.Any())
 	clientMock.EXPECT().CreateSession(gomock.Any(), expectedConfig).Return(sessionMock, nil)
 	clientMock.EXPECT().Stop()
 
@@ -88,6 +92,7 @@ func TestCopilotResumeSessionID(t *testing.T) {
 		},
 	}
 
+	clientMock.EXPECT().Start(gomock.Any())
 	clientMock.EXPECT().ResumeSessionWithOptions(gomock.Any(), "session-1", expectedConfig).Return(sessionMock, nil)
 	clientMock.EXPECT().Stop()
 
@@ -139,6 +144,7 @@ func TestCopilotSendAndWaitReturnsErrorInResult(t *testing.T) {
 		},
 	}
 
+	clientMock.EXPECT().Start(gomock.Any())
 	clientMock.EXPECT().CreateSession(gomock.Any(), expectedConfig).Return(sessionMock, nil)
 	clientMock.EXPECT().Stop()
 
@@ -168,7 +174,16 @@ func TestCopilotSendAndWaitReturnsErrorInResult(t *testing.T) {
 }
 
 func TestCopilotExecute_RequiredFields(t *testing.T) {
-	builder := NewCopilotEngineBuilder("gpt-4o-mini", nil)
+	ctrl := gomock.NewController(t)
+
+	client := NewMockcopilotClient(ctrl)
+	client.EXPECT().Start(gomock.Any())
+
+	builder := NewCopilotEngineBuilder("gpt-4o-mini", &CopilotEngineBuilderOptions{
+		NewCopilotClient: func(clientOptions *copilot.ClientOptions) copilotClient {
+			return client
+		},
+	})
 	engine := builder.Build()
 
 	testCases := []struct {
@@ -184,6 +199,35 @@ func TestCopilotExecute_RequiredFields(t *testing.T) {
 			require.ErrorContains(t, err, td.Error)
 			require.Empty(t, resp)
 		})
+	}
+}
+
+func TestCopilotExecuteParallel(t *testing.T) {
+	if !enableCopilotTests {
+		t.Skip("ENABLE_COPILOT_TESTS must be set in order to run live copilot tests")
+	}
+
+	for range 5 {
+		engine := NewCopilotEngineBuilder("gpt-4o-mini", nil).Build()
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		eg := errgroup.Group{}
+
+		for range 10 {
+			eg.Go(func() error {
+				_, err := engine.Execute(ctx, &ExecutionRequest{
+					Message: "hello!",
+					Timeout: 30 * time.Second,
+				})
+				return err
+			})
+		}
+
+		err := eg.Wait()
+		require.NoError(t, err)
+		require.NoError(t, engine.Shutdown(context.Background()))
 	}
 }
 
