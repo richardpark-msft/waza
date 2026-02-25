@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/spboyer/waza/internal/checks"
 	"github.com/spboyer/waza/internal/scoring"
 	"github.com/spboyer/waza/internal/skill"
 )
@@ -44,8 +45,11 @@ func DisplayScore(w io.Writer, sk *skill.Skill, score *scoring.ScoreResult) {
 	}
 
 	// Run and display spec compliance
-	specResult := (SpecScorer{}).Score(sk)
-	DisplaySpecResult(w, specResult)
+	if specResults, err := checks.RunChecks(checks.SpecCheckers(), *sk); err == nil {
+		DisplayCheckResults(w, "Spec Compliance", specResults)
+	} else {
+		fprintf(w, "\nError running spec compliance checks: %s\n", err.Error())
+	}
 
 	// Run and display MCP integration checks
 	mcpResult := (McpScorer{}).Score(sk)
@@ -54,17 +58,12 @@ func DisplayScore(w io.Writer, sk *skill.Skill, score *scoring.ScoreResult) {
 	// Run and display SkillsBench advisory checks
 	advisoryResult := (AdvisoryScorer{}).Score(sk)
 	DisplayAdvisory(w, advisoryResult)
-}
 
-// DisplaySpecResult shows agentskills.io spec compliance results.
-func DisplaySpecResult(w io.Writer, r *SpecResult) {
-	fprintf(w, "\nSpec Compliance: %d/%d passed\n", r.Pass, r.Total)
-	for _, iss := range r.Issues {
-		icon := "⚠️"
-		if iss.Severity == "error" {
-			icon = "❌"
-		}
-		fprintf(w, "  %s [%s] %s\n", icon, iss.Rule, iss.Message)
+	// Run and display advisory checks
+	if advisoryResults, err := checks.RunChecks(checks.AdvisoryCheckers(), *sk); err == nil {
+		DisplayCheckResults(w, "Advisory Checks", advisoryResults)
+	} else {
+		fprintf(w, "\nError running advisory checks: %s\n", err.Error())
 	}
 }
 
@@ -166,6 +165,31 @@ func DisplayAdvisory(w io.Writer, r *AdvisoryResult) {
 			icon = "ℹ️"
 		}
 		fprintf(w, "  %s [%s] %s\n", icon, a.Check, a.Message)
+	}
+}
+
+// DisplayCheckResults renders pre-computed check results under a titled section.
+func DisplayCheckResults(w io.Writer, title string, results []*checks.CheckResult) {
+	if len(results) == 0 {
+		return
+	}
+	fprintf(w, "\n── %s ──\n", title)
+	for _, r := range results {
+		icon := "✅"
+		if sh, ok := r.Data.(checks.StatusHolder); ok {
+			switch sh.GetStatus() {
+			case checks.StatusOptimal:
+				icon = "🌟"
+			case checks.StatusWarning:
+				icon = "⚠️"
+			}
+		} else if !r.Passed {
+			icon = "⚠️"
+		}
+		fprintf(w, "  %s %s: %s\n", icon, r.Name, r.Summary)
+		if d, ok := r.Data.(*checks.ScoreCheckData); ok && d.Evidence != "" && (!r.Passed || d.Status == checks.StatusWarning) {
+			fprintf(w, "     📎 %s\n", d.Evidence)
+		}
 	}
 }
 

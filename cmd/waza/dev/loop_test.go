@@ -103,9 +103,24 @@ Description: 198 chars
 Triggers: 3
 Anti-triggers: 0
 
-Spec Compliance: 6/8 passed
-  ⚠️ [spec-license] Consider adding a 'license' field (e.g., MIT, Apache-2.0)
-  ⚠️ [spec-version] Consider adding 'metadata.version' for versioning
+── Spec Compliance ──
+  ✅ spec-frontmatter: Frontmatter structure valid with required fields
+  ✅ spec-allowed-fields: All frontmatter fields are spec-allowed
+  ✅ spec-name: Name follows spec naming rules
+  ✅ spec-dir-match: Directory name matches skill name
+  ✅ spec-description: Description is valid
+  ✅ spec-compatibility: No compatibility field (optional)
+  ⚠️ spec-license: No license field found
+     📎 Best practice: include a license field (e.g., MIT, Apache-2.0)
+  ⚠️ spec-version: No metadata.version field found
+     📎 Best practice: include metadata.version for tracking and compatibility
+
+── Advisory Checks ──
+  ✅ module-count: Found 0 reference module(s)
+  ✅ complexity: Complexity: compact (74 tokens, 0 modules)
+  ✅ negative-delta-risk: No negative delta risk patterns detected
+  ✅ procedural-content: Description contains procedural language
+  ✅ over-specificity: No over-specificity patterns detected
 `
 	require.Equal(t, expected, buf.String())
 }
@@ -187,14 +202,29 @@ Description: 266 chars
 Triggers: 3
 Anti-triggers: 1
 
-Spec Compliance: 6/8 passed
-  ⚠️ [spec-license] Consider adding a 'license' field (e.g., MIT, Apache-2.0)
-  ⚠️ [spec-version] Consider adding 'metadata.version' for versioning
+── Spec Compliance ──
+  ✅ spec-frontmatter: Frontmatter structure valid with required fields
+  ✅ spec-allowed-fields: All frontmatter fields are spec-allowed
+  ✅ spec-name: Name follows spec naming rules
+  ✅ spec-dir-match: Directory name matches skill name
+  ✅ spec-description: Description is valid
+  ✅ spec-compatibility: No compatibility field (optional)
+  ⚠️ spec-license: No license field found
+     📎 Best practice: include a license field (e.g., MIT, Apache-2.0)
+  ⚠️ spec-version: No metadata.version field found
+     📎 Best practice: include metadata.version for tracking and compatibility
 
 MCP Integration: 1/4
   ⚠️ [mcp-tools-table] No MCP tools table found — add a Markdown table listing tools used
   ⚠️ [mcp-prerequisites] MCP prerequisites not documented — describe which MCP servers are needed
   ⚠️ [mcp-cli-fallback] No CLI fallback documented — describe behavior when MCP is unavailable
+
+── Advisory Checks ──
+  ✅ module-count: Found 0 reference module(s)
+  ✅ complexity: Complexity: compact (94 tokens, 0 modules)
+  ✅ negative-delta-risk: No negative delta risk patterns detected
+  ✅ procedural-content: Description contains procedural language
+  ✅ over-specificity: No over-specificity patterns detected
 
 ✅ Target adherence level High reached!
 `
@@ -242,9 +272,24 @@ Anti-triggers: 0
 Issues:
   ❌ Description is 5 chars (need 150+)
 
-Spec Compliance: 6/8 passed
-  ⚠️ [spec-license] Consider adding a 'license' field (e.g., MIT, Apache-2.0)
-  ⚠️ [spec-version] Consider adding 'metadata.version' for versioning
+── Spec Compliance ──
+  ✅ spec-frontmatter: Frontmatter structure valid with required fields
+  ✅ spec-allowed-fields: All frontmatter fields are spec-allowed
+  ✅ spec-name: Name follows spec naming rules
+  ✅ spec-dir-match: Directory name matches skill name
+  ✅ spec-description: Description is valid
+  ✅ spec-compatibility: No compatibility field (optional)
+  ⚠️ spec-license: No license field found
+     📎 Best practice: include a license field (e.g., MIT, Apache-2.0)
+  ⚠️ spec-version: No metadata.version field found
+     📎 Best practice: include metadata.version for tracking and compatibility
+
+── Advisory Checks ──
+  ✅ module-count: Found 0 reference module(s)
+  ✅ complexity: Complexity: compact (15 tokens, 0 modules)
+  ✅ negative-delta-risk: No negative delta risk patterns detected
+  ⚠️ procedural-content: Description lacks procedural language (no action verbs or procedure keywords found)
+  ✅ over-specificity: No over-specificity patterns detected
 
 📝 Suggested improvement (description-length):
 ────────────────────────────────────────
@@ -334,9 +379,24 @@ Anti-triggers: 0
 Issues:
   ❌ Description is 5 chars (need 150+)
 
-Spec Compliance: 6/8 passed
-  ⚠️ [spec-license] Consider adding a 'license' field (e.g., MIT, Apache-2.0)
-  ⚠️ [spec-version] Consider adding 'metadata.version' for versioning
+── Spec Compliance ──
+  ✅ spec-frontmatter: Frontmatter structure valid with required fields
+  ✅ spec-allowed-fields: All frontmatter fields are spec-allowed
+  ✅ spec-name: Name follows spec naming rules
+  ✅ spec-dir-match: Directory name matches skill name
+  ✅ spec-description: Description is valid
+  ✅ spec-compatibility: No compatibility field (optional)
+  ⚠️ spec-license: No license field found
+     📎 Best practice: include a license field (e.g., MIT, Apache-2.0)
+  ⚠️ spec-version: No metadata.version field found
+     📎 Best practice: include metadata.version for tracking and compatibility
+
+── Advisory Checks ──
+  ✅ module-count: Found 0 reference module(s)
+  ✅ complexity: Complexity: compact (31 tokens, 0 modules)
+  ✅ negative-delta-risk: No negative delta risk patterns detected
+  ⚠️ procedural-content: Description lacks procedural language (no action verbs or procedure keywords found)
+  ✅ over-specificity: No over-specificity patterns detected
 
 📝 Suggested improvement (description-length):
 ────────────────────────────────────────
@@ -354,9 +414,24 @@ Description: 214 chars
 Triggers: 0
 Anti-triggers: 0
 
-Spec Compliance: 6/8 passed
-  ⚠️ [spec-license] Consider adding a 'license' field (e.g., MIT, Apache-2.0)
-  ⚠️ [spec-version] Consider adding 'metadata.version' for versioning
+── Spec Compliance ──
+  ✅ spec-frontmatter: Frontmatter structure valid with required fields
+  ✅ spec-allowed-fields: All frontmatter fields are spec-allowed
+  ✅ spec-name: Name follows spec naming rules
+  ✅ spec-dir-match: Directory name matches skill name
+  ✅ spec-description: Description is valid
+  ✅ spec-compatibility: No compatibility field (optional)
+  ⚠️ spec-license: No license field found
+     📎 Best practice: include a license field (e.g., MIT, Apache-2.0)
+  ⚠️ spec-version: No metadata.version field found
+     📎 Best practice: include metadata.version for tracking and compatibility
+
+── Advisory Checks ──
+  ✅ module-count: Found 0 reference module(s)
+  ✅ complexity: Complexity: compact (83 tokens, 0 modules)
+  ✅ negative-delta-risk: No negative delta risk patterns detected
+  ✅ procedural-content: Description contains procedural language
+  ✅ over-specificity: No over-specificity patterns detected
 
 📝 Suggested improvement (triggers):
 ────────────────────────────────────────
@@ -374,9 +449,24 @@ Description: 305 chars
 Triggers: 5
 Anti-triggers: 0
 
-Spec Compliance: 6/8 passed
-  ⚠️ [spec-license] Consider adding a 'license' field (e.g., MIT, Apache-2.0)
-  ⚠️ [spec-version] Consider adding 'metadata.version' for versioning
+── Spec Compliance ──
+  ✅ spec-frontmatter: Frontmatter structure valid with required fields
+  ✅ spec-allowed-fields: All frontmatter fields are spec-allowed
+  ✅ spec-name: Name follows spec naming rules
+  ✅ spec-dir-match: Directory name matches skill name
+  ✅ spec-description: Description is valid
+  ✅ spec-compatibility: No compatibility field (optional)
+  ⚠️ spec-license: No license field found
+     📎 Best practice: include a license field (e.g., MIT, Apache-2.0)
+  ⚠️ spec-version: No metadata.version field found
+     📎 Best practice: include metadata.version for tracking and compatibility
+
+── Advisory Checks ──
+  ✅ module-count: Found 0 reference module(s)
+  ✅ complexity: Complexity: compact (106 tokens, 0 modules)
+  ✅ negative-delta-risk: No negative delta risk patterns detected
+  ✅ procedural-content: Description contains procedural language
+  ✅ over-specificity: No over-specificity patterns detected
 
 📝 Suggested improvement (anti-triggers):
 ────────────────────────────────────────
@@ -394,9 +484,24 @@ Description: 407 chars
 Triggers: 5
 Anti-triggers: 2
 
-Spec Compliance: 6/8 passed
-  ⚠️ [spec-license] Consider adding a 'license' field (e.g., MIT, Apache-2.0)
-  ⚠️ [spec-version] Consider adding 'metadata.version' for versioning
+── Spec Compliance ──
+  ✅ spec-frontmatter: Frontmatter structure valid with required fields
+  ✅ spec-allowed-fields: All frontmatter fields are spec-allowed
+  ✅ spec-name: Name follows spec naming rules
+  ✅ spec-dir-match: Directory name matches skill name
+  ✅ spec-description: Description is valid
+  ✅ spec-compatibility: No compatibility field (optional)
+  ⚠️ spec-license: No license field found
+     📎 Best practice: include a license field (e.g., MIT, Apache-2.0)
+  ⚠️ spec-version: No metadata.version field found
+     📎 Best practice: include metadata.version for tracking and compatibility
+
+── Advisory Checks ──
+  ✅ module-count: Found 0 reference module(s)
+  ✅ complexity: Complexity: compact (132 tokens, 0 modules)
+  ✅ negative-delta-risk: No negative delta risk patterns detected
+  ✅ procedural-content: Description contains procedural language
+  ✅ over-specificity: No over-specificity patterns detected
 
 📝 Suggested improvement (routing-clarity):
 ────────────────────────────────────────
@@ -473,9 +578,24 @@ Anti-triggers: 0
 Issues:
   ❌ Description is 5 chars (need 150+)
 
-Spec Compliance: 6/8 passed
-  ⚠️ [spec-license] Consider adding a 'license' field (e.g., MIT, Apache-2.0)
-  ⚠️ [spec-version] Consider adding 'metadata.version' for versioning
+── Spec Compliance ──
+  ✅ spec-frontmatter: Frontmatter structure valid with required fields
+  ✅ spec-allowed-fields: All frontmatter fields are spec-allowed
+  ✅ spec-name: Name follows spec naming rules
+  ✅ spec-dir-match: Directory name matches skill name
+  ✅ spec-description: Description is valid
+  ✅ spec-compatibility: No compatibility field (optional)
+  ⚠️ spec-license: No license field found
+     📎 Best practice: include a license field (e.g., MIT, Apache-2.0)
+  ⚠️ spec-version: No metadata.version field found
+     📎 Best practice: include metadata.version for tracking and compatibility
+
+── Advisory Checks ──
+  ✅ module-count: Found 0 reference module(s)
+  ✅ complexity: Complexity: compact (17 tokens, 0 modules)
+  ✅ negative-delta-risk: No negative delta risk patterns detected
+  ⚠️ procedural-content: Description lacks procedural language (no action verbs or procedure keywords found)
+  ✅ over-specificity: No over-specificity patterns detected
 
 📝 Suggested improvement (description-length):
 ────────────────────────────────────────
