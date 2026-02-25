@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/spboyer/waza/internal/projectconfig"
 	"github.com/spboyer/waza/internal/scaffold"
 	"github.com/spboyer/waza/internal/scoring"
 	"github.com/spboyer/waza/internal/skill"
@@ -32,6 +33,12 @@ type devConfig struct {
 }
 
 func runDev(cmd *cobra.Command, args []string) error {
+	// Load .waza.yaml defaults for dev flags.
+	pcfg, err := projectconfig.Load(".")
+	if err != nil || pcfg == nil {
+		pcfg = projectconfig.New()
+	}
+
 	// Check for --scaffold-triggers first — it's a standalone mode.
 	scaffoldTriggers, err := cmd.Flags().GetBool("scaffold-triggers")
 	if err != nil {
@@ -61,6 +68,13 @@ func runDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Only load model from config when in copilot mode
+	if copilotMode {
+		if !cmd.Flags().Changed("model") && pcfg.Dev.Model != "" {
+			modelID = pcfg.Dev.Model
+		}
+	}
+
 	if copilotMode {
 		if cmd.Flags().Changed("target") {
 			return errors.New("--target is not valid with --copilot")
@@ -87,6 +101,9 @@ func runDev(cmd *cobra.Command, args []string) error {
 		if targetErr != nil {
 			return targetErr
 		}
+		if !cmd.Flags().Changed("target") && pcfg.Dev.Target != "" {
+			targetStr = pcfg.Dev.Target
+		}
 		target, targetErr = scoring.ParseAdherenceLevel(targetStr)
 		if targetErr != nil {
 			return targetErr
@@ -95,6 +112,9 @@ func runDev(cmd *cobra.Command, args []string) error {
 		maxIter, err = cmd.Flags().GetInt("max-iterations")
 		if err != nil {
 			return err
+		}
+		if !cmd.Flags().Changed("max-iterations") && pcfg.Dev.MaxIterations > 0 {
+			maxIter = pcfg.Dev.MaxIterations
 		}
 		if maxIter < 1 {
 			return errors.New("max-iterations must be at least 1")
