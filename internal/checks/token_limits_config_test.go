@@ -121,3 +121,6 @@ func TestLoadLimitsConfig_NoFile(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, DefaultLimits, cfg)
 }
+
+// Note: .waza.yaml integration tests for token limits live in
+// cmd/waza/tokens/internal/limits_test.go, not here.
