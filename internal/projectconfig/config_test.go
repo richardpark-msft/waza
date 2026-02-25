@@ -30,7 +30,7 @@ func TestNew_ReturnsAllDefaults(t *testing.T) {
 
 	// Server
 	assertEqualInt(t, "Server.Port", 3000, cfg.Server.Port)
-	assertEqual(t, "Server.ResultsDir", ".", cfg.Server.ResultsDir)
+	assertEqual(t, "Server.ResultsDir", "results/", cfg.Server.ResultsDir)
 
 	// Dev
 	assertEqual(t, "Dev.Model", "claude-sonnet-4-20250514", cfg.Dev.Model)
@@ -38,8 +38,8 @@ func TestNew_ReturnsAllDefaults(t *testing.T) {
 	assertEqualInt(t, "Dev.MaxIterations", 5, cfg.Dev.MaxIterations)
 
 	// Tokens
-	assertEqualInt(t, "Tokens.WarningThreshold", 2500, cfg.Tokens.WarningThreshold)
-	assertEqualInt(t, "Tokens.FallbackLimit", 2000, cfg.Tokens.FallbackLimit)
+	assertEqualInt(t, "Tokens.WarningThreshold", 500, cfg.Tokens.WarningThreshold)
+	assertEqualInt(t, "Tokens.FallbackLimit", 1000, cfg.Tokens.FallbackLimit)
 	if cfg.Tokens.Limits != nil {
 		t.Error("Tokens.Limits should be nil by default")
 	}
@@ -58,32 +58,32 @@ paths:
 defaults:
   engine: mock
   model: gpt-4o
-  judge_model: claude-sonnet-4.6
+  judgeModel: claude-sonnet-4.6
   timeout: 600
   parallel: true
   workers: 8
   verbose: true
-  session_log: true
+  sessionLog: true
 cache:
   enabled: true
   dir: ".my-cache"
 server:
   port: 8080
-  results_dir: "./output"
+  resultsDir: "./output"
 dev:
   model: gpt-5
   target: high
-  max_iterations: 10
+  maxIterations: 10
 tokens:
-  warning_threshold: 5000
-  fallback_limit: 3000
+  warningThreshold: 5000
+  fallbackLimit: 3000
   limits:
     defaults:
       gpt-4o: 4096
     overrides:
       gpt-4o: 8192
 graders:
-  program_timeout: 60
+  programTimeout: 60
 `)
 
 	cfg, err := Load(dir)
@@ -239,7 +239,7 @@ cache:
 defaults:
   parallel: true
   verbose: true
-  session_log: true
+  sessionLog: true
 cache:
   enabled: true
 `)

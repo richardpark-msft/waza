@@ -26,14 +26,14 @@ const (
 	DefaultCacheDir = ".waza-cache"
 
 	DefaultServerPort       = 3000
-	DefaultServerResultsDir = "."
+	DefaultServerResultsDir = "results/"
 
 	DefaultDevModel         = "claude-sonnet-4-20250514"
 	DefaultDevTarget        = "medium-high"
 	DefaultDevMaxIterations = 5
 
-	DefaultTokenWarningThreshold = 2500
-	DefaultTokenFallbackLimit    = 2000
+	DefaultTokenWarningThreshold = 500
+	DefaultTokenFallbackLimit    = 1000
 
 	DefaultGraderProgramTimeout = 30
 )
@@ -49,12 +49,12 @@ type PathsConfig struct {
 type DefaultsConfig struct {
 	Engine     string `yaml:"engine,omitempty"`
 	Model      string `yaml:"model,omitempty"`
-	JudgeModel string `yaml:"judge_model,omitempty"`
+	JudgeModel string `yaml:"judgeModel,omitempty"`
 	Timeout    int    `yaml:"timeout,omitempty"`
 	Parallel   *bool  `yaml:"parallel,omitempty"`
 	Workers    int    `yaml:"workers,omitempty"`
 	Verbose    *bool  `yaml:"verbose,omitempty"`
-	SessionLog *bool  `yaml:"session_log,omitempty"`
+	SessionLog *bool  `yaml:"sessionLog,omitempty"`
 }
 
 // CacheConfig holds cache settings.
@@ -66,14 +66,14 @@ type CacheConfig struct {
 // ServerConfig holds dashboard server settings.
 type ServerConfig struct {
 	Port       int    `yaml:"port,omitempty"`
-	ResultsDir string `yaml:"results_dir,omitempty"`
+	ResultsDir string `yaml:"resultsDir,omitempty"`
 }
 
 // DevConfig holds waza dev command settings.
 type DevConfig struct {
 	Model         string `yaml:"model,omitempty"`
 	Target        string `yaml:"target,omitempty"`
-	MaxIterations int    `yaml:"max_iterations,omitempty"`
+	MaxIterations int    `yaml:"maxIterations,omitempty"`
 }
 
 // TokenLimitsConfig holds per-model token limit maps.
@@ -84,14 +84,14 @@ type TokenLimitsConfig struct {
 
 // TokensConfig holds token budget settings.
 type TokensConfig struct {
-	WarningThreshold int                `yaml:"warning_threshold,omitempty"`
-	FallbackLimit    int                `yaml:"fallback_limit,omitempty"`
+	WarningThreshold int                `yaml:"warningThreshold,omitempty"`
+	FallbackLimit    int                `yaml:"fallbackLimit,omitempty"`
 	Limits           *TokenLimitsConfig `yaml:"limits,omitempty"`
 }
 
 // GradersConfig holds grader execution settings.
 type GradersConfig struct {
-	ProgramTimeout int `yaml:"program_timeout,omitempty"`
+	ProgramTimeout int `yaml:"programTimeout,omitempty"`
 }
 
 // ProjectConfig is the top-level configuration loaded from .waza.yaml.
@@ -129,7 +129,7 @@ func New() *ProjectConfig {
 		},
 		Server: ServerConfig{
 			Port:       DefaultServerPort,
-			ResultsDir: DefaultServerResultsDir,
+			ResultsDir: DefaultResultsDir,
 		},
 		Dev: DevConfig{
 			Model:         DefaultDevModel,
