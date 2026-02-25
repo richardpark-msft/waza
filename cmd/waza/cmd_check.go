@@ -6,9 +6,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
+
+	"github.com/mattn/go-runewidth"
 
 	"github.com/spboyer/waza/cmd/waza/dev"
 	"github.com/spboyer/waza/internal/checks"
+	"github.com/spboyer/waza/internal/projectconfig"
 	"github.com/spboyer/waza/internal/scoring"
 	"github.com/spboyer/waza/internal/skill"
 	"github.com/spboyer/waza/internal/validation"
@@ -133,18 +137,58 @@ func runCheckForSkills(cmd *cobra.Command, wsCtx *workspace.WorkspaceContext) er
 }
 
 func printCheckSummaryTable(w interface{ Write([]byte) (int, error) }, reports []*readinessReport) {
-	fmt.Fprintf(w, "\n")                                                                                                        //nolint:errcheck
-	fmt.Fprintf(w, "═══════════════════════════════════════════════\n")                                                         //nolint:errcheck
-	fmt.Fprintf(w, " CHECK SUMMARY\n")                                                                                          //nolint:errcheck
-	fmt.Fprintf(w, "═══════════════════════════════════════════════\n\n")                                                       //nolint:errcheck
-	fmt.Fprintf(w, "%-25s %-15s %-12s %-8s %-8s %-8s %s\n", "Skill", "Compliance", "Tokens", "Spec", "Links", "Schema", "Eval") //nolint:errcheck
-	fmt.Fprintf(w, "%s\n", strings.Repeat("─", 85))                                                                             //nolint:errcheck
+	const maxNameWidth = 25
+	const minNameWidth = 10
+
+	// Compute dynamic column width from the longest skill name.
+	nameWidth := len("Skill")
+	for _, r := range reports {
+		n := r.skillName
+		if n == "" {
+			n = "unnamed"
+		}
+		if runeLen := utf8.RuneCountInString(n); runeLen > nameWidth {
+			nameWidth = runeLen
+		}
+	}
+	if nameWidth > maxNameWidth {
+		nameWidth = maxNameWidth
+	}
+	if nameWidth < minNameWidth {
+		nameWidth = minNameWidth
+	}
+
+	// Fixed column widths (display columns) for emoji-safe alignment.
+	const colCompliance = 14
+	const colTokens = 16
+	const colSpec = 6
+	const colLinks = 6
+	const colSchema = 6
+	const colEval = 4
+	totalWidth := nameWidth + colCompliance + colTokens + colSpec + colLinks + colSchema + colEval + 12 // 12 = 6 gaps × 2 spaces
+
+	fmt.Fprintf(w, "\n")                                      //nolint:errcheck
+	fmt.Fprintf(w, "%s\n", strings.Repeat("═", totalWidth))   //nolint:errcheck
+	fmt.Fprintf(w, " CHECK SUMMARY\n")                        //nolint:errcheck
+	fmt.Fprintf(w, "%s\n\n", strings.Repeat("═", totalWidth)) //nolint:errcheck
+
+	fmt.Fprintf(w, "%s  %s  %s  %s  %s  %s  %s\n", //nolint:errcheck
+		padRight("Skill", nameWidth),
+		padRight("Compliance", colCompliance),
+		padRight("Tokens", colTokens),
+		padRight("Spec", colSpec),
+		padRight("Links", colLinks),
+		padRight("Schema", colSchema),
+		"Eval")
+	fmt.Fprintf(w, "%s\n", strings.Repeat("─", totalWidth)) //nolint:errcheck
 
 	for _, r := range reports {
 		name := r.skillName
 		if name == "" {
 			name = "unnamed"
 		}
+		name = truncateName(name, nameWidth)
+
 		tokenStatus := "✅"
 		if r.tokenExceeded {
 			tokenStatus = "❌"
@@ -169,10 +213,35 @@ func printCheckSummaryTable(w interface{ Write([]byte) (int, error) }, reports [
 		if !r.hasEval {
 			evalStatus = "⚠️"
 		}
-		fmt.Fprintf(w, "%-25s %-15s %s %d/%-6d %s       %s      %s      %s\n", //nolint:errcheck
-			name, r.complianceLevel, tokenStatus, r.tokenCount, r.tokenLimit, specStatus, linkStatus, schemaStatus, evalStatus)
+		tokenStr := fmt.Sprintf("%s %d/%d", tokenStatus, r.tokenCount, r.tokenLimit)
+		fmt.Fprintf(w, "%s  %s  %s  %s  %s  %s  %s\n", //nolint:errcheck
+			padRight(name, nameWidth),
+			padRight(string(r.complianceLevel), colCompliance),
+			padRight(tokenStr, colTokens),
+			padRight(specStatus, colSpec),
+			padRight(linkStatus, colLinks),
+			padRight(schemaStatus, colSchema),
+			evalStatus)
 	}
 	fmt.Fprintf(w, "\n") //nolint:errcheck
+}
+
+// truncateName shortens a name to maxLen runes, replacing the last rune with "…" if needed.
+func truncateName(name string, maxLen int) string {
+	runes := []rune(name)
+	if len(runes) <= maxLen {
+		return name
+	}
+	return string(runes[:maxLen-1]) + "…"
+}
+
+// padRight pads s with spaces so its terminal display width reaches width.
+func padRight(s string, width int) string {
+	sw := runewidth.StringWidth(s)
+	if sw >= width {
+		return s
+	}
+	return s + strings.Repeat(" ", width-sw)
 }
 
 func checkReadiness(skillDir string, wsCtx *workspace.WorkspaceContext) (*readinessReport, error) {
@@ -200,7 +269,8 @@ func checkReadiness(skillDir string, wsCtx *workspace.WorkspaceContext) (*readin
 	report.skillName = sk.Frontmatter.Name
 
 	// 3. Run compliance scoring
-	complianceData, err := (&checks.ComplianceScoreChecker{}).Score(sk)
+	tokenLimit := resolveSkillTokenLimit(filepath.Dir(skillDir))
+	complianceData, err := (&checks.ComplianceScoreChecker{TokenLimit: tokenLimit}).Score(sk)
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +289,8 @@ func checkReadiness(skillDir string, wsCtx *workspace.WorkspaceContext) (*readin
 	linkScorer := &dev.LinkScorer{}
 	report.linkResult = linkScorer.Score(&sk)
 
-	// 4. Check token budget
-	tokenData, err := (&checks.TokenBudgetChecker{}).Budget(sk)
+	// 4. Check token budget (resolve per-skill limit from project config)
+	tokenData, err := (&checks.TokenBudgetChecker{Limit: tokenLimit}).Budget(sk)
 	if err != nil {
 		return nil, err
 	}
@@ -269,6 +339,32 @@ func checkReadiness(skillDir string, wsCtx *workspace.WorkspaceContext) (*readin
 	return report, nil
 }
 
+// resolveSkillTokenLimit loads per-skill token limits from .waza.yaml (or
+// .token-limits.json) and returns the resolved limit for SKILL.md.
+// Falls back to 0 (which lets TokenBudgetChecker use scoring.TokenSoftLimit).
+func resolveSkillTokenLimit(startDir string) int {
+	// Try project config first (.waza.yaml tokens.limits section)
+	if cfg, err := projectconfig.Load(startDir); err == nil && cfg.Tokens.Limits != nil {
+		limCfg := checks.TokenLimitsConfig{
+			Defaults:  cfg.Tokens.Limits.Defaults,
+			Overrides: cfg.Tokens.Limits.Overrides,
+		}
+		if limCfg.Defaults != nil {
+			lr := checks.GetLimitForFile("SKILL.md", limCfg)
+			return lr.Limit
+		}
+	}
+
+	// Try .token-limits.json
+	limCfg, err := checks.LoadLimitsConfig(startDir)
+	if err == nil {
+		lr := checks.GetLimitForFile("SKILL.md", limCfg)
+		return lr.Limit
+	}
+
+	return 0 // fall back to TokenBudgetChecker default (scoring.TokenSoftLimit)
+}
+
 //nolint:errcheck // display function — fmt.Fprintf errors to stdout are not actionable
 func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report *readinessReport) {
 	w := out
@@ -287,13 +383,13 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 	fmt.Fprintf(w, "📋 Compliance Score: %s\n", report.complianceLevel)
 	switch report.complianceLevel {
 	case scoring.AdherenceHigh:
-		fmt.Fprintf(w, "   ✅ Excellent! Your skill meets all compliance requirements.\n")
+		fmt.Fprintf(w, "   ✅  Excellent! Your skill meets all compliance requirements.\n")
 	case scoring.AdherenceMediumHigh:
 		fmt.Fprintf(w, "   ⚠️  Good, but could be improved. Missing routing clarity.\n")
 	case scoring.AdherenceMedium:
 		fmt.Fprintf(w, "   ⚠️  Needs improvement. Missing anti-triggers and routing clarity.\n")
 	default:
-		fmt.Fprintf(w, "   ❌ Needs significant improvement. Description too short or missing triggers.\n")
+		fmt.Fprintf(w, "   ❌  Needs significant improvement. Description too short or missing triggers.\n")
 	}
 
 	if len(report.complianceScore.Issues) > 0 {
@@ -303,7 +399,7 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 			if issue.Severity == "error" {
 				emoji = "❌"
 			}
-			fmt.Fprintf(w, "   %s %s\n", emoji, issue.Message)
+			fmt.Fprintf(w, "   %s  %s\n", emoji, issue.Message)
 		}
 	}
 	fmt.Fprintf(w, "\n")
@@ -312,9 +408,9 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 	if report.specResult != nil {
 		fmt.Fprintf(w, "📐 Spec Compliance: %d/%d checks passed\n", report.specResult.Pass, report.specResult.Total)
 		if report.specResult.Passed() {
-			fmt.Fprintf(w, "   ✅ Meets agentskills.io specification.\n")
+			fmt.Fprintf(w, "   ✅  Meets agentskills.io specification.\n")
 		} else {
-			fmt.Fprintf(w, "   ❌ Does not fully meet agentskills.io specification.\n")
+			fmt.Fprintf(w, "   ❌  Does not fully meet agentskills.io specification.\n")
 		}
 		if len(report.specResult.Issues) > 0 {
 			for _, issue := range report.specResult.Issues {
@@ -322,7 +418,7 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 				if issue.Severity == "error" {
 					emoji = "❌"
 				}
-				fmt.Fprintf(w, "   %s [%s] %s\n", emoji, issue.Rule, issue.Message)
+				fmt.Fprintf(w, "   %s  [%s] %s\n", emoji, issue.Rule, issue.Message)
 			}
 		}
 		fmt.Fprintf(w, "\n")
@@ -332,7 +428,7 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 	if report.mcpResult != nil {
 		fmt.Fprintf(w, "🔌 MCP Integration: %d/4\n", report.mcpResult.SubScore)
 		if report.mcpResult.SubScore == 4 {
-			fmt.Fprintf(w, "   ✅ All MCP integration checks passed.\n")
+			fmt.Fprintf(w, "   ✅  All MCP integration checks passed.\n")
 		} else {
 			fmt.Fprintf(w, "   ⚠️  MCP documentation incomplete (%d/4 checks passed).\n", report.mcpResult.SubScore)
 		}
@@ -341,7 +437,7 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 			if issue.Severity == "error" {
 				emoji = "❌"
 			}
-			fmt.Fprintf(w, "   %s [%s] %s\n", emoji, issue.Rule, issue.Message)
+			fmt.Fprintf(w, "   %s  [%s] %s\n", emoji, issue.Rule, issue.Message)
 		}
 		fmt.Fprintf(w, "\n")
 	}
@@ -353,7 +449,7 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 			if report.linkResult.TotalLinks == 0 {
 				fmt.Fprintf(w, "   — No links found.\n")
 			} else {
-				fmt.Fprintf(w, "   ✅ All links valid.\n")
+				fmt.Fprintf(w, "   ✅  All links valid.\n")
 			}
 		} else {
 			problems := len(report.linkResult.BrokenLinks) + len(report.linkResult.DirectoryLinks) +
@@ -362,13 +458,13 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 			fmt.Fprintf(w, "   ⚠️  %d link issue(s) found.\n", problems)
 		}
 		for _, bl := range report.linkResult.BrokenLinks {
-			fmt.Fprintf(w, "   ❌ [%s] → %s: %s\n", bl.Source, bl.Target, bl.Reason)
+			fmt.Fprintf(w, "   ❌  [%s] → %s: %s\n", bl.Source, bl.Target, bl.Reason)
 		}
 		for _, dl := range report.linkResult.DirectoryLinks {
 			fmt.Fprintf(w, "   ⚠️  [%s] → %s: %s\n", dl.Source, dl.Target, dl.Reason)
 		}
 		for _, se := range report.linkResult.ScopeEscapes {
-			fmt.Fprintf(w, "   ❌ [%s] → %s: %s\n", se.Source, se.Target, se.Reason)
+			fmt.Fprintf(w, "   ❌  [%s] → %s: %s\n", se.Source, se.Target, se.Reason)
 		}
 		for _, du := range report.linkResult.DeadURLs {
 			fmt.Fprintf(w, "   ⚠️  [%s] → %s: %s\n", du.Source, du.Target, du.Reason)
@@ -386,10 +482,10 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 	fmt.Fprintf(w, "📊 Token Budget: %d / %d tokens\n", report.tokenCount, report.tokenLimit)
 	if report.tokenExceeded {
 		over := report.tokenCount - report.tokenLimit
-		fmt.Fprintf(w, "   ❌ Exceeds limit by %d tokens. Consider reducing content.\n", over)
+		fmt.Fprintf(w, "   ❌  Exceeds limit by %d tokens. Consider reducing content.\n", over)
 	} else {
 		remaining := report.tokenLimit - report.tokenCount
-		fmt.Fprintf(w, "   ✅ Within budget (%d tokens remaining).\n", remaining)
+		fmt.Fprintf(w, "   ✅  Within budget (%d tokens remaining).\n", remaining)
 	}
 	fmt.Fprintf(w, "\n")
 
@@ -397,7 +493,7 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 	fmt.Fprintf(w, "🧪 Evaluation Suite: ")
 	if report.hasEval {
 		fmt.Fprintf(w, "Found\n")
-		fmt.Fprintf(w, "   ✅ eval.yaml detected. Run 'waza run eval.yaml' to test.\n")
+		fmt.Fprintf(w, "   ✅  eval.yaml detected. Run 'waza run eval.yaml' to test.\n")
 	} else {
 		fmt.Fprintf(w, "Not Found\n")
 		fmt.Fprintf(w, "   ⚠️  No eval.yaml found. Consider creating tests.\n")
@@ -412,7 +508,7 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 		if hasEvalSchemaErrs {
 			fmt.Fprintf(w, "📐 Eval Schema: %d error(s)\n", len(report.evalSchemaErrs))
 			for _, e := range report.evalSchemaErrs {
-				fmt.Fprintf(w, "   ❌ %s\n", e)
+				fmt.Fprintf(w, "   ❌  %s\n", e)
 			}
 			fmt.Fprintf(w, "\n")
 		}
@@ -421,18 +517,18 @@ func displayReadinessReport(out interface{ Write([]byte) (int, error) }, report 
 			for file, errs := range report.taskSchemaErrs {
 				fmt.Fprintf(w, "   %s:\n", file)
 				for _, e := range errs {
-					fmt.Fprintf(w, "     ❌ %s\n", e)
+					fmt.Fprintf(w, "     ❌  %s\n", e)
 				}
 			}
 			fmt.Fprintf(w, "\n")
 		}
 		if !hasEvalSchemaErrs && !hasTaskSchemaErrs {
 			fmt.Fprintf(w, "📐 Schema Validation: Passed\n")
-			fmt.Fprintf(w, "   ✅ eval.yaml schema valid\n")
+			fmt.Fprintf(w, "   ✅  eval.yaml schema valid\n")
 			// Count validated task files
 			taskCount := countValidatedTasks(report)
 			if taskCount > 0 {
-				fmt.Fprintf(w, "   ✅ %d task file(s) validated\n", taskCount)
+				fmt.Fprintf(w, "   ✅  %d task file(s) validated\n", taskCount)
 			}
 			fmt.Fprintf(w, "\n")
 		}

@@ -1,15 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+	"gopkg.in/yaml.v3"
 
 	"github.com/spboyer/waza/internal/projectconfig"
 	"github.com/spboyer/waza/internal/scaffold"
@@ -59,10 +62,10 @@ If no directory is specified, the current directory is used.`,
 
 // displayInventory scans the workspace and prints a structured inventory table.
 // Returns the discovered skill entries for downstream logic.
-func displayInventory(out io.Writer, absDir string) []skillEntry {
+func displayInventory(out io.Writer, absDir string, opts ...workspace.DetectOption) []skillEntry {
 	var inventory []skillEntry
 
-	wsCtx, wsErr := workspace.DetectContext(absDir)
+	wsCtx, wsErr := workspace.DetectContext(absDir, opts...)
 	if wsErr == nil && wsCtx != nil {
 		for _, si := range wsCtx.Skills {
 			evalPath, _ := workspace.FindEval(wsCtx, si.Name) //nolint:errcheck // missing eval is expected
@@ -97,9 +100,9 @@ func displayInventory(out io.Writer, absDir string) []skillEntry {
 			if rel, err := filepath.Rel(absDir, inv.EvalPath); err == nil {
 				relEval = rel
 			}
-			fmt.Fprintf(out, "  %s %-22s eval: %s\n", greenCheck, inv.Name, relEval) //nolint:errcheck
+			fmt.Fprintf(out, "  %s %-22s   eval: %s\n", greenCheck, inv.Name, relEval) //nolint:errcheck
 		} else {
-			fmt.Fprintf(out, "  %s %-22s missing eval\n", redCross, inv.Name) //nolint:errcheck
+			fmt.Fprintf(out, "  %s %-22s   missing eval\n", redCross, inv.Name) //nolint:errcheck
 		}
 	}
 	fmt.Fprintf(out, "\n%d skills found, %d missing eval\n", len(inventory), missing) //nolint:errcheck
@@ -128,26 +131,20 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 
 	fmt.Fprintf(out, "🔧 Initializing waza project: %s\n", projectName) //nolint:errcheck
 
-	// --- Phase 1: Discover & Display Inventory ---
-	inventory := displayInventory(out, absDir)
-
-	skillsMissingEvals := 0
-	for _, inv := range inventory {
-		if !inv.HasEval {
-			skillsMissingEvals++
-		}
-	}
-
 	wazaConfigPath := filepath.Join(absDir, ".waza.yaml")
 	_, wazaStatErr := os.Stat(wazaConfigPath)
 	needConfigPrompt := wazaStatErr != nil
 	needSkillPrompt := !noSkill
 
-	// --- Phase 2: Configuration (if .waza.yaml missing) ---
+	// --- Phase 1: Configuration (if .waza.yaml missing) ---
 	var engine, model string
+	var skillsPath, evalsPath, resultsPath string
 	var createSkill, scaffoldMissing bool
-	engine = "copilot-sdk"
-	model = "claude-sonnet-4.6"
+	engine = projectconfig.DefaultEngine
+	model = projectconfig.DefaultModel
+	skillsPath = projectconfig.DefaultSkillsDir
+	evalsPath = projectconfig.DefaultEvalsDir
+	resultsPath = projectconfig.DefaultResultsDir
 
 	// If .waza.yaml exists, read engine/model from it so scaffolded evals
 	// match the project's actual config instead of hardcoded defaults.
@@ -155,8 +152,14 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 		if cfg, err := projectconfig.Load(absDir); err == nil {
 			engine = cfg.Defaults.Engine
 			model = cfg.Defaults.Model
+			skillsPath = cfg.Paths.Skills
+			evalsPath = cfg.Paths.Evals
+			resultsPath = cfg.Paths.Results
 		}
 	}
+
+	var inventory []skillEntry
+	var skillsMissingEvals int
 
 	if isTTY {
 		// Engine selector (separate form)
@@ -177,7 +180,7 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 			).WithInput(cmd.InOrStdin()).WithOutput(out)
 
 			if err := engineForm.Run(); err != nil {
-				engine = "copilot-sdk"
+				engine = projectconfig.DefaultEngine
 			}
 
 			// Model selector (hidden when engine ≠ copilot-sdk)
@@ -212,8 +215,52 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 				).WithInput(cmd.InOrStdin()).WithOutput(out)
 
 				if err := modelForm.Run(); err != nil {
-					model = "claude-sonnet-4.6"
+					model = projectconfig.DefaultModel
 				}
+			}
+
+			pathsForm := huh.NewForm(
+				huh.NewGroup(
+					huh.NewInput().
+						Title("Skills directory").
+						Description("Where skill definitions live").
+						Value(&skillsPath),
+					huh.NewInput().
+						Title("Evals directory").
+						Description("Where evaluation suites live").
+						Value(&evalsPath),
+					huh.NewInput().
+						Title("Results directory").
+						Description("Where evaluation results are saved").
+						Value(&resultsPath),
+				),
+			).WithInput(cmd.InOrStdin()).WithOutput(out)
+
+			if err := pathsForm.Run(); err != nil {
+				// keep current values on error
+				_ = err
+			}
+
+			// Validate paths are safe (no absolute paths or traversal)
+			for _, p := range []string{skillsPath, evalsPath, resultsPath} {
+				cleaned := filepath.Clean(p)
+				if filepath.IsAbs(cleaned) || strings.HasPrefix(cleaned, "..") {
+					return fmt.Errorf("path %q must be relative and within the project directory", p)
+				}
+				if strings.ContainsAny(p, ":#") {
+					return fmt.Errorf("path %q contains invalid characters", p)
+				}
+			}
+		}
+
+		// --- Phase 2: Discover & Display Inventory (using configured paths) ---
+		inventory = displayInventory(out, absDir,
+			workspace.WithSkillsDir(skillsPath),
+			workspace.WithEvalsDir(evalsPath))
+
+		for _, inv := range inventory {
+			if !inv.HasEval {
+				skillsMissingEvals++
 			}
 		}
 
@@ -235,9 +282,11 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 			}
 
 			if scaffoldMissing {
-				scaffoldMissingEvals(absDir, inventory, engine, model)
+				scaffoldMissingEvals(absDir, evalsPath, inventory, engine, model)
 				// Re-display inventory showing updated state
-				inventory = displayInventory(out, absDir)
+				inventory = displayInventory(out, absDir,
+					workspace.WithSkillsDir(skillsPath),
+					workspace.WithEvalsDir(evalsPath))
 				skillsMissingEvals = 0
 				for _, inv := range inventory {
 					if !inv.HasEval {
@@ -271,12 +320,25 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 	} else {
 		// Non-TTY: use defaults, skip forms
 		fmt.Fprintf(out, "\nUsing defaults: engine=%s, model=%s, scaffold missing evals=yes, create skill=no\n", engine, model) //nolint:errcheck
+
+		// Discover inventory using configured paths
+		inventory = displayInventory(out, absDir,
+			workspace.WithSkillsDir(skillsPath),
+			workspace.WithEvalsDir(evalsPath))
+
+		for _, inv := range inventory {
+			if !inv.HasEval {
+				skillsMissingEvals++
+			}
+		}
 		scaffoldMissing = skillsMissingEvals > 0
 
 		if scaffoldMissing {
-			scaffoldMissingEvals(absDir, inventory, engine, model)
+			scaffoldMissingEvals(absDir, evalsPath, inventory, engine, model)
 			// Re-display inventory after scaffolding
-			inventory = displayInventory(out, absDir)
+			inventory = displayInventory(out, absDir,
+				workspace.WithSkillsDir(skillsPath),
+				workspace.WithEvalsDir(evalsPath))
 			skillsMissingEvals = 0
 			for _, inv := range inventory {
 				if !inv.HasEval {
@@ -296,21 +358,14 @@ func initCommandE(cmd *cobra.Command, args []string, noSkill bool) error {
 
 	wazaConfigContent := ""
 	if needConfigPrompt {
-		wazaConfigContent = fmt.Sprintf(`# yaml-language-server: $schema=https://raw.githubusercontent.com/spboyer/waza/main/schemas/config.schema.json
-# Waza project configuration
-# These defaults are used by 'waza new' when generating eval.yaml files
-# and by 'waza run' as fallback values when not specified in eval.yaml.
-defaults:
-  engine: %s
-  model: %s
-`, engine, model)
+		wazaConfigContent = generateWazaConfig(engine, model, skillsPath, evalsPath, resultsPath)
 	}
 
 	configLabel := fmt.Sprintf("Project defaults (%s, %s)", engine, model)
 
 	items := []initItem{
-		{filepath.Join(absDir, "skills"), "Skill definitions", true, ""},
-		{filepath.Join(absDir, "evals"), "Evaluation suites", true, ""},
+		{filepath.Join(absDir, skillsPath), "Skill definitions", true, ""},
+		{filepath.Join(absDir, evalsPath), "Evaluation suites", true, ""},
 		{filepath.Join(absDir, ".waza.yaml"), configLabel, false, wazaConfigContent},
 		{filepath.Join(absDir, ".github", "workflows", "eval.yml"), "CI pipeline", false, initCIWorkflow()},
 		{filepath.Join(absDir, ".gitignore"), "Build artifacts excluded", false, initGitignore()},
@@ -405,7 +460,9 @@ defaults:
 		}
 
 		// Re-display final inventory after skill creation
-		displayInventory(out, absDir)
+		displayInventory(out, absDir,
+			workspace.WithSkillsDir(skillsPath),
+			workspace.WithEvalsDir(evalsPath))
 	}
 
 	// --- Phase 6: Next steps (first run only, TTY only) ---
@@ -417,12 +474,12 @@ defaults:
 }
 
 // scaffoldMissingEvals creates eval suites for skills that lack them.
-func scaffoldMissingEvals(absDir string, inventory []skillEntry, engine, model string) {
+func scaffoldMissingEvals(absDir, evalsDir string, inventory []skillEntry, engine, model string) {
 	for _, inv := range inventory {
 		if inv.HasEval {
 			continue
 		}
-		evalDir := filepath.Join(absDir, "evals", inv.Name)
+		evalDir := filepath.Join(absDir, evalsDir, inv.Name)
 		tasksDir := filepath.Join(evalDir, "tasks")
 		fixturesDir := filepath.Join(evalDir, "fixtures")
 
@@ -537,4 +594,49 @@ func initReadme(projectName string) string {
    git push
    `+"`"+``+"`"+``+"`"+`
 `, projectName)
+}
+
+// generateWazaConfig produces the expanded .waza.yaml content with all config sections.
+// Active values (paths, defaults) are YAML-marshaled for safety; commented-out
+// sections showing available options are appended as a string template.
+func generateWazaConfig(engine, model, skillsPath, evalsPath, resultsPath string) string {
+	cfg := projectconfig.ProjectConfig{
+		Paths: projectconfig.PathsConfig{
+			Skills:  skillsPath,
+			Evals:   evalsPath,
+			Results: resultsPath,
+		},
+		Defaults: projectconfig.DefaultsConfig{
+			Engine: engine,
+			Model:  model,
+		},
+	}
+
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(&cfg); err != nil {
+		return fmt.Sprintf("defaults:\n  engine: %s\n  model: %s\n", engine, model)
+	}
+	_ = enc.Close()
+
+	var sb strings.Builder
+	sb.WriteString("# yaml-language-server: $schema=https://raw.githubusercontent.com/spboyer/waza/main/schemas/config.schema.json\n\n")
+	sb.Write(buf.Bytes())
+	sb.WriteString("  # judge_model: \"\"\n")
+	sb.WriteString("  # timeout: 300\n")
+	sb.WriteString("  # parallel: false\n")
+	sb.WriteString("  # workers: 4\n")
+	sb.WriteString("  # verbose: false\n")
+	sb.WriteString("  # session_log: false\n")
+	sb.WriteString("\n# cache:\n#   enabled: false\n#   dir: .waza-cache\n")
+	sb.WriteString("\n# server:\n#   port: 3000\n#   results_dir: .\n")
+	sb.WriteString("\n# dev:\n#   model: claude-sonnet-4-20250514\n#   target: medium-high\n#   max_iterations: 5\n")
+	sb.WriteString("\n# tokens:\n#   warning_threshold: 2500\n#   fallback_limit: 2000\n#   limits:\n")
+	sb.WriteString("#     defaults:\n#       \"SKILL.md\": 500\n#       \"references/**/*.md\": 1000\n")
+	sb.WriteString("#       \"docs/**/*.md\": 1500\n#       \"*.md\": 2000\n")
+	sb.WriteString("#     overrides:\n#       \"README.md\": 3000\n#       \"CONTRIBUTING.md\": 2500\n")
+	sb.WriteString("\n# graders:\n#   program_timeout: 30\n")
+
+	return sb.String()
 }
