@@ -35,6 +35,11 @@ type ExecutionRequest struct {
 	SkillPaths []string // Directories to search for skills
 
 	Timeout time.Duration
+
+	// PermissionHandler controls is called when the copilot SDK wants to determine if a tool can
+	// be used.
+	// Default: allows all tools.
+	PermissionHandler copilot.PermissionHandler
 }
 
 // ResourceFile represents a file resource

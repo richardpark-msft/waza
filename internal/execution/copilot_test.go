@@ -31,8 +31,9 @@ func TestCopilotNoSessionID(t *testing.T) {
 		t:         t,
 		sourceDir: sourceDir,
 		expected: copilot.SessionConfig{
-			Model:            expectedModel,
-			SkillDirectories: []string{sourceDir},
+			OnPermissionRequest: allowAllTools,
+			Model:               expectedModel,
+			SkillDirectories:    []string{sourceDir},
 		},
 	}
 
@@ -86,8 +87,9 @@ func TestCopilotResumeSessionID(t *testing.T) {
 		t:         t,
 		sourceDir: sourceDir,
 		expected: copilot.ResumeSessionConfig{
-			Model:            "gpt-4o-mini",
-			SkillDirectories: []string{sourceDir},
+			Model:               "gpt-4o-mini",
+			SkillDirectories:    []string{sourceDir},
+			OnPermissionRequest: allowAllTools,
 		},
 	}
 
@@ -137,8 +139,9 @@ func TestCopilotSendAndWaitReturnsErrorInResult(t *testing.T) {
 		t:         t,
 		sourceDir: sourceDir,
 		expected: copilot.SessionConfig{
-			Model:            "gpt-4o-mini",
-			SkillDirectories: []string{sourceDir},
+			Model:               "gpt-4o-mini",
+			SkillDirectories:    []string{sourceDir},
+			OnPermissionRequest: allowAllTools,
 		},
 	}
 
@@ -239,16 +242,46 @@ func (m sessionConfigMatcher) Matches(x any) bool {
 	switch tempC := x.(type) {
 	case *copilot.SessionConfig:
 		c := *tempC
+		expected, ok := m.expected.(copilot.SessionConfig)
+		require.True(m.t, ok)
+
 		require.NotEqual(m.t, m.sourceDir, c.WorkingDirectory)
 		require.NotEmpty(m.t, c.WorkingDirectory)
+
+		if expected.OnPermissionRequest == nil {
+			require.Nil(m.t, c.OnPermissionRequest)
+		} else {
+			require.NotNil(m.t, c.OnPermissionRequest)
+		}
+
 		c.WorkingDirectory = ""
-		require.Equal(m.t, m.expected, c)
+
+		// Equal can't compare function ptrs..
+		expected.OnPermissionRequest = nil
+		c.OnPermissionRequest = nil
+
+		require.Equal(m.t, expected, c)
 	case *copilot.ResumeSessionConfig:
 		c := *tempC
+		expected, ok := m.expected.(copilot.ResumeSessionConfig)
+		require.True(m.t, ok)
+
 		require.NotEqual(m.t, m.sourceDir, c.WorkingDirectory)
 		require.NotEmpty(m.t, c.WorkingDirectory)
+
+		if expected.OnPermissionRequest == nil {
+			require.Nil(m.t, c.OnPermissionRequest)
+		} else {
+			require.NotNil(m.t, c.OnPermissionRequest)
+		}
+
 		c.WorkingDirectory = ""
-		require.Equal(m.t, m.expected, c)
+
+		// Equal can't compare function ptrs..
+		expected.OnPermissionRequest = nil
+		c.OnPermissionRequest = nil
+
+		require.Equal(m.t, expected, c)
 	default:
 		require.FailNow(m.t, "Unhandled session configuration type %T", tempC)
 	}

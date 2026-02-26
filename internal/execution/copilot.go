@@ -116,10 +116,19 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 
 	var session copilotSession
 
+	permRequestCallback := allowAllTools
+
+	if req.PermissionHandler != nil {
+		permRequestCallback = req.PermissionHandler
+	}
+
 	if req.SessionID == "" {
 		// Create session with updated API
 		session, err = e.client.CreateSession(ctx, &copilot.SessionConfig{
-			Model:            modelID,
+			Model: modelID,
+
+			OnPermissionRequest: permRequestCallback,
+
 			SkillDirectories: skillDirs,
 			WorkingDirectory: workspaceDir,
 		})
@@ -130,6 +139,9 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 	} else {
 		session, err = e.client.ResumeSessionWithOptions(ctx, req.SessionID, &copilot.ResumeSessionConfig{
 			Model: modelID,
+
+			OnPermissionRequest: permRequestCallback,
+
 			// these are the directory for the skill itself.
 			SkillDirectories: skillDirs,
 			WorkingDirectory: workspaceDir,
@@ -288,4 +300,9 @@ func joinStrings(parts []string) string {
 		builder.WriteString(p)
 	}
 	return builder.String()
+}
+
+func allowAllTools(request copilot.PermissionRequest, invocation copilot.PermissionInvocation) (copilot.PermissionRequestResult, error) {
+	// value for 'Kind' came from the permissions_test.go in the Copilot SDK.
+	return copilot.PermissionRequestResult{Kind: "approved"}, nil
 }
