@@ -10,6 +10,7 @@ How to decide who handles what.
 | React / frontend / Web UI | Rusty | Components, pages, styling, state management, Vite config |
 | Testing / QA | Basher | Go unit tests, integration tests, Playwright E2E tests, test infrastructure |
 | Documentation | Livingston, Saul | README, docs/, changelogs, API docs, design notes |
+| Go performance / optimization | Turk | Profiling, allocation analysis, concurrency, I/O optimization, Azure SDK tuning |
 | Architecture / Design decisions | Rusty | System design, component architecture, API contracts, large refactors |
 | Copilot SDK integration | Richard Park 👤 | SDK usage, API contracts, integration patterns |
 | Backend overflow | Charles Lowell 👤 | Secondary backend review, overflow capacity |

@@ -25,6 +25,7 @@
 | Basher | Tester / QA | `.ai-team/agents/basher/charter.md` | ✅ Active |
 | Livingston | Documentation Specialist | `.ai-team/agents/livingston/charter.md` | ✅ Active |
 | Saul | Documentation Lead | `.ai-team/agents/saul/charter.md` | ✅ Active |
+| Turk | Go Performance Specialist | `.ai-team/agents/turk/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.ai-team/agents/scribe/charter.md` | 📋 Silent |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 
