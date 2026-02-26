@@ -194,3 +194,53 @@ Weighted scoring lets users express that some graders matter more than others (e
 **Why:** The docs site should be a self-contained starting point for users downloading waza. Having binaries, install commands, and changelog highlights in one place reduces friction. Linking to GitHub Releases for history avoids maintaining two changelog surfaces.
 
 **Pattern for future releases:** When cutting a new version, update the releases.mdx page — change the version number, update the changelog highlights, and update download URLs. The CHANGELOG.md remains the source of truth; the releases page is a curated summary of the latest.
+
+## 2026-02-26: Performance Audit — 30 findings from dual-model assessment
+
+**By:** Turk (Go Performance Specialist)
+**Requested by:** Shayne Boyer
+**Date:** 2026-02-26
+**Scope:** runner, cmd_run, execution, jsonrpc, webapi, tokens, graders, links
+**Status:** INFORMATIONAL + PRIORITIZED REMEDIATION
+
+### What
+
+Full independent performance audit of waza Go codebase across two models:
+- **GPT-5.3-Codex pass:** 28 findings (3 P0, 9 P1, 16 P2)
+- **Claude Opus 4.6 pass:** 23 findings (3 P0, 9 P1, 11 P2)
+- **Coordinator synthesis:** 30 total unique findings (19 overlapping, 7 Codex-only, 4 Opus-only)
+
+### Critical P0 Findings
+
+1. **O(N²) stop-on-error scan** (runner.go:658–671): Sequential test iteration re-scans all previous outcomes. **Fix:** Track `hadFailure` flag instead.
+2. **Grader instances recreated per run** (runner.go:1167–1233): `runGraders()` calls `graders.Create()` for every grader on every run. 10 tasks × 3 runs × 4 graders = 120 factory calls, each loading `.waza.yaml`. **Fix:** Create instances once during test init, reuse.
+3. **Resource files read into memory per run** (runner.go:1081–1144): `loadResources()` reads fixture files as strings on every run. 1MB × 10 tests × 3 runs = 30MB redundant read. **Fix:** Cache across runs or use direct file copy.
+4. **No signal propagation on long-running evals** (cmd_run.go:607): `runSingleModel` uses `context.Background()` — Ctrl+C never reaches engine/graders. **Fix:** Wire `signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)`.
+
+### Important P1 Findings
+
+- Inline script grader creates temp file per invocation; write once in constructor
+- Program grader loads `.waza.yaml` on every construction; accept timeout as parameter
+- FileStore recomputes summaries on every API call; cache on load
+- Goldmark parser recreated per markdown file; use single shared instance
+- JSON transport allocates per message; use `json.Encoder` with buffer
+- BPE tokenizer regex applied char-by-char with repeated substring slicing
+- HTTP response bodies not drained, blocking connection reuse
+
+### Nice-to-Have P2 Findings (11 total)
+
+Cache mutex should be RWMutex, token limits reads files twice, session runs never evicted, spinner uses `time.After` in select loop, repeated JSON marshaling for cache keys, context ignored in `Shutdown()`, and others.
+
+### Remediation Priority
+
+1. **Concurrency/cancellation first:** Fix lifecycle leaks, add `ctx.Done()` checks before semaphore acquisition, wire signal context
+2. **High-frequency I/O second:** Remove repeated config loads, reduce lock-held disk I/O, revisit workspace lifecycle
+3. **CPU/allocation micro-optimizations third:** Tokenizer hot loops, pretty JSON on machine paths, HTTP link checker reuse
+
+### Why
+
+Top issues are multiplicative with benchmark scale (tasks × runs × graders). Correctness-oriented fixes prevent wasted work and leaks. Grader/store I/O reductions deliver largest immediate wall-clock gains. Micro-optimizations follow after control-path fixes.
+
+### Session Log
+
+See `.ai-team/log/2026-02-26-performance-audit.md` for detailed session notes.
