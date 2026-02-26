@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/spboyer/waza/internal/checks"
+	"github.com/spboyer/waza/internal/projectconfig"
+	"github.com/spboyer/waza/internal/workspace"
 )
 
 // FileResult holds token count results for a single file.
@@ -86,4 +90,57 @@ func findMarkdownFiles(paths []string, rootDir string) ([]string, error) {
 	}
 
 	return result, nil
+}
+
+// ConfigDetectOptions loads .waza.yaml project config and returns workspace
+// DetectOptions derived from the configured paths.
+func ConfigDetectOptions() []workspace.DetectOption {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil
+	}
+	cfg, err := projectconfig.Load(wd)
+	if err != nil {
+		return nil
+	}
+	return []workspace.DetectOption{
+		workspace.WithSkillsDir(cfg.Paths.Skills),
+		workspace.WithEvalsDir(cfg.Paths.Evals),
+	}
+}
+
+// resolveLimitsConfig returns a TokenLimitsConfig using .waza.yaml as the
+// primary source. Falls back to .token-limits.json (handled by Check()),
+// then built-in defaults when neither provides limits.
+func resolveLimitsConfig(skillDir string) checks.TokenLimitsConfig {
+	// Skill-level .token-limits.json takes precedence — let Check() load it.
+	if _, err := os.Stat(filepath.Join(skillDir, ".token-limits.json")); err == nil {
+		return checks.TokenLimitsConfig{}
+	}
+	pcfg, err := projectconfig.Load(skillDir)
+	if err != nil || pcfg.Tokens.Limits == nil || pcfg.Tokens.Limits.Defaults == nil {
+		return checks.TokenLimitsConfig{}
+	}
+	overrides := pcfg.Tokens.Limits.Overrides
+	if overrides == nil {
+		overrides = make(map[string]int)
+	}
+	return checks.TokenLimitsConfig{
+		Defaults:  pcfg.Tokens.Limits.Defaults,
+		Overrides: overrides,
+	}
+}
+
+// computeWorkspaceRelPrefix returns the forward-slash-separated path from
+// workspaceRoot to skillDir, or "" when they are the same or the relation
+// cannot be computed.
+func computeWorkspaceRelPrefix(workspaceRoot, skillDir string) string {
+	if workspaceRoot == "" || skillDir == "" || workspaceRoot == skillDir {
+		return ""
+	}
+	rel, err := filepath.Rel(workspaceRoot, skillDir)
+	if err != nil || rel == "." {
+		return ""
+	}
+	return filepath.ToSlash(rel)
 }

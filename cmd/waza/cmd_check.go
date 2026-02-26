@@ -369,8 +369,9 @@ func checkReadiness(skillDir string, wsCtx *workspace.WorkspaceContext) (*readin
 	return report, nil
 }
 
-// resolveSkillTokenLimit loads per-skill token limits from .waza.yaml (or
-// .token-limits.json) and returns the resolved limit for SKILL.md.
+// resolveSkillTokenLimit loads per-skill token limits from .waza.yaml
+// (primary) or .token-limits.json (fallback) and returns the resolved
+// limit for SKILL.md.
 // Falls back to 0 (which lets TokenBudgetChecker use scoring.TokenSoftLimit).
 func resolveSkillTokenLimit(startDir string) int {
 	// Try project config first (.waza.yaml tokens.limits section)
@@ -380,12 +381,22 @@ func resolveSkillTokenLimit(startDir string) int {
 			Overrides: cfg.Tokens.Limits.Overrides,
 		}
 		if limCfg.Defaults != nil {
-			lr := checks.GetLimitForFile("SKILL.md", limCfg)
+			// Compute workspace-relative prefix so workspace-root-relative
+			// patterns (e.g. "plugin/skills/**/SKILL.md") can match.
+			prefix := ""
+			if wd, wdErr := os.Getwd(); wdErr == nil {
+				if abs, absErr := filepath.Abs(startDir); absErr == nil {
+					if rel, relErr := filepath.Rel(wd, abs); relErr == nil && rel != "." {
+						prefix = filepath.ToSlash(rel)
+					}
+				}
+			}
+			lr := checks.GetLimitForFile("SKILL.md", limCfg, prefix)
 			return lr.Limit
 		}
 	}
 
-	// Try .token-limits.json
+	// Try .token-limits.json (fallback)
 	limCfg, err := checks.LoadLimitsConfig(startDir)
 	if err == nil {
 		lr := checks.GetLimitForFile("SKILL.md", limCfg)

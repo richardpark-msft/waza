@@ -21,27 +21,28 @@ func newCheckCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check [skill-name | paths...]",
 		Short: "Check files against token limits",
-		Long: `Check markdown files against token limits from .token-limits.json.
+		Long: `Check markdown files against token limits.
+
+Limits are resolved in priority order:
+  1. .waza.yaml tokens.limits section (primary — workspace-level config)
+  2. .token-limits.json in the skill directory (fallback — standalone use)
+  3. Built-in defaults when neither config exists
 
 Paths may be files or directories (scanned recursively for .md/.mdx files).
 A relative path is resolved from the working directory; an absolute path is
-used as-is. When no path is given, the working directory is scanned.
+used as-is.
+
+When no path is given, workspace detection determines what to check:
+  - In a multi-skill workspace, each skill is checked with per-skill headers
+  - In a single-skill workspace, that skill's directory is checked
+  - Otherwise, the working directory is scanned
 
 If the first argument looks like a skill name (no path separators or file
 extension), it is resolved via workspace detection to scope checking to that
 skill's directory.
 
-When no .token-limits.json is found, these defaults apply:
-
-  defaults:
-    SKILL.md              500 tokens
-    references/**/*.md   1000 tokens
-    docs/**/*.md         1500 tokens
-    *.md                 2000 tokens
-
-  overrides (not subject to the *.md default):
-    README.md            3000 tokens
-    CONTRIBUTING.md      2500 tokens`,
+Patterns support workspace-root-relative paths (e.g., plugin/skills/**/SKILL.md).
+Configure tokens.warningThreshold and tokens.fallbackLimit in .waza.yaml.`,
 		Args: cobra.ArbitraryArgs,
 		RunE: runCheck,
 	}
@@ -84,12 +85,16 @@ func runCheck(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("getting current directory: %w", err)
 	}
+	workspaceRoot := rootDir
 
 	var paths []string
 
-	// If the first arg looks like a skill name (not a path), resolve via workspace
-	if len(args) > 0 && !workspace.LooksLikePath(args[0]) {
-		ctx, ctxErr := workspace.DetectContext(rootDir)
+	if len(args) > 0 && workspace.LooksLikePath(args[0]) {
+		// Explicit paths — use as-is (escape hatch)
+		paths = args
+	} else if len(args) > 0 {
+		// Skill name — resolve via workspace with config options
+		ctx, ctxErr := workspace.DetectContext(rootDir, ConfigDetectOptions()...)
 		if ctxErr != nil {
 			return fmt.Errorf("detecting workspace: %w", ctxErr)
 		}
@@ -99,34 +104,23 @@ func runCheck(cmd *cobra.Command, args []string) error {
 		}
 		rootDir = si.Dir
 	} else {
-		paths = args
+		// No args: workspace-aware mode
+		ctx, ctxErr := workspace.DetectContext(rootDir, ConfigDetectOptions()...)
+		if ctxErr == nil {
+			switch ctx.Type {
+			case workspace.ContextMultiSkill:
+				return runCheckBatch(cmd, ctx.Skills, format, strict, quiet, workspaceRoot)
+			case workspace.ContextSingleSkill:
+				rootDir = ctx.Skills[0].Dir
+			}
+		}
+		// ContextNone or error: fall through to CWD scan
 	}
 
-	checker := &checks.TokenLimitsChecker{
-		Paths: paths,
-	}
-	limitsData, err := checker.Limits(skill.Skill{Path: filepath.Join(rootDir, "SKILL.md")})
+	results, err := computeCheckResults(rootDir, paths, computeWorkspaceRelPrefix(workspaceRoot, rootDir))
 	if err != nil {
 		return err
 	}
-
-	var results []checkResult
-	for _, r := range limitsData.Results {
-		results = append(results, checkResult{
-			File:     r.File,
-			Tokens:   r.Tokens,
-			Limit:    r.Limit,
-			Pattern:  r.Pattern,
-			Exceeded: r.Exceeded,
-		})
-	}
-
-	sort.Slice(results, func(i, j int) bool {
-		if results[i].Exceeded != results[j].Exceeded {
-			return results[i].Exceeded
-		}
-		return results[i].File < results[j].File
-	})
 
 	output := ""
 	switch format {
@@ -239,4 +233,129 @@ func checkJSON(results []checkResult) (string, error) {
 	enc.SetIndent("", "  ")
 	err := enc.Encode(report)
 	return buf.String(), err
+}
+
+// computeCheckResults runs the token limits checker and returns sorted results.
+func computeCheckResults(rootDir string, paths []string, workspaceRelPrefix string) ([]checkResult, error) {
+	checker := &checks.TokenLimitsChecker{
+		Config:             resolveLimitsConfig(rootDir),
+		Paths:              paths,
+		WorkspaceRelPrefix: workspaceRelPrefix,
+	}
+	limitsData, err := checker.Limits(skill.Skill{Path: filepath.Join(rootDir, "SKILL.md")})
+	if err != nil {
+		return nil, err
+	}
+
+	var results []checkResult
+	for _, r := range limitsData.Results {
+		results = append(results, checkResult{
+			File:     r.File,
+			Tokens:   r.Tokens,
+			Limit:    r.Limit,
+			Pattern:  r.Pattern,
+			Exceeded: r.Exceeded,
+		})
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		if results[i].Exceeded != results[j].Exceeded {
+			return results[i].Exceeded
+		}
+		return results[i].File < results[j].File
+	})
+
+	return results, nil
+}
+
+// batchCheckReport wraps per-skill check results for JSON output.
+type batchCheckReport struct {
+	Timestamp string             `json:"timestamp"`
+	Skills    []skillCheckReport `json:"skills"`
+}
+
+// skillCheckReport holds check results for a single skill in batch mode.
+type skillCheckReport struct {
+	Skill         string        `json:"skill"`
+	TotalFiles    int           `json:"totalFiles"`
+	ExceededCount int           `json:"exceededCount"`
+	Results       []checkResult `json:"results,omitempty"`
+	Error         string        `json:"error,omitempty"`
+}
+
+// runCheckBatch runs token limit checks for each skill in a multi-skill workspace.
+func runCheckBatch(cmd *cobra.Command, skills []workspace.SkillInfo, format string, strict bool, quiet bool, workspaceRoot string) error {
+	out := cmd.OutOrStdout()
+	anyExceeded := false
+
+	var skillReports []skillCheckReport
+
+	for i, si := range skills {
+		if format == "table" {
+			if i > 0 && !quiet {
+				fmt.Fprintln(out) //nolint:errcheck
+			}
+			if !quiet {
+				fmt.Fprintf(out, "─── %s ───\n", si.Name) //nolint:errcheck
+			}
+		}
+
+		results, err := computeCheckResults(si.Dir, nil, computeWorkspaceRelPrefix(workspaceRoot, si.Dir))
+		if err != nil {
+			fmt.Fprintf(cmd.ErrOrStderr(), "  ⚠️  %s: %s\n", si.Name, err) //nolint:errcheck
+			if format == "json" {
+				skillReports = append(skillReports, skillCheckReport{
+					Skill: si.Name,
+					Error: err.Error(),
+				})
+			}
+			continue
+		}
+
+		exceeded := countExceeded(results)
+		if exceeded > 0 {
+			anyExceeded = true
+		}
+
+		switch format {
+		case "json":
+			skillReports = append(skillReports, skillCheckReport{
+				Skill:         si.Name,
+				TotalFiles:    len(results),
+				ExceededCount: exceeded,
+				Results:       results,
+			})
+		case "table":
+			if !quiet {
+				if _, wErr := fmt.Fprint(out, checkTable(results)); wErr != nil {
+					return fmt.Errorf("writing output: %w", wErr)
+				}
+			}
+		default:
+			return errors.New("invalid format: " + format)
+		}
+	}
+
+	if format == "json" {
+		report := batchCheckReport{
+			Timestamp: nowISO(),
+			Skills:    skillReports,
+		}
+		var buf bytes.Buffer
+		enc := json.NewEncoder(&buf)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(report); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprint(out, buf.String()); err != nil {
+			return fmt.Errorf("writing output: %w", err)
+		}
+	}
+
+	if strict && anyExceeded {
+		cmd.SilenceErrors = true
+		cmd.SilenceUsage = true
+		return errors.New("one or more skills have files exceeding token limits")
+	}
+	return nil
 }
