@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/spboyer/waza/internal/models"
+	"github.com/stretchr/testify/require"
 )
 
 func TestToolConstraintGrader_RequiresAtLeastOneConstraint(t *testing.T) {
@@ -146,11 +147,9 @@ func TestToolConstraintGrader_AllConstraints_PartialFail(t *testing.T) {
 		ExpectTools: []ToolSpec{{Tool: "bash"}, {Tool: "edit"}},
 		RejectTools: []ToolSpec{{Tool: "create_file"}},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	// bash used, edit missing, create_file used, turns ok, tokens over
+	// bash used, edit missing, create_file used
 	result, err := g.Grade(context.Background(), &Context{
 		Session: &models.SessionDigest{
 			ToolsUsed:   []string{"bash", "create_file"},
@@ -159,41 +158,27 @@ func TestToolConstraintGrader_AllConstraints_PartialFail(t *testing.T) {
 			TokensTotal: 8000,
 		},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.Passed {
-		t.Error("expected fail, got pass")
-	}
-	// 6 total checks: 2 expect + 1 reject + 1 turns + 1 tokens = 5? No:
+	require.NoError(t, err)
+	require.False(t, result.Passed)
+
 	// expect_tools: bash(pass) + edit(fail) = 2 checks
 	// reject_tools: create_file(fail) = 1 check
-	// max_turns: pass = 1 check
-	// max_tokens: fail = 1 check
-	// total = 5 checks, 2 passed, score = 2/5 = 0.4
-	if result.Score != 0.4 {
-		t.Errorf("expected score 0.4, got %f", result.Score)
-	}
+	// total = 3 checks, 1 passed, score = 1/3
+	require.Equal(t, 1.0/3.0, result.Score)
 }
 
 func TestToolConstraintGrader_NilSession(t *testing.T) {
-	g, err := NewToolConstraintGrader("test", ToolConstraintGraderConfig{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	g, err := NewToolConstraintGrader("test", ToolConstraintGraderConfig{
+		ExpectTools: []ToolSpec{{Tool: "bash"}},
+	})
+	require.NoError(t, err)
 
 	result, err := g.Grade(context.Background(), &Context{
 		Session: nil,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.Passed {
-		t.Error("expected fail with nil session")
-	}
-	if result.Score != 0.0 {
-		t.Errorf("expected score 0.0, got %f", result.Score)
-	}
+	require.NoError(t, err)
+	require.False(t, result.Passed)
+	require.Equal(t, 0.0, result.Score)
 }
 
 func TestToolConstraintGrader_Kind(t *testing.T) {
