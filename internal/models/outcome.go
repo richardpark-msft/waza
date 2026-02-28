@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/spboyer/waza/internal/statistics"
+	"github.com/microsoft/waza/internal/statistics"
 )
 
 // Status represents the outcome status of a test or run.

@@ -6,7 +6,7 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/spboyer/waza/internal/jsonrpc"
+	"github.com/microsoft/waza/internal/jsonrpc"
 )
 
 // ServeStdio runs the MCP server on the given reader/writer (typically stdin/stdout).

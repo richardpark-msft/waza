@@ -3,8 +3,8 @@ package checks
 import (
 	"testing"
 
-	"github.com/spboyer/waza/internal/scoring"
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/scoring"
+	"github.com/microsoft/waza/internal/skill"
 	"github.com/stretchr/testify/require"
 )
 

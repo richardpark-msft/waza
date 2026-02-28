@@ -2,7 +2,7 @@
 // for validating skill readiness across multiple dimensions.
 package checks
 
-import "github.com/spboyer/waza/internal/skill"
+import "github.com/microsoft/waza/internal/skill"
 
 // CheckResult holds the outcome of a single compliance check.
 type CheckResult struct {

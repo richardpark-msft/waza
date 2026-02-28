@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/spboyer/waza/internal/jsonrpc"
-	"github.com/spboyer/waza/internal/webapi"
+	"github.com/microsoft/waza/internal/jsonrpc"
+	"github.com/microsoft/waza/internal/webapi"
 )
 
 const protocolVersion = "2024-11-05"

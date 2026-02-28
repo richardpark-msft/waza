@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # install.sh — Download and install the latest waza binary from GitHub.
-# Usage: curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
 
-REPO="spboyer/waza"
+REPO="microsoft/waza"
 BINARY_NAME="waza"
 
 # Global so the EXIT trap can access it after main() returns

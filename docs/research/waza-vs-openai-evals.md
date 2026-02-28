@@ -93,7 +93,7 @@ oaieval gpt-4 my-eval      # vendor-locked CLI
 
 **Waza setup:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
 waza run eval.yaml -v       # runs immediately, any model
 ```
 

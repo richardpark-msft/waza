@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // ToolSpec describes a tool matching rule with an optional arguments pattern.

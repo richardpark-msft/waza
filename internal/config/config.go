@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // BenchmarkConfig is the main configuration with functional options

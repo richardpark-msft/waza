@@ -20,7 +20,7 @@ This is the recommended approach for CI/CD pipelines:
 
 ```bash
 # Install latest version
-go install github.com/spboyer/waza/cmd/waza@latest
+go install github.com/microsoft/waza/cmd/waza@latest
 
 # Verify installation
 waza --version
@@ -38,7 +38,7 @@ If you prefer containerized environments:
 
 ```bash
 # Clone the waza repository
-git clone https://github.com/spboyer/waza.git
+git clone https://github.com/microsoft/waza.git
 cd waza
 
 # Build the Docker image
@@ -59,7 +59,7 @@ For development or local testing:
 
 ```bash
 # Clone the repository
-git clone https://github.com/spboyer/waza.git
+git clone https://github.com/microsoft/waza.git
 cd waza
 
 # Build the binary
@@ -193,7 +193,7 @@ cp .github/workflows/skills-ci-example.yml \
 Or download directly:
 ```bash
 curl -o .github/workflows/eval.yml \
-  https://raw.githubusercontent.com/spboyer/waza/main/.github/workflows/skills-ci-example.yml
+  https://raw.githubusercontent.com/microsoft/waza/main/.github/workflows/skills-ci-example.yml
 ```
 
 ### Step 2: Customize for Your Skill
@@ -222,7 +222,7 @@ jobs:
           go-version: '1.26'
       
       - name: Install Waza
-        run: go install github.com/spboyer/waza/cmd/waza@latest
+        run: go install github.com/microsoft/waza/cmd/waza@latest
       
       - name: Run Evaluation
         run: waza run eval/eval.yaml --verbose --output results.json
@@ -352,7 +352,7 @@ Waza supports multiple grader types for validating agent output:
 | `behavior` | Agent behavior constraints | Limit tool calls, duration |
 | `action_sequence` | Tool call sequence validation | Verify workflow steps |
 
-See [docs/GRADERS.md](https://github.com/spboyer/waza/blob/main/docs/GRADERS.md) for complete documentation.
+See [docs/GRADERS.md](https://github.com/microsoft/waza/blob/main/docs/GRADERS.md) for complete documentation.
 
 ## Best Practices
 
@@ -480,7 +480,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
-      - run: go install github.com/spboyer/waza/cmd/waza@latest
+      - run: go install github.com/microsoft/waza/cmd/waza@latest
       - run: waza run eval/eval.yaml --verbose
 ```
 
@@ -498,7 +498,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
-      - run: go install github.com/spboyer/waza/cmd/waza@latest
+      - run: go install github.com/microsoft/waza/cmd/waza@latest
       - run: |
           sed -i "s/model: .*/model: ${{ matrix.model }}/" eval/eval.yaml
           waza run eval/eval.yaml --output results-${{ matrix.model }}.json
@@ -519,7 +519,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
-      - run: go install github.com/spboyer/waza/cmd/waza@latest
+      - run: go install github.com/microsoft/waza/cmd/waza@latest
       - run: waza run eval/eval.yaml --verbose --output nightly-results.json
       - uses: actions/upload-artifact@v4
         with:
@@ -529,13 +529,13 @@ jobs:
 
 ## Additional Resources
 
-- **Main Documentation**: [README.md](https://github.com/spboyer/waza/blob/main/README.md)
-- **Grader Reference**: [docs/GRADERS.md](https://github.com/spboyer/waza/blob/main/docs/GRADERS.md)
-- **Example Evaluations**: [examples/](https://github.com/spboyer/waza/tree/main/examples)
-- **CI Examples**: [examples/ci/](https://github.com/spboyer/waza/tree/main/examples/ci)
+- **Main Documentation**: [README.md](https://github.com/microsoft/waza/blob/main/README.md)
+- **Grader Reference**: [docs/GRADERS.md](https://github.com/microsoft/waza/blob/main/docs/GRADERS.md)
+- **Example Evaluations**: [examples/](https://github.com/microsoft/waza/tree/main/examples)
+- **CI Examples**: [examples/ci/](https://github.com/microsoft/waza/tree/main/examples/ci)
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/spboyer/waza/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/spboyer/waza/discussions)
-- **Repository**: [github.com/spboyer/waza](https://github.com/spboyer/waza)
+- **Issues**: [GitHub Issues](https://github.com/microsoft/waza/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/microsoft/waza/discussions)
+- **Repository**: [github.com/microsoft/waza](https://github.com/microsoft/waza)

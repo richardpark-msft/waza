@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/spboyer/waza/internal/scoring"
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/scoring"
+	"github.com/microsoft/waza/internal/skill"
 )
 
 // builtinToolNames lists well-known Copilot CLI built-in tool names that

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/spboyer/waza/internal/storage"
-	"github.com/spboyer/waza/internal/webapi"
-	"github.com/spboyer/waza/web"
+	"github.com/microsoft/waza/internal/storage"
+	"github.com/microsoft/waza/internal/webapi"
+	"github.com/microsoft/waza/web"
 )
 
 // registerRoutes sets up API and SPA routes on the given mux.

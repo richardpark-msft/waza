@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/validation"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/validation"
 	"gopkg.in/yaml.v3"
 )
 

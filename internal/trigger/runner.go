@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/spboyer/waza/internal/config"
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/transcript"
-	"github.com/spboyer/waza/internal/utils"
+	"github.com/microsoft/waza/internal/config"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/transcript"
+	"github.com/microsoft/waza/internal/utils"
 )
 
 // Runner executes trigger tests and returns classification metrics.

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spboyer/waza/internal/hooks"
+	"github.com/microsoft/waza/internal/hooks"
 	"gopkg.in/yaml.v3"
 )
 

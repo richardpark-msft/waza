@@ -3,7 +3,7 @@
 **Date:** February 2026
 **Audience:** Waza product team, engineering leads
 **Status:** Research complete, ready for design review
-**Related:** [Issue #14 — Web UI](https://github.com/spboyer/waza/issues/14) · [Issue #16 — JSON-RPC Server](https://github.com/spboyer/waza/issues/16) · [Issue #21 — Session Logging](https://github.com/spboyer/waza/issues/21) · [Issue #194 — A/B Baseline](https://github.com/spboyer/waza/issues/194) · [MSBench](https://github.com/devdiv-microsoft/MicrosoftSweBench) (internal)
+**Related:** [Issue #14 — Web UI](https://github.com/microsoft/waza/issues/14) · [Issue #16 — JSON-RPC Server](https://github.com/microsoft/waza/issues/16) · [Issue #21 — Session Logging](https://github.com/microsoft/waza/issues/21) · [Issue #194 — A/B Baseline](https://github.com/microsoft/waza/issues/194) · [MSBench](https://github.com/devdiv-microsoft/MicrosoftSweBench) (internal)
 
 ---
 

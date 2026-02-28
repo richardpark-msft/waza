@@ -11,7 +11,7 @@ import (
 	"time"
 
 	copilot "github.com/github/copilot-sdk/go"
-	"github.com/spboyer/waza/internal/utils"
+	"github.com/microsoft/waza/internal/utils"
 )
 
 // CopilotEngine integrates with GitHub Copilot SDK

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/projectconfig"
 )
 
 // defaultProgramTimeoutSeconds is the default timeout for program graders when none is specified.

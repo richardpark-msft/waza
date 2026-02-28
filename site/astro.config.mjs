@@ -16,7 +16,7 @@ export default defineConfig({
 				themes: ['github-light', 'github-dark'],
 			},
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/spboyer/waza' }
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/microsoft/waza' }
 			],
 			customCss: ['./src/styles/custom.css'],
 			sidebar: [

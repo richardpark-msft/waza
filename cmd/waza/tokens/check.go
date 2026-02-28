@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/spboyer/waza/internal/checks"
-	"github.com/spboyer/waza/internal/skill"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/internal/checks"
+	"github.com/microsoft/waza/internal/skill"
+	"github.com/microsoft/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 

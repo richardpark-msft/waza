@@ -3,7 +3,7 @@ package orchestration
 import (
 	"testing"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

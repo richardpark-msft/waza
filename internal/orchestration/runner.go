@@ -11,17 +11,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/spboyer/waza/internal/cache"
-	"github.com/spboyer/waza/internal/config"
-	"github.com/spboyer/waza/internal/dataset"
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/graders"
-	"github.com/spboyer/waza/internal/hooks"
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/statistics"
-	"github.com/spboyer/waza/internal/template"
-	"github.com/spboyer/waza/internal/transcript"
-	"github.com/spboyer/waza/internal/utils"
+	"github.com/microsoft/waza/internal/cache"
+	"github.com/microsoft/waza/internal/config"
+	"github.com/microsoft/waza/internal/dataset"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/graders"
+	"github.com/microsoft/waza/internal/hooks"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/statistics"
+	"github.com/microsoft/waza/internal/template"
+	"github.com/microsoft/waza/internal/transcript"
+	"github.com/microsoft/waza/internal/utils"
 )
 
 // TestRunner orchestrates the execution of tests

@@ -14,7 +14,7 @@ import (
 	_ "embed"
 
 	copilot "github.com/github/copilot-sdk/go"
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 type Language string

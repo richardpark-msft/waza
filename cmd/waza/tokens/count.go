@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/spboyer/waza/internal/tokens"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/internal/tokens"
+	"github.com/microsoft/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 

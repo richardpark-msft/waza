@@ -4,7 +4,7 @@ Pre-built rubric configurations for evaluating AI agent quality.
 These are adapted from [Azure ML's built-in evaluators](https://github.com/Azure/azureml-assets/tree/main/assets/evaluators/builtin)
 for use with waza's `prompt` grader.
 
-> **Note:** These rubrics require the `prompt` grader ([#104](https://github.com/spboyer/waza/issues/104)),
+> **Note:** These rubrics require the `prompt` grader ([#104](https://github.com/microsoft/waza/issues/104)),
 > which is not yet merged. The YAML files are ready to use once that grader lands.
 
 ## Rubrics

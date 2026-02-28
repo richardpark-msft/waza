@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/spboyer/waza/internal/storage"
+	"github.com/microsoft/waza/internal/storage"
 )
 
 // StorageAdapter adapts storage.ResultStore to the webapi.RunStore interface.

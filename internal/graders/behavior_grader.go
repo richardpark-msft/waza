@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // behaviorGrader validates agent behavior metrics such as tool usage,

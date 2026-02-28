@@ -8,10 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/spboyer/waza/internal/jsonrpc"
-	"github.com/spboyer/waza/internal/mcp"
-	"github.com/spboyer/waza/internal/projectconfig"
-	"github.com/spboyer/waza/internal/webserver"
+	"github.com/microsoft/waza/internal/jsonrpc"
+	"github.com/microsoft/waza/internal/mcp"
+	"github.com/microsoft/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/webserver"
 	"github.com/spf13/cobra"
 )
 

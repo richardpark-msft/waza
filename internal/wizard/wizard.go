@@ -8,7 +8,7 @@ import (
 	"text/template"
 
 	"github.com/charmbracelet/huh"
-	"github.com/spboyer/waza/internal/scaffold"
+	"github.com/microsoft/waza/internal/scaffold"
 	"golang.org/x/term"
 )
 

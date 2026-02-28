@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/spboyer/waza/internal/scoring"
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/scoring"
+	"github.com/microsoft/waza/internal/skill"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/text"

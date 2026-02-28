@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	waza "github.com/spboyer/waza"
-	"github.com/spboyer/waza/internal/skill"
+	waza "github.com/microsoft/waza"
+	"github.com/microsoft/waza/internal/skill"
 	"github.com/stretchr/testify/require"
 )
 

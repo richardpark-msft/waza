@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 	"github.com/stretchr/testify/require"
 )
 

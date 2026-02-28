@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	waza "github.com/spboyer/waza"
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/scaffold"
-	suggestpkg "github.com/spboyer/waza/internal/suggest"
+	waza "github.com/microsoft/waza"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/scaffold"
+	suggestpkg "github.com/microsoft/waza/internal/suggest"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

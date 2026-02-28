@@ -8,7 +8,7 @@ import (
 	"time"
 
 	copilot "github.com/github/copilot-sdk/go"
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // MockEngine is a simple mock implementation for testing

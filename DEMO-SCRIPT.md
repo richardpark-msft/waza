@@ -17,7 +17,7 @@ cd ~/demo && rm -rf waza-demo
 mkdir waza-demo && cd waza-demo
 
 # Install waza
-curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
 ```
 
 ---
@@ -949,7 +949,7 @@ rm -rf waza-demo
 
 ### If `waza` command not found
 ```bash
-curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
 ```
 
 ### If tasks not loading

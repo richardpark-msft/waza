@@ -8,7 +8,7 @@ import (
 	"maps"
 	"strings"
 
-	"github.com/spboyer/waza/internal/tokens"
+	"github.com/microsoft/waza/internal/tokens"
 	"gopkg.in/yaml.v3"
 )
 

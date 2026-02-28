@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/spboyer/waza/internal/cache"
+	"github.com/microsoft/waza/internal/cache"
 	"github.com/spf13/cobra"
 )
 

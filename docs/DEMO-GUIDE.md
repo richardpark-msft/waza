@@ -12,7 +12,7 @@ Before any demo, ensure waza is installed:
 
 ```bash
 # Option A: Binary install (recommended)
-curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
 
 # Option B: Build from source
 cd /path/to/waza

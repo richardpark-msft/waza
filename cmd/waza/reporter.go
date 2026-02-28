@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // formatDuration formats a duration in a consistent, human-readable way.

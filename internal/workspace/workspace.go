@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/skill"
 )
 
 // ContextType represents the type of workspace detected.

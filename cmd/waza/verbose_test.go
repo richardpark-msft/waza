@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spboyer/waza/internal/orchestration"
+	"github.com/microsoft/waza/internal/orchestration"
 	"github.com/stretchr/testify/assert"
 )
 

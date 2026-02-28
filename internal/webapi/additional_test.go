@@ -12,8 +12,8 @@ import (
 	"time"
 
 	copilot "github.com/github/copilot-sdk/go"
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/statistics"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/statistics"
 )
 
 func writeOutcomeFile(t *testing.T, path string, outcome models.EvaluationOutcome) {

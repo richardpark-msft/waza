@@ -9,7 +9,7 @@ When making changes, follow these guidelines to maintain consistency and quality
 ## Project Tracking
 
 **Keep issues and tracking up to date:**
-- **Tracking Issue:** [#66 - Waza Platform Roadmap](https://github.com/spboyer/waza/issues/66)
+- **Tracking Issue:** [#66 - Waza Platform Roadmap](https://github.com/microsoft/waza/issues/66)
 - **PRD:** [docs/PRD.md](docs/PRD.md)
 - When completing work, update the relevant GitHub issue
 - Reference issue numbers in commit messages (e.g., `feat: Add tokens command #47`)
@@ -143,7 +143,7 @@ Each task execution gets a **fresh temp workspace** with fixtures copied in:
 | `waza-go/README.md` | Go implementation details | Go code changes |
 | `docs/PRD.md` | Product requirements | Feature scope changes |
 | `AGENTS.md` | Agent coding guidelines | Process/pattern changes |
-| `site/` (GitHub Pages) | Public docs site (spboyer.github.io/waza) | Any feature add/change |
+| `site/` (GitHub Pages) | Public docs site (microsoft.github.io/waza) | Any feature add/change |
 | `web/` (Dashboard) | Interactive eval dashboard | New data in results JSON, new views needed |
 
 ### Documentation Checklist
@@ -268,7 +268,7 @@ make test
 
 ## Epics and Priorities
 
-See [Tracking Issue #66](https://github.com/spboyer/waza/issues/66) for the full roadmap.
+See [Tracking Issue #66](https://github.com/microsoft/waza/issues/66) for the full roadmap.
 
 | Epic | Priority | Description |
 |------|----------|-------------|

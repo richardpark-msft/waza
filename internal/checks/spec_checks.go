@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/skill"
 )
 
 // allowedSpecFields lists the top-level frontmatter keys permitted by the agentskills.io spec.

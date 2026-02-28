@@ -5,7 +5,7 @@ import (
 	"os"
 
 	copilot "github.com/github/copilot-sdk/go"
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 const sessionFailedUnknown = "session failed with unknown error"

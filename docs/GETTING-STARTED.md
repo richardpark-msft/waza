@@ -511,5 +511,5 @@ The `mock` executor is meant for local iteration without API calls. For real eva
 
 ## Support
 
-- **Issues:** [github.com/spboyer/waza/issues](https://github.com/spboyer/waza/issues)
-- **Discussions:** [github.com/spboyer/waza/discussions](https://github.com/spboyer/waza/discussions)
+- **Issues:** [github.com/microsoft/waza/issues](https://github.com/microsoft/waza/issues)
+- **Discussions:** [github.com/microsoft/waza/discussions](https://github.com/microsoft/waza/discussions)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // FilterTestCases returns the subset of testCases based on whether it matches tags or task display name, or task id glob patterns.

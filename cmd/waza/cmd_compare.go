@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 	"github.com/spf13/cobra"
 )
 

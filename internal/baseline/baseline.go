@@ -3,7 +3,7 @@ package baseline
 import (
 	"math"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // BaselineResult pairs a task's baseline (no skill) and skill-enabled results

@@ -11,7 +11,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // Cache provides caching for evaluation results

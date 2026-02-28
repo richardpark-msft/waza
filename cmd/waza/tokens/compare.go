@@ -11,9 +11,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/spboyer/waza/cmd/waza/tokens/internal/git"
-	"github.com/spboyer/waza/internal/checks"
-	"github.com/spboyer/waza/internal/tokens"
+	"github.com/microsoft/waza/cmd/waza/tokens/internal/git"
+	"github.com/microsoft/waza/internal/checks"
+	"github.com/microsoft/waza/internal/tokens"
 	"github.com/spf13/cobra"
 )
 

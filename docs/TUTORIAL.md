@@ -6,7 +6,7 @@ This tutorial walks you through creating evaluations for your Agent Skills.
 
 - `waza` CLI installed:
   ```bash
-  curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
   ```
 - An existing skill to evaluate
 
@@ -390,7 +390,7 @@ Add to your GitHub Actions workflow:
 ```yaml
 - name: Run Skill Evals
   run: |
-    curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
     waza run ./my-skill/eval.yaml \
       --output results.json \
       --fail-threshold 0.8 \

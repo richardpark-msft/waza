@@ -15,12 +15,12 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/spboyer/waza/internal/checks"
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/skill"
-	"github.com/spboyer/waza/internal/spinner"
-	"github.com/spboyer/waza/internal/tokens"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/internal/checks"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/skill"
+	"github.com/microsoft/waza/internal/spinner"
+	"github.com/microsoft/waza/internal/tokens"
+	"github.com/microsoft/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 

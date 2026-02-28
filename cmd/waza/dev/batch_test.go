@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spboyer/waza/internal/scoring"
+	"github.com/microsoft/waza/internal/scoring"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

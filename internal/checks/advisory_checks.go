@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/skill"
 )
 
 // ModuleCountChecker counts .md files in the skill's references/ directory.

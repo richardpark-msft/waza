@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spboyer/waza/internal/config"
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/config"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/models"
 	"github.com/stretchr/testify/require"
 )
 

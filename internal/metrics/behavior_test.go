@@ -3,7 +3,7 @@ package metrics
 import (
 	"testing"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 func TestComputeBehaviorMetrics(t *testing.T) {

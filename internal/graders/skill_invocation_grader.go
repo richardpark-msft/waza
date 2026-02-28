@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // SkillInvocationMatchingMode controls how actual skill invocations are compared to expected skills.

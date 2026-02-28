@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spboyer/waza/internal/checks"
-	"github.com/spboyer/waza/internal/projectconfig"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/internal/checks"
+	"github.com/microsoft/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/workspace"
 )
 
 // FileResult holds token count results for a single file.

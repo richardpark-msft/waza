@@ -10,11 +10,11 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/spboyer/waza/internal/projectconfig"
-	"github.com/spboyer/waza/internal/scaffold"
-	"github.com/spboyer/waza/internal/scoring"
-	"github.com/spboyer/waza/internal/skill"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/scaffold"
+	"github.com/microsoft/waza/internal/scoring"
+	"github.com/microsoft/waza/internal/skill"
+	"github.com/microsoft/waza/internal/workspace"
 	"github.com/spf13/cobra"
 )
 

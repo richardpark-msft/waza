@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // InterpretScore returns a plain-language label for a numeric score (0–1).

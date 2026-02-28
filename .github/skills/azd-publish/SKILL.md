@@ -87,8 +87,8 @@ Then finalize the changelog:
 
 3. **Update comparison links** at the bottom of the file:
    ```markdown
-   [Unreleased]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_X.Y.Z...HEAD
-   [X.Y.Z]: https://github.com/spboyer/waza/compare/azd-ext-microsoft-azd-waza_PREVIOUS...azd-ext-microsoft-azd-waza_X.Y.Z
+   [Unreleased]: https://github.com/microsoft/waza/compare/azd-ext-microsoft-azd-waza_X.Y.Z...HEAD
+   [X.Y.Z]: https://github.com/microsoft/waza/compare/azd-ext-microsoft-azd-waza_PREVIOUS...azd-ext-microsoft-azd-waza_X.Y.Z
    ```
 
 4. **Clear the Unreleased section**: Leave `## [Unreleased]` with empty subsections or blank.

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spboyer/waza/internal/session"
+	"github.com/microsoft/waza/internal/session"
 	"github.com/spf13/cobra"
 )
 

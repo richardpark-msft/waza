@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/go-viper/mapstructure/v2"
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // Grader is the interface for all validators

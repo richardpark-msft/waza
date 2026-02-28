@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/spboyer/waza/cmd/waza/dev"
-	"github.com/spboyer/waza/cmd/waza/tokens"
+	"github.com/microsoft/waza/cmd/waza/dev"
+	"github.com/microsoft/waza/cmd/waza/tokens"
 	"github.com/spf13/cobra"
 )
 

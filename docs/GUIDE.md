@@ -25,7 +25,7 @@ Choose one of three methods:
 The fastest way to get started. The script auto-detects your OS and architecture:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
 ```
 
 This downloads the latest release, verifies the checksum, and installs the `waza` binary to:
@@ -49,7 +49,7 @@ export PATH="$HOME/bin:$PATH"
 Requires **Go 1.26 or later**:
 
 ```bash
-go install github.com/spboyer/waza/cmd/waza@latest
+go install github.com/microsoft/waza/cmd/waza@latest
 ```
 
 Verify installation:
@@ -64,7 +64,7 @@ If you use Azure Developer CLI (`azd`), install waza as an extension:
 
 ```bash
 # Add the waza extension registry
-azd ext source add -n waza -t url -l https://raw.githubusercontent.com/spboyer/waza/main/registry.json
+azd ext source add -n waza -t url -l https://raw.githubusercontent.com/microsoft/waza/main/registry.json
 
 # Install the extension
 azd ext install microsoft.azd.waza
@@ -542,7 +542,7 @@ jobs:
           go-version: '1.26'
       - name: Install waza
         run: |
-          curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+          curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
       - name: Run evals
         run: |
           waza run --output results.json -v
@@ -752,8 +752,8 @@ If tasks fail validation unexpectedly:
 
 ## Getting Help
 
-- **[GitHub Issues](https://github.com/spboyer/waza/issues)** — Report bugs or request features
-- **[Discussions](https://github.com/spboyer/waza/discussions)** — Ask questions, share ideas
+- **[GitHub Issues](https://github.com/microsoft/waza/issues)** — Report bugs or request features
+- **[Discussions](https://github.com/microsoft/waza/discussions)** — Ask questions, share ideas
 - **[Waza Examples](../examples/)** — Runnable evaluation suites
 
 ---

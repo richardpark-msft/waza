@@ -3,7 +3,7 @@ package checks
 import (
 	"errors"
 
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/skill"
 )
 
 // RunChecks executes each checker against sk, collecting results and errors.

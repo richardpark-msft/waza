@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/skill"
 )
 
 // SkillsBench-derived thresholds.

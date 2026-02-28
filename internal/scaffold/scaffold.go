@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spboyer/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/projectconfig"
 )
 
 // ValidateName rejects names with path-traversal characters or empty names.

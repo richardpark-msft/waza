@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/skill"
 	"github.com/stretchr/testify/require"
 )
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // ========================================

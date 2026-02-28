@@ -9,8 +9,8 @@ import (
 	"time"
 
 	copilot "github.com/github/copilot-sdk/go"
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/utils"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/utils"
 )
 
 func TestSanitizeName(t *testing.T) {

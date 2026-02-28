@@ -9,8 +9,8 @@ import (
 
 	copilot "github.com/github/copilot-sdk/go"
 	"github.com/go-viper/mapstructure/v2"
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/utils"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/utils"
 )
 
 const AllPromptsPassed = "All prompts passed"

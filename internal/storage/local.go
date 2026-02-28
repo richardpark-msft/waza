@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // LocalStore implements ResultStore using the local filesystem.

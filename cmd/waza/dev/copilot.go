@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/skill"
-	"github.com/spboyer/waza/internal/spinner"
-	"github.com/spboyer/waza/internal/trigger"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/skill"
+	"github.com/microsoft/waza/internal/spinner"
+	"github.com/microsoft/waza/internal/trigger"
+	"github.com/microsoft/waza/internal/workspace"
 )
 
 var (

@@ -3,8 +3,8 @@ package checks
 import (
 	"fmt"
 
-	"github.com/spboyer/waza/internal/scoring"
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/scoring"
+	"github.com/microsoft/waza/internal/skill"
 )
 
 // ComplianceScoreChecker validates skill frontmatter quality using heuristic scoring.

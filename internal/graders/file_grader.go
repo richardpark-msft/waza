@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // errFileGraderNoChecks is the error format string returned when a file grader is created without any checks.

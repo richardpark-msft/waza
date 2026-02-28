@@ -12,9 +12,9 @@ import (
 	"testing"
 
 	copilot "github.com/github/copilot-sdk/go"
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/utils"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/utils"
 	"github.com/stretchr/testify/require"
 )
 

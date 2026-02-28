@@ -9,9 +9,9 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
-	"github.com/spboyer/waza/internal/generate"
-	"github.com/spboyer/waza/internal/scaffold"
-	"github.com/spboyer/waza/internal/wizard"
+	"github.com/microsoft/waza/internal/generate"
+	"github.com/microsoft/waza/internal/scaffold"
+	"github.com/microsoft/waza/internal/wizard"
 )
 
 func newNewCommand() *cobra.Command {
@@ -526,7 +526,7 @@ coverage.txt
 func defaultReadme(name string) string {
 	return fmt.Sprintf(`# %s
 
-A skill for agent evaluation with [waza](https://github.com/spboyer/waza).
+A skill for agent evaluation with [waza](https://github.com/microsoft/waza).
 
 ## Quick Start
 
@@ -560,6 +560,6 @@ waza run evals/eval.yaml --context-dir evals/fixtures -v
 
 ## Learn More
 
-- [Waza Documentation](https://github.com/spboyer/waza)
+- [Waza Documentation](https://github.com/microsoft/waza)
 `, scaffold.TitleCase(name), name)
 }

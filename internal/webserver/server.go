@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/spboyer/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/projectconfig"
 )
 
 // Config holds the HTTP server configuration.

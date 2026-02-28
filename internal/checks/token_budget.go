@@ -3,8 +3,8 @@ package checks
 import (
 	"fmt"
 
-	"github.com/spboyer/waza/internal/scoring"
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/scoring"
+	"github.com/microsoft/waza/internal/skill"
 )
 
 // TokenBudgetChecker validates that SKILL.md is within its token budget.

@@ -131,7 +131,7 @@
                 "value": "45ba53e8f906c25df51767fd22f2798e3aac0e4c698d8acd6cdf7328a29086cb"
               },
               "entryPoint": "microsoft-azd-waza-darwin-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-darwin-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-darwin-amd64.zip"
             },
             "darwin/arm64": {
               "checksum": {
@@ -139,7 +139,7 @@
                 "value": "c9c3c8b75db4e55833c7090375c5d217529061ad3f87d9b1e808f4ac28fd8943"
               },
               "entryPoint": "microsoft-azd-waza-darwin-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-darwin-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-darwin-arm64.zip"
             },
             "linux/amd64": {
               "checksum": {
@@ -147,7 +147,7 @@
                 "value": "144f52de76bb84e7ca011152a176a099ce50b8e5fa0b3d047ac10d2a472c9a32"
               },
               "entryPoint": "microsoft-azd-waza-linux-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-linux-amd64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-linux-amd64.tar.gz"
             },
             "linux/arm64": {
               "checksum": {
@@ -155,7 +155,7 @@
                 "value": "4bc09c7e61c0b3b15d864ff429279946ca576b5d47a1b05735df85b9ea8df07d"
               },
               "entryPoint": "microsoft-azd-waza-linux-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-linux-arm64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-linux-arm64.tar.gz"
             },
             "windows/amd64": {
               "checksum": {
@@ -163,7 +163,7 @@
                 "value": "68e4f09bab9dd3fbe99736fbfce9458cbd4606bc62417dafa645c3ba4a18d05d"
               },
               "entryPoint": "microsoft-azd-waza-windows-amd64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-windows-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-windows-amd64.zip"
             },
             "windows/arm64": {
               "checksum": {
@@ -171,7 +171,7 @@
                 "value": "31bac1c5264744828dab346cd2a686765e40b6e8e8d8858c1174e5268465d7b8"
               },
               "entryPoint": "microsoft-azd-waza-windows-arm64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-windows-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.0/microsoft-azd-waza-windows-arm64.zip"
             }
           }
         },
@@ -216,7 +216,7 @@
                 "value": "50b0055e873a67d47debc929dbfd86000375dff38490d3f1649ae5ef85ee1184"
               },
               "entryPoint": "microsoft-azd-waza-darwin-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-darwin-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-darwin-amd64.zip"
             },
             "darwin/arm64": {
               "checksum": {
@@ -224,7 +224,7 @@
                 "value": "69ff2926ed8736fc552c9e29fc1c697b6947e65921e20d9afb60196887a7c7f3"
               },
               "entryPoint": "microsoft-azd-waza-darwin-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-darwin-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-darwin-arm64.zip"
             },
             "linux/amd64": {
               "checksum": {
@@ -232,7 +232,7 @@
                 "value": "aa23920269e1e1777570189d1d7833da6ea0d964c8498295daf7a46ce150dd86"
               },
               "entryPoint": "microsoft-azd-waza-linux-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-linux-amd64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-linux-amd64.tar.gz"
             },
             "linux/arm64": {
               "checksum": {
@@ -240,7 +240,7 @@
                 "value": "4192ddba23406167dc33064acb53d9f1af4e33f0a629050402b97170e63615b0"
               },
               "entryPoint": "microsoft-azd-waza-linux-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-linux-arm64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-linux-arm64.tar.gz"
             },
             "windows/amd64": {
               "checksum": {
@@ -248,7 +248,7 @@
                 "value": "556c6f19d2071d77be011b5001d1c174861294c79d25e391a699f6f819fa1e2e"
               },
               "entryPoint": "microsoft-azd-waza-windows-amd64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-windows-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-windows-amd64.zip"
             },
             "windows/arm64": {
               "checksum": {
@@ -256,7 +256,7 @@
                 "value": "e04141be33781267a3d14050ef4ec454958afd4b92e2cf5c1ee260494eb92b56"
               },
               "entryPoint": "microsoft-azd-waza-windows-arm64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-windows-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.2.1/microsoft-azd-waza-windows-arm64.zip"
             }
           }
         },
@@ -301,7 +301,7 @@
                 "value": "0813c5aeba13287028515f003b5b751c2d5c0f2649cfb707029d94b1407a8c7a"
               },
               "entryPoint": "microsoft-azd-waza-darwin-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-darwin-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-darwin-amd64.zip"
             },
             "darwin/arm64": {
               "checksum": {
@@ -309,7 +309,7 @@
                 "value": "8a6da1fd45eb338562fc05d4524493c4d4cd2fce325818cf980c33fb9b48ce16"
               },
               "entryPoint": "microsoft-azd-waza-darwin-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-darwin-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-darwin-arm64.zip"
             },
             "linux/amd64": {
               "checksum": {
@@ -317,7 +317,7 @@
                 "value": "46036fe88a2280bf97f08646b9debc05ef2933544adf7d16d8d8add40e09d129"
               },
               "entryPoint": "microsoft-azd-waza-linux-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-linux-amd64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-linux-amd64.tar.gz"
             },
             "linux/arm64": {
               "checksum": {
@@ -325,7 +325,7 @@
                 "value": "2871601c8baab535ffc9209a17d1b1379f2953d240d619a5c060539984544314"
               },
               "entryPoint": "microsoft-azd-waza-linux-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-linux-arm64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-linux-arm64.tar.gz"
             },
             "windows/amd64": {
               "checksum": {
@@ -333,7 +333,7 @@
                 "value": "18bd3478906e3183cdf80b7ec14729892b2b58c62609e3cae92f432435d0a0f7"
               },
               "entryPoint": "microsoft-azd-waza-windows-amd64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-windows-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-windows-amd64.zip"
             },
             "windows/arm64": {
               "checksum": {
@@ -341,7 +341,7 @@
                 "value": "4937f1a44a7953c7d57237b35fccb41eaee02d589426ed0e941adf2ce2aca7dd"
               },
               "entryPoint": "microsoft-azd-waza-windows-arm64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-windows-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.5.0-alpha.2/microsoft-azd-waza-windows-arm64.zip"
             }
           }
         },
@@ -386,7 +386,7 @@
                 "value": "d451b8baee62ddc97b631db33394d74cc99ea8840dfaaeb0e9c1099a47cfca91"
               },
               "entryPoint": "microsoft-azd-waza-darwin-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-darwin-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-darwin-amd64.zip"
             },
             "darwin/arm64": {
               "checksum": {
@@ -394,7 +394,7 @@
                 "value": "0bbbd07399e20a44a6679c43f0927aba5c97a0355e3563719609750c73c3ea8a"
               },
               "entryPoint": "microsoft-azd-waza-darwin-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-darwin-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-darwin-arm64.zip"
             },
             "linux/amd64": {
               "checksum": {
@@ -402,7 +402,7 @@
                 "value": "fab6f19bf820e77b6489028c627c267eb25f11e2e25d3e43f738e423be9361df"
               },
               "entryPoint": "microsoft-azd-waza-linux-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-linux-amd64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-linux-amd64.tar.gz"
             },
             "linux/arm64": {
               "checksum": {
@@ -410,7 +410,7 @@
                 "value": "6fef5b3932d3047dc02d52b91946eeae6d6f60f9793476f1403bbfae37c68f43"
               },
               "entryPoint": "microsoft-azd-waza-linux-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-linux-arm64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-linux-arm64.tar.gz"
             },
             "windows/amd64": {
               "checksum": {
@@ -418,7 +418,7 @@
                 "value": "8f20c46b3ce6f3029ecb575abee901136977de0f66eeef92b216b19ddb33460e"
               },
               "entryPoint": "microsoft-azd-waza-windows-amd64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-windows-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-windows-amd64.zip"
             },
             "windows/arm64": {
               "checksum": {
@@ -426,7 +426,7 @@
                 "value": "ec36b4b70718cb75c26c6094b2d42ad73760b612b1c3dfdcbfb1b8784a4e3523"
               },
               "entryPoint": "microsoft-azd-waza-windows-arm64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-windows-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.6.0/microsoft-azd-waza-windows-arm64.zip"
             }
           }
         },
@@ -471,7 +471,7 @@
                 "value": "185a88153e08f24bb0ae51c3aecb33deae0f9c1d7f0f98ce4e329501bf5eae22"
               },
               "entryPoint": "microsoft-azd-waza-darwin-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-darwin-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-darwin-amd64.zip"
             },
             "darwin/arm64": {
               "checksum": {
@@ -479,7 +479,7 @@
                 "value": "c07cf756951ac439b3bfd1516f2374ceaeddf9b751a7ccf2916d000b6b2007ea"
               },
               "entryPoint": "microsoft-azd-waza-darwin-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-darwin-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-darwin-arm64.zip"
             },
             "linux/amd64": {
               "checksum": {
@@ -487,7 +487,7 @@
                 "value": "04cd7a220bd3fab0ab710ef471575ebf08ca29198340350d2a7dfc67731b9d11"
               },
               "entryPoint": "microsoft-azd-waza-linux-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-linux-amd64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-linux-amd64.tar.gz"
             },
             "linux/arm64": {
               "checksum": {
@@ -495,7 +495,7 @@
                 "value": "933b7557765debced35425f664c3fc91c2e5e61d857d9ec33069c819ad087a53"
               },
               "entryPoint": "microsoft-azd-waza-linux-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-linux-arm64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-linux-arm64.tar.gz"
             },
             "windows/amd64": {
               "checksum": {
@@ -503,7 +503,7 @@
                 "value": "70c9793c244c4c8de82eed73a72098d5bf304149583d19b9cb6635cf494ff997"
               },
               "entryPoint": "microsoft-azd-waza-windows-amd64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-windows-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-windows-amd64.zip"
             },
             "windows/arm64": {
               "checksum": {
@@ -511,7 +511,7 @@
                 "value": "1c68dd48fd6ce9580584b20f20093a840e0c940d439d59148e1dd9d454dd7152"
               },
               "entryPoint": "microsoft-azd-waza-windows-arm64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-windows-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.0/microsoft-azd-waza-windows-arm64.zip"
             }
           }
         },
@@ -556,7 +556,7 @@
                 "value": "ebfd16d9b00d07a47f4f3627acf5bac84422b7f649eea92b89c157a93386b45d"
               },
               "entryPoint": "microsoft-azd-waza-darwin-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-darwin-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-darwin-amd64.zip"
             },
             "darwin/arm64": {
               "checksum": {
@@ -564,7 +564,7 @@
                 "value": "8bf143ea230af447a3dd11296a8f33df7e3ed72fa4815f254a0fc28842982e89"
               },
               "entryPoint": "microsoft-azd-waza-darwin-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-darwin-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-darwin-arm64.zip"
             },
             "linux/amd64": {
               "checksum": {
@@ -572,7 +572,7 @@
                 "value": "a1a18037afa0a664e9f8176ba46fe2489f6b850d0e9ea4a48fa1d97c92644c76"
               },
               "entryPoint": "microsoft-azd-waza-linux-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-linux-amd64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-linux-amd64.tar.gz"
             },
             "linux/arm64": {
               "checksum": {
@@ -580,7 +580,7 @@
                 "value": "63ea247e1e78abe65cc919e5f4bb2e1a071fdd2eb661973a308749fb1bddef4d"
               },
               "entryPoint": "microsoft-azd-waza-linux-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-linux-arm64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-linux-arm64.tar.gz"
             },
             "windows/amd64": {
               "checksum": {
@@ -588,7 +588,7 @@
                 "value": "9faceed33e5de559eab953593ef30537c27ffb042ae87eccdf348842efcf5e56"
               },
               "entryPoint": "microsoft-azd-waza-windows-amd64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-windows-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-windows-amd64.zip"
             },
             "windows/arm64": {
               "checksum": {
@@ -596,7 +596,7 @@
                 "value": "e684c2911db87b7e8e0a5db45ebf3cf8dea99f5ea6a7d700dcf58b1a914a50cd"
               },
               "entryPoint": "microsoft-azd-waza-windows-arm64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-windows-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.7.1/microsoft-azd-waza-windows-arm64.zip"
             }
           }
         },
@@ -641,7 +641,7 @@
                 "value": "41048d50c1698b7f232df4ca5db5505807b1a304c3d9a75f73cde5f4357282ec"
               },
               "entryPoint": "microsoft-azd-waza-darwin-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-darwin-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-darwin-amd64.zip"
             },
             "darwin/arm64": {
               "checksum": {
@@ -649,7 +649,7 @@
                 "value": "300ccc9812074ce364cda7e2a7c89fb2e979f5a48449b1ffbe79f576efc8733c"
               },
               "entryPoint": "microsoft-azd-waza-darwin-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-darwin-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-darwin-arm64.zip"
             },
             "linux/amd64": {
               "checksum": {
@@ -657,7 +657,7 @@
                 "value": "c26d32632913ec12e89665ede8b66966f767d89c111d72c1116a773026ca08db"
               },
               "entryPoint": "microsoft-azd-waza-linux-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-linux-amd64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-linux-amd64.tar.gz"
             },
             "linux/arm64": {
               "checksum": {
@@ -665,7 +665,7 @@
                 "value": "7b7553c039ab3e3f55aa8a04291722c80d37e8e36de7a8800c5e00c7cb3be6cd"
               },
               "entryPoint": "microsoft-azd-waza-linux-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-linux-arm64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-linux-arm64.tar.gz"
             },
             "windows/amd64": {
               "checksum": {
@@ -673,7 +673,7 @@
                 "value": "3cda061666717689ee5b68340cece0da6d20861f490e66078b7c3147086d9622"
               },
               "entryPoint": "microsoft-azd-waza-windows-amd64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-windows-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-windows-amd64.zip"
             },
             "windows/arm64": {
               "checksum": {
@@ -681,7 +681,7 @@
                 "value": "d9d981b6c131c746c7b6dfc6df01c86800242492ec189ef5cbd98e28b7838241"
               },
               "entryPoint": "microsoft-azd-waza-windows-arm64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-windows-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.8.0/microsoft-azd-waza-windows-arm64.zip"
             }
           }
         },
@@ -726,7 +726,7 @@
                 "value": "b03369961cf10a527585aa5ba61fbe9581b7cf5a5c7a9c5a7018d9dbf9e2f344"
               },
               "entryPoint": "microsoft-azd-waza-darwin-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-darwin-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-darwin-amd64.zip"
             },
             "darwin/arm64": {
               "checksum": {
@@ -734,7 +734,7 @@
                 "value": "5b0025739b7201935c783b37645160e25a79ef7c6b971fda742a58df89c87f28"
               },
               "entryPoint": "microsoft-azd-waza-darwin-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-darwin-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-darwin-arm64.zip"
             },
             "linux/amd64": {
               "checksum": {
@@ -742,7 +742,7 @@
                 "value": "753a5529fc97bb8ef3329eb2bc31ab0faf0ff156cb3e1df001b0a6803561d391"
               },
               "entryPoint": "microsoft-azd-waza-linux-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-linux-amd64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-linux-amd64.tar.gz"
             },
             "linux/arm64": {
               "checksum": {
@@ -750,7 +750,7 @@
                 "value": "95f25e625d2774eb13a2861a6ec97fe905871819c4772dbd58a68053b545aa4f"
               },
               "entryPoint": "microsoft-azd-waza-linux-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-linux-arm64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-linux-arm64.tar.gz"
             },
             "windows/amd64": {
               "checksum": {
@@ -758,7 +758,7 @@
                 "value": "91eeee7851bced88bc4534b374fa8f03d78caad1b4694ab696a96d88619228ee"
               },
               "entryPoint": "microsoft-azd-waza-windows-amd64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-windows-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-windows-amd64.zip"
             },
             "windows/arm64": {
               "checksum": {
@@ -766,7 +766,7 @@
                 "value": "1cf57b5c514d8ef04a9a9f7b2e7bf7020ccc61584a0e9e9c6e5cbdb57515fa6b"
               },
               "entryPoint": "microsoft-azd-waza-windows-arm64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-windows-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.9.0/microsoft-azd-waza-windows-arm64.zip"
             }
           }
         },
@@ -811,7 +811,7 @@
                 "value": "979c62f5dda472d441f883be85b5e219245e59c50cabfd223b0ade32d6364869"
               },
               "entryPoint": "microsoft-azd-waza-darwin-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-darwin-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-darwin-amd64.zip"
             },
             "darwin/arm64": {
               "checksum": {
@@ -819,7 +819,7 @@
                 "value": "9d64bdc7503cecf4dfa653ee9d5cb0e1cf2b7608875b1a3845989be1affb399c"
               },
               "entryPoint": "microsoft-azd-waza-darwin-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-darwin-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-darwin-arm64.zip"
             },
             "linux/amd64": {
               "checksum": {
@@ -827,7 +827,7 @@
                 "value": "cef94a544f36dc12b328caafbd89efc54704646f5615f7d8d256cb7341d6910a"
               },
               "entryPoint": "microsoft-azd-waza-linux-amd64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-linux-amd64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-linux-amd64.tar.gz"
             },
             "linux/arm64": {
               "checksum": {
@@ -835,7 +835,7 @@
                 "value": "86aab4960f877104685cd0ade66a0a254f9646376d17416d445ef5c1b4726085"
               },
               "entryPoint": "microsoft-azd-waza-linux-arm64",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-linux-arm64.tar.gz"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-linux-arm64.tar.gz"
             },
             "windows/amd64": {
               "checksum": {
@@ -843,7 +843,7 @@
                 "value": "0cb13b785083005ec38e8b42d3a2fb539f589b981998d27be3ecf27aaa76af35"
               },
               "entryPoint": "microsoft-azd-waza-windows-amd64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-windows-amd64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-windows-amd64.zip"
             },
             "windows/arm64": {
               "checksum": {
@@ -851,7 +851,7 @@
                 "value": "49c7e0991c9f926c32896016c20f39ab622d906947057a7036d37773d949ac09"
               },
               "entryPoint": "microsoft-azd-waza-windows-arm64.exe",
-              "url": "https://github.com/spboyer/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-windows-arm64.zip"
+              "url": "https://github.com/microsoft/waza/releases/download/azd-ext-microsoft-azd-waza_0.10.0/microsoft-azd-waza-windows-arm64.zip"
             }
           }
         }

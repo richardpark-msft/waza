@@ -14,7 +14,7 @@ Choose one of three methods:
 The fastest way to get started. The script auto-detects your OS and architecture:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
 ```
 
 This downloads the latest release, verifies the checksum, and installs the `waza` binary to:
@@ -32,7 +32,7 @@ waza --version
 Requires **Go 1.26 or later**:
 
 ```bash
-go install github.com/spboyer/waza/cmd/waza@latest
+go install github.com/microsoft/waza/cmd/waza@latest
 ```
 
 ### 3. Azure Developer CLI Extension
@@ -41,7 +41,7 @@ If you use Azure Developer CLI (`azd`):
 
 ```bash
 # Add the waza extension registry
-azd ext source add -n waza -t url -l https://raw.githubusercontent.com/spboyer/waza/main/registry.json
+azd ext source add -n waza -t url -l https://raw.githubusercontent.com/microsoft/waza/main/registry.json
 
 # Install the extension
 azd ext install microsoft.azd.waza
@@ -261,17 +261,17 @@ Opens http://localhost:3000. View runs, detailed results, comparisons, and trend
 - **[Validators & Graders](../guides/graders/)** — Reference for all grader types
 - **[Web Dashboard](../guides/dashboard/)** — Explore interactive results
 - **[CLI Reference](../reference/cli/)** — All commands and flags
-- **[GitHub Repository](https://github.com/spboyer/waza)** — Source code, examples, issues
+- **[GitHub Repository](https://github.com/microsoft/waza)** — Source code, examples, issues
 
 ## Troubleshooting
 
 ### Install script fails or binary not found
 
-If the install script exits with a download error or 404, check the [Releases page](https://github.com/spboyer/waza/releases/latest) to confirm a binary for your platform is available. You can also install manually:
+If the install script exits with a download error or 404, check the [Releases page](https://github.com/microsoft/waza/releases/latest) to confirm a binary for your platform is available. You can also install manually:
 
 ```bash
 # Example: macOS ARM64 (Apple Silicon) — replace <version> with the latest tag (e.g. v0.9.0)
-curl -fSL -o waza https://github.com/spboyer/waza/releases/download/<version>/waza-darwin-arm64
+curl -fSL -o waza https://github.com/microsoft/waza/releases/download/<version>/waza-darwin-arm64
 chmod +x waza
 sudo mv waza /usr/local/bin/waza
 ```
@@ -301,5 +301,5 @@ And that you have `.yaml` files in the `tasks/` directory.
 
 ## Support
 
-- **Issues:** [github.com/spboyer/waza/issues](https://github.com/spboyer/waza/issues)
-- **GitHub:** [github.com/spboyer/waza](https://github.com/spboyer/waza)
+- **Issues:** [github.com/microsoft/waza/issues](https://github.com/microsoft/waza/issues)
+- **GitHub:** [github.com/microsoft/waza](https://github.com/microsoft/waza)

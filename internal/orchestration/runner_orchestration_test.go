@@ -8,11 +8,11 @@ import (
 	"time"
 
 	copilot "github.com/github/copilot-sdk/go"
-	"github.com/spboyer/waza/internal/cache"
-	"github.com/spboyer/waza/internal/config"
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/graders"
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/cache"
+	"github.com/microsoft/waza/internal/config"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/graders"
+	"github.com/microsoft/waza/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

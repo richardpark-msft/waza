@@ -13,13 +13,13 @@ import (
 
 	"github.com/mattn/go-runewidth"
 
-	"github.com/spboyer/waza/cmd/waza/dev"
-	"github.com/spboyer/waza/internal/checks"
-	"github.com/spboyer/waza/internal/projectconfig"
-	"github.com/spboyer/waza/internal/scoring"
-	"github.com/spboyer/waza/internal/skill"
-	"github.com/spboyer/waza/internal/validation"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/cmd/waza/dev"
+	"github.com/microsoft/waza/internal/checks"
+	"github.com/microsoft/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/scoring"
+	"github.com/microsoft/waza/internal/skill"
+	"github.com/microsoft/waza/internal/validation"
+	"github.com/microsoft/waza/internal/workspace"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

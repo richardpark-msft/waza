@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/spboyer/waza/main/schemas/eval.schema.json",
+  "$id": "https://raw.githubusercontent.com/microsoft/waza/main/schemas/eval.schema.json",
   "title": "Waza Eval Specification",
   "description": "Schema for waza eval.yaml files that define skill evaluation suites. Validates the complete evaluation specification including config, metrics, graders, hooks, and task references.",
   "type": "object",

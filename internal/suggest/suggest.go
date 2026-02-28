@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/scaffold"
-	"github.com/spboyer/waza/internal/skill"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/scaffold"
+	"github.com/microsoft/waza/internal/skill"
 	"gopkg.in/yaml.v3"
 )
 

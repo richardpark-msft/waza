@@ -258,7 +258,7 @@ Waza needs to move right (adopt A/B methodology) while staying high (platform de
 |---|---|---|
 | **Publish "skill validation vs skill evaluation" positioning** | 1 day | Frame the narrative: skill-validator *validates* (binary: does it help?). Waza *evaluates* (rich: how well, on what dimensions, across which models, with what trajectory?). Make the scope difference explicit |
 | **Offer skill-validator as a waza plugin** | 2–3 weeks | skill-validator's A/B comparison could run as a `program` grader inside waza. Wrap skill-validator execution as a waza grader that returns improvement scores. Best-of-both-worlds positioning |
-| **"waza vs" comparison page on docs site** | 2 days | Public comparison page on spboyer.github.io/waza showing waza vs skill-validator, OpenAI Evals, MSBench. Honest about gaps, clear about advantages. Builds trust through transparency |
+| **"waza vs" comparison page on docs site** | 2 days | Public comparison page on microsoft.github.io/waza showing waza vs skill-validator, OpenAI Evals, MSBench. Honest about gaps, clear about advantages. Builds trust through transparency |
 
 ---
 

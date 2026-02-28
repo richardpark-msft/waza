@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/spboyer/waza/main/schemas/task.schema.json",
+  "$id": "https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json",
   "title": "Waza Task Definition",
   "description": "Schema for waza task YAML files that define individual evaluation test cases.",
   "type": "object",

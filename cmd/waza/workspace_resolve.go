@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spboyer/waza/internal/projectconfig"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/workspace"
 )
 
 // configDetectOptions returns workspace DetectOptions derived from project config.

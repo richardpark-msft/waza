@@ -9,8 +9,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/projectconfig"
 )
 
 // ErrNotFound is returned when a requested run ID does not exist.

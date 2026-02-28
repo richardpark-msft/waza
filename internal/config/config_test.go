@@ -3,7 +3,7 @@ package config
 import (
 	"testing"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 func TestNewBenchmarkConfig_DefaultValues(t *testing.T) {

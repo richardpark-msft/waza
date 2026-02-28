@@ -9,19 +9,19 @@ A Go CLI for evaluating AI agent skills — scaffold eval suites, run benchmarks
 Download and install the latest pre-built binary with the install script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
 ```
 
 The script auto-detects your OS and architecture (linux/darwin/windows, amd64/arm64), downloads the binary, verifies the checksum, and installs to `/usr/local/bin` (or `~/bin` if not writable).
 
-Or download binaries directly from the [latest release](https://github.com/spboyer/waza/releases/latest).
+Or download binaries directly from the [latest release](https://github.com/microsoft/waza/releases/latest).
 
 ### Install from Source
 
 Requires Go 1.26+:
 
 ```bash
-go install github.com/spboyer/waza/cmd/waza@latest
+go install github.com/microsoft/waza/cmd/waza@latest
 ```
 
 ### Azure Developer CLI (azd) Extension
@@ -30,7 +30,7 @@ Waza is also available as an [azd extension](https://learn.microsoft.com/azure/d
 
 ```bash
 # Add the waza extension registry
-azd ext source add -n waza -t url -l https://raw.githubusercontent.com/spboyer/waza/main/registry.json
+azd ext source add -n waza -t url -l https://raw.githubusercontent.com/microsoft/waza/main/registry.json
 
 # Install the extension
 azd ext install microsoft.azd.waza
@@ -887,13 +887,13 @@ Waza can validate your skill in CI before publishing:
 
 **Option 1: Binary install (recommended)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
 ```
 
 **Option 2: Install from source**
 ```bash
 # Requires Go 1.26+
-go install github.com/spboyer/waza/cmd/waza@latest
+go install github.com/microsoft/waza/cmd/waza@latest
 ```
 
 **Option 3: Use Docker**
@@ -913,7 +913,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install waza
-        run: curl -fsSL https://raw.githubusercontent.com/spboyer/waza/main/install.sh | bash
+        run: curl -fsSL https://raw.githubusercontent.com/microsoft/waza/main/install.sh | bash
       - run: waza run eval/eval.yaml --verbose --output results.json
       - uses: actions/upload-artifact@v4
         with:
@@ -1001,7 +1001,7 @@ See [AGENTS.md](AGENTS.md) for coding guidelines.
 
 ## Legacy Python Implementation
 
-The Python implementation has been superseded by the Go CLI. The last Python release is available at [v0.3.2](https://github.com/spboyer/waza/releases/tag/v0.3.2). Starting with v0.4.0-alpha.1, waza is distributed exclusively as pre-built Go binaries.
+The Python implementation has been superseded by the Go CLI. The last Python release is available at [v0.3.2](https://github.com/microsoft/waza/releases/tag/v0.3.2). Starting with v0.4.0-alpha.1, waza is distributed exclusively as pre-built Go binaries.
 
 ## License
 

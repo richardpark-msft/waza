@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/spboyer/waza/internal/tokens/bpe"
+	"github.com/microsoft/waza/internal/tokens/bpe"
 )
 
 type Tokenizer string

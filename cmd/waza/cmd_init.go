@@ -15,9 +15,9 @@ import (
 	"golang.org/x/term"
 	"gopkg.in/yaml.v3"
 
-	"github.com/spboyer/waza/internal/projectconfig"
-	"github.com/spboyer/waza/internal/scaffold"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/scaffold"
+	"github.com/microsoft/waza/internal/workspace"
 )
 
 // skillEntry holds inventory information about a discovered skill.

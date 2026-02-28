@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/spboyer/waza/internal/execution"
+	"github.com/microsoft/waza/internal/execution"
 	"github.com/stretchr/testify/require"
 )
 

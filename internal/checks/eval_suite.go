@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spboyer/waza/internal/skill"
-	"github.com/spboyer/waza/internal/workspace"
+	"github.com/microsoft/waza/internal/skill"
+	"github.com/microsoft/waza/internal/workspace"
 )
 
 // EvalSuiteChecker checks for the presence of an eval.yaml file.

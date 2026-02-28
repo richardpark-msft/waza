@@ -9,9 +9,9 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/spboyer/waza/internal/scaffold"
-	"github.com/spboyer/waza/internal/scoring"
-	"github.com/spboyer/waza/internal/validation"
+	"github.com/microsoft/waza/internal/scaffold"
+	"github.com/microsoft/waza/internal/scoring"
+	"github.com/microsoft/waza/internal/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

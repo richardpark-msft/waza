@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/projectconfig"
 )
 
 func makeOutcome(runID, skill, model string, passed, total int) *models.EvaluationOutcome {

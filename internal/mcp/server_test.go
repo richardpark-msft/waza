@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spboyer/waza/internal/jsonrpc"
+	"github.com/microsoft/waza/internal/jsonrpc"
 )
 
 func TestHandleInitialize(t *testing.T) {

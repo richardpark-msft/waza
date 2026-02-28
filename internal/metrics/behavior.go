@@ -1,6 +1,6 @@
 package metrics
 
-import "github.com/spboyer/waza/internal/models"
+import "github.com/microsoft/waza/internal/models"
 
 // BehaviorMetrics captures quality metrics for agent behavior during a run.
 type BehaviorMetrics struct {

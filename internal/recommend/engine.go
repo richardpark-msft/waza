@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // ModelInput pairs a model identifier with its evaluation outcome.

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spboyer/waza/internal/skill"
-	"github.com/spboyer/waza/internal/tokens"
+	"github.com/microsoft/waza/internal/skill"
+	"github.com/microsoft/waza/internal/tokens"
 )
 
 // TokenLimitsChecker validates that markdown files are within configured token limits.

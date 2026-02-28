@@ -14,13 +14,13 @@ import (
 	"time"
 
 	copilot "github.com/github/copilot-sdk/go"
-	waza "github.com/spboyer/waza"
-	"github.com/spboyer/waza/internal/dataset"
-	"github.com/spboyer/waza/internal/execution"
-	"github.com/spboyer/waza/internal/models"
-	"github.com/spboyer/waza/internal/template"
-	"github.com/spboyer/waza/internal/transcript"
-	"github.com/spboyer/waza/internal/utils"
+	waza "github.com/microsoft/waza"
+	"github.com/microsoft/waza/internal/dataset"
+	"github.com/microsoft/waza/internal/execution"
+	"github.com/microsoft/waza/internal/models"
+	"github.com/microsoft/waza/internal/template"
+	"github.com/microsoft/waza/internal/transcript"
+	"github.com/microsoft/waza/internal/utils"
 	"gopkg.in/yaml.v3"
 )
 

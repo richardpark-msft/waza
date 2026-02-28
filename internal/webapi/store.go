@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/spboyer/waza/internal/models"
+	"github.com/microsoft/waza/internal/models"
 )
 
 // ErrRunNotFound is returned when a run ID does not match any stored run.

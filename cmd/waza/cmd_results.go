@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spboyer/waza/internal/projectconfig"
-	"github.com/spboyer/waza/internal/storage"
+	"github.com/microsoft/waza/internal/projectconfig"
+	"github.com/microsoft/waza/internal/storage"
 	"github.com/spf13/cobra"
 )
 
