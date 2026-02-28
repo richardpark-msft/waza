@@ -2,6 +2,8 @@
 
 A Go CLI for evaluating AI agent skills — scaffold eval suites, run benchmarks, and compare results across models.
 
+📖 **[Getting Started / Docs](https://proud-beach-0e05cbe0f.2.azurestaticapps.net/)**
+
 ## Installation
 
 ### Binary Install (recommended)
