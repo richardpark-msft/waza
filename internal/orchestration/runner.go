@@ -216,10 +216,10 @@ func (r *TestRunner) runNormalBenchmark(ctx context.Context) (*models.Evaluation
 		return nil, err
 	}
 
-	// Load test cases
+	// Load task specs
 	taskSpecs, err := r.loadTaskSpecs()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load test cases: %w", err)
+		return nil, fmt.Errorf("failed to load task specs: %w", err)
 	}
 
 	// Apply task/tag filters
@@ -228,7 +228,7 @@ func (r *TestRunner) runNormalBenchmark(ctx context.Context) (*models.Evaluation
 		if err != nil {
 			return nil, fmt.Errorf("task/tag filter error: %w", err)
 		}
-		fmt.Printf("Task and tag filters matched %d test(s):\n", len(taskSpecs))
+		fmt.Printf("Task and tag filters matched %d task(s):\n", len(taskSpecs))
 		for _, tc := range taskSpecs {
 			fmt.Printf("  • %s (%s)\n", tc.DisplayName, tc.TestID)
 		}
@@ -236,7 +236,7 @@ func (r *TestRunner) runNormalBenchmark(ctx context.Context) (*models.Evaluation
 	}
 
 	if len(taskSpecs) == 0 {
-		return nil, fmt.Errorf("no test cases found")
+		return nil, fmt.Errorf("no task specs found")
 	}
 
 	r.notifyProgress(ProgressEvent{
@@ -598,7 +598,7 @@ func (r *TestRunner) loadTaskSpecsFromCSV() ([]*models.TaskSpec, error) {
 	return taskSpecs, nil
 }
 
-// loadTaskSpecsFromFiles loads test cases from YAML files via glob patterns.
+// loadTaskSpecsFromFiles loads task specs from YAML files via glob patterns.
 func (r *TestRunner) loadTaskSpecsFromFiles() ([]*models.TaskSpec, error) {
 	spec := r.cfg.Spec()
 
