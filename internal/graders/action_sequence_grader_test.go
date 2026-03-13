@@ -19,7 +19,7 @@ func TestActionSequenceGrader_Basic(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	require.Equal(t, models.GraderKindActionSequence, g.Kind())
+	require.Equal(t, models.GraderKindActionSequence, g.Type())
 	require.Equal(t, "test", g.Name())
 }
 
@@ -540,7 +540,7 @@ func TestActionSequenceGrader_ViaCreate(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, "from-create", g.Name())
-		require.Equal(t, models.GraderKindActionSequence, g.Kind())
+		require.Equal(t, models.GraderKindActionSequence, g.Type())
 
 		results, err := g.Grade(context.Background(), &Context{
 			Session: &models.SessionDigest{
