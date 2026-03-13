@@ -69,7 +69,7 @@ tasks: []
 	}
 }
 
-func TestLoadTestCase_PolymorphicValidatorParameters(t *testing.T) {
+func TestLoadTaskSpec_PolymorphicValidatorParameters(t *testing.T) {
 	tempDir := t.TempDir()
 	yamlContent := `id: test-001
 name: Test
