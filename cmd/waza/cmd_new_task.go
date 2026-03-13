@@ -172,7 +172,7 @@ func newTaskFromPromptCmd(options *newTaskFromPromptCmdOptions) *cobra.Command {
 
 					logPath := filepath.Join(logDir, sessionID, "events.jsonl")
 
-					taskSpecs, err := newtask.CreateTaskSpecFromCopilotLog(logPath, &newtask.CreateTaskSpecFromCopilotLogOptions{
+					taskSpec, err := newtask.CreateTaskSpecFromCopilotLog(logPath, &newtask.CreateTaskSpecFromCopilotLogOptions{
 						DisplayName: testName,
 						TestID:      testName,
 						Tags:        tags,
@@ -184,7 +184,7 @@ func newTaskFromPromptCmd(options *newTaskFromPromptCmdOptions) *cobra.Command {
 
 					var root yaml.Node
 
-					if err := root.Encode(taskSpecs); err != nil {
+					if err := root.Encode(taskSpec); err != nil {
 						return ux.Error, err
 					}
 
