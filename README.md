@@ -725,7 +725,7 @@ internal/
   execution/           AgentEngine interface (mock, copilot)
   graders/             Validator registry and built-in graders
   metrics/             Scoring metrics
-  models/              Data structures (BenchmarkSpec, TestCase, EvaluationOutcome)
+  models/              Data structures (EvalSpec, TaskSpec, EvaluationOutcome)
   orchestration/       TestRunner for coordinating execution
   reporting/           Result formatting and output
   transcript/          Per-task transcript capture

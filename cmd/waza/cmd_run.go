@@ -400,7 +400,7 @@ func runCommandForSpec(cmd *cobra.Command, sp skillSpecPath) ([]modelResult, err
 	specPath := sp.specPath
 
 	// Load spec
-	spec, err := models.LoadBenchmarkSpec(specPath)
+	spec, err := models.LoadEvalSpec(specPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load spec: %w", err)
 	}

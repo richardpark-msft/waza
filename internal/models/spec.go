@@ -107,8 +107,8 @@ type MeasurementDef struct {
 	Desc       string  `yaml:"description,omitempty" json:"desc,omitempty"`
 }
 
-// LoadBenchmarkSpec loads a spec from a YAML file
-func LoadBenchmarkSpec(path string) (*EvalSpec, error) {
+// LoadEvalSpec loads a spec from a YAML file
+func LoadEvalSpec(path string) (*EvalSpec, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err

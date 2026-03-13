@@ -27,7 +27,7 @@ waza-go/
 │   │   ├── mock.go        # Mock engine for testing
 │   │   └── copilot.go     # Copilot SDK integration
 │   ├── models/            # Data structures
-│   │   ├── spec.go        # BenchmarkSpec (eval configuration)
+│   │   ├── spec.go        # EvalSpec (eval configuration)
 │   │   ├── testcase.go    # TestCase (task definition)
 │   │   └── outcome.go     # EvaluationOutcome (results)
 │   ├── orchestration/     # TestRunner for coordinating execution

@@ -62,7 +62,7 @@ func runGrade(ctx context.Context, w, errW io.Writer, specPath, taskID, resultsF
 		return fmt.Errorf("--workspace path %q is not a directory", workspace)
 	}
 
-	spec, err := models.LoadBenchmarkSpec(specPath)
+	spec, err := models.LoadEvalSpec(specPath)
 	if err != nil {
 		return fmt.Errorf("failed to load spec: %w", err)
 	}
