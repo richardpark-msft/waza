@@ -113,12 +113,12 @@ type EvalGetParams struct {
 }
 
 type EvalGetResult struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description,omitempty"`
-	SkillName   string          `json:"skill,omitempty"`
-	Config      models.EvalConfig   `json:"config"`
-	Tasks       []string        `json:"tasks"`
-	Graders     []GraderSummary `json:"graders"`
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	SkillName   string            `json:"skill,omitempty"`
+	Config      models.EvalConfig `json:"config"`
+	Tasks       []string          `json:"tasks"`
+	Graders     []GraderSummary   `json:"graders"`
 }
 
 type GraderSummary struct {
