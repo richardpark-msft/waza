@@ -524,7 +524,7 @@ func runCommandForSpec(cmd *cobra.Command, sp skillSpecPath) ([]modelResult, err
 
 // runSingleModel executes a benchmark for one model and returns the outcome.
 // It prints the per-model summary and saves output for single-model runs.
-func runSingleModel(cmd *cobra.Command, spec *models.BenchmarkSpec, specPath string) (*models.EvaluationOutcome, error) {
+func runSingleModel(cmd *cobra.Command, spec *models.EvalSpec, specPath string) (*models.EvaluationOutcome, error) {
 	// Get spec directory for resolving relative paths
 	specDir := filepath.Dir(specPath)
 	if !filepath.IsAbs(specDir) {

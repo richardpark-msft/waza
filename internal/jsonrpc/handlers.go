@@ -116,7 +116,7 @@ type EvalGetResult struct {
 	Name        string          `json:"name"`
 	Description string          `json:"description,omitempty"`
 	SkillName   string          `json:"skill,omitempty"`
-	Config      models.Config   `json:"config"`
+	Config      models.EvalConfig   `json:"config"`
 	Tasks       []string        `json:"tasks"`
 	Graders     []GraderSummary `json:"graders"`
 }
@@ -191,7 +191,7 @@ func (h *HandlerContext) handleEvalValidate(_ context.Context, params json.RawMe
 		return nil, ErrInternalError(err.Error())
 	}
 
-	var spec models.BenchmarkSpec
+	var spec models.EvalSpec
 	var errs []string
 
 	if yerr := yaml.Unmarshal(data, &spec); yerr != nil {

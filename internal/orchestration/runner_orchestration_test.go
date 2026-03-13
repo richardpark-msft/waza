@@ -61,10 +61,10 @@ graders:
         - "Mock response"
 `)
 
-	spec := &models.BenchmarkSpec{
+	spec := &models.EvalSpec{
 		SpecIdentity: models.SpecIdentity{Name: "orchestration-sequential"},
 		SkillName:    "test-skill",
-		Config: models.Config{
+		Config: models.EvalConfig{
 			RunsPerTest: 2,
 			TimeoutSec:  30,
 			EngineType:  "mock",
@@ -157,10 +157,10 @@ inputs:
   prompt: "second"
 `)
 
-	spec := &models.BenchmarkSpec{
+	spec := &models.EvalSpec{
 		SpecIdentity: models.SpecIdentity{Name: "orchestration-concurrent"},
 		SkillName:    "test-skill",
-		Config: models.Config{
+		Config: models.EvalConfig{
 			RunsPerTest: 1,
 			TimeoutSec:  30,
 			EngineType:  "mock",
@@ -199,10 +199,10 @@ inputs:
   prompt: "run without grading"
 `)
 
-	spec := &models.BenchmarkSpec{
+	spec := &models.EvalSpec{
 		SpecIdentity: models.SpecIdentity{Name: "skip-graders"},
 		SkillName:    "test-skill",
-		Config: models.Config{
+		Config: models.EvalConfig{
 			RunsPerTest: 2,
 			TimeoutSec:  30,
 			EngineType:  "mock",
@@ -261,8 +261,8 @@ func TestOverallStatus(t *testing.T) {
 }
 
 func TestRunGraders_WeightsAndErrors(t *testing.T) {
-	spec := &models.BenchmarkSpec{
-		Config: models.Config{ModelID: "mock-model"},
+	spec := &models.EvalSpec{
+		Config: models.EvalConfig{ModelID: "mock-model"},
 		Graders: []models.GraderConfig{
 			{
 				Kind:       models.GraderKindText,
@@ -310,8 +310,8 @@ func TestRunGraders_DiffSnapshotUpdateOption(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(workspaceDir, "output.txt"), []byte("new snapshot"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(contextDir, "expected.txt"), []byte("old snapshot"), 0o644))
 
-	spec := &models.BenchmarkSpec{
-		Config: models.Config{ModelID: "mock-model"},
+	spec := &models.EvalSpec{
+		Config: models.EvalConfig{ModelID: "mock-model"},
 		Graders: []models.GraderConfig{
 			{
 				Kind:       models.GraderKindDiff,
@@ -345,7 +345,7 @@ func TestLoadResources_PathValidation(t *testing.T) {
 	fixtureDir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(fixtureDir, "ok.txt"), []byte("ok"), 0o644))
 
-	spec := &models.BenchmarkSpec{}
+	spec := &models.EvalSpec{}
 	cfg := config.NewBenchmarkConfig(spec, config.WithFixtureDir(fixtureDir))
 	runner := NewTestRunner(cfg, nil)
 
@@ -370,7 +370,7 @@ func TestLoadResources_PathValidation(t *testing.T) {
 }
 
 func TestBuildGraderContextAndScoreHelpers(t *testing.T) {
-	spec := &models.BenchmarkSpec{Config: models.Config{RunsPerTest: 2}}
+	spec := &models.EvalSpec{Config: models.EvalConfig{RunsPerTest: 2}}
 	runner := NewTestRunner(config.NewBenchmarkConfig(spec), nil)
 
 	content := "hi"
@@ -452,9 +452,9 @@ func TestComputeTestStats_FlakinessPercent(t *testing.T) {
 }
 
 func TestRunTest_CacheHitAndTranscriptWrite(t *testing.T) {
-	spec := &models.BenchmarkSpec{
+	spec := &models.EvalSpec{
 		SkillName: "cache-skill",
-		Config: models.Config{
+		Config: models.EvalConfig{
 			RunsPerTest: 1,
 			TimeoutSec:  30,
 			EngineType:  "mock",

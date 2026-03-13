@@ -9,12 +9,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// BenchmarkSpec represents a complete evaluation specification
-type BenchmarkSpec struct {
+// EvalSpec represents a complete evaluation specification
+type EvalSpec struct {
 	SpecIdentity `yaml:",inline"`
 	SkillName    string            `yaml:"skill"`
 	Version      string            `yaml:"version"`
-	Config       Config            `yaml:"config"`
+	Config       EvalConfig        `yaml:"config"`
 	Hooks        hooks.HooksConfig `yaml:"hooks,omitempty"`
 	Inputs       map[string]string `yaml:"inputs,omitempty" json:"inputs,omitempty"`
 	TasksFrom    string            `yaml:"tasks_from,omitempty" json:"tasks_from,omitempty"`
@@ -30,8 +30,8 @@ type SpecIdentity struct {
 	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
-// Config controls execution behavior
-type Config struct {
+// EvalConfig controls execution behavior
+type EvalConfig struct {
 	RunsPerTest    int            `yaml:"trials_per_task" json:"runs_per_test"`
 	TimeoutSec     int            `yaml:"timeout_seconds" json:"timeout_sec"`
 	Concurrent     bool           `yaml:"parallel" json:"concurrent"`
@@ -108,13 +108,13 @@ type MeasurementDef struct {
 }
 
 // LoadBenchmarkSpec loads a spec from a YAML file
-func LoadBenchmarkSpec(path string) (*BenchmarkSpec, error) {
+func LoadBenchmarkSpec(path string) (*EvalSpec, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	var spec BenchmarkSpec
+	var spec EvalSpec
 	if err := yaml.Unmarshal(data, &spec); err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func LoadBenchmarkSpec(path string) (*BenchmarkSpec, error) {
 }
 
 // Validate checks that the spec is valid
-func (s *BenchmarkSpec) Validate() error {
+func (s *EvalSpec) Validate() error {
 	if s.Config.RunsPerTest < 1 {
 		return fmt.Errorf("trials_per_task must be at least 1, got %d", s.Config.RunsPerTest)
 	}
@@ -139,7 +139,7 @@ func (s *BenchmarkSpec) Validate() error {
 }
 
 // ResolveTestFiles expands glob patterns to actual test files
-func (s *BenchmarkSpec) ResolveTestFiles(basePath string) ([]string, error) {
+func (s *EvalSpec) ResolveTestFiles(basePath string) ([]string, error) {
 	var files []string
 	for _, pattern := range s.Tasks {
 		fullPattern := filepath.Join(basePath, pattern)
