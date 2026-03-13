@@ -193,7 +193,7 @@ type TriggerHeuristicGraderParameters struct {
 
 func (TriggerHeuristicGraderParameters) isGraderParameters() {}
 
-func decodeGraderParameters(kind GraderKind, configNode *yaml.Node) (GraderParameters, error) {
+func decodeGraderParameters(kind GraderType, configNode *yaml.Node) (GraderParameters, error) {
 	switch kind {
 	case GraderKindInlineScript:
 		return decodeYAMLNode[InlineScriptGraderParameters](configNode)

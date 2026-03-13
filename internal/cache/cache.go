@@ -31,7 +31,7 @@ func New(dir string) *Cache {
 // - task content (test case definition)
 // - model ID
 // - fixture file hashes
-func CacheKey(spec *models.EvalSpec, task *models.TestCase, fixtureDir string) (string, error) {
+func CacheKey(spec *models.EvalSpec, task *models.TaskSpec, fixtureDir string) (string, error) {
 	h := sha256.New()
 
 	// Include spec identity
@@ -89,7 +89,7 @@ func CacheKey(spec *models.EvalSpec, task *models.TestCase, fixtureDir string) (
 
 	// Include fixture files from resources
 	var fixtures []string
-	for _, res := range task.Stimulus.Resources {
+	for _, res := range task.Inputs.Resources {
 		if res.Location != "" {
 			fixtures = append(fixtures, res.Location)
 		}

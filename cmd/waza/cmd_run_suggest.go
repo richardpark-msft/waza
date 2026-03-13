@@ -487,14 +487,14 @@ func loadTestDefinitionYAML(spec *models.EvalSpec, specPath string) (map[string]
 	return defs, nil
 }
 
-func loadTestCases(spec *models.EvalSpec, specPath string) ([]*models.TestCase, error) {
+func loadTestCases(spec *models.EvalSpec, specPath string) ([]*models.TaskSpec, error) {
 	if spec.TasksFrom != "" {
 		return loadTestCasesFromCSV(spec, specPath)
 	}
 	return loadTestCasesFromFiles(spec, specPath)
 }
 
-func loadTestCasesFromFiles(spec *models.EvalSpec, specPath string) ([]*models.TestCase, error) {
+func loadTestCasesFromFiles(spec *models.EvalSpec, specPath string) ([]*models.TaskSpec, error) {
 	specDir := filepath.Dir(specPath)
 	testFiles := make([]string, 0)
 	for _, pattern := range spec.Tasks {
@@ -510,7 +510,7 @@ func loadTestCasesFromFiles(spec *models.EvalSpec, specPath string) ([]*models.T
 		return nil, fmt.Errorf("no test files matched patterns: %v in directory: %s", spec.Tasks, specDir)
 	}
 
-	testCases := make([]*models.TestCase, 0, len(testFiles))
+	testCases := make([]*models.TaskSpec, 0, len(testFiles))
 	for _, path := range testFiles {
 		tc, err := models.LoadTestCase(path)
 		if err != nil {
@@ -523,7 +523,7 @@ func loadTestCasesFromFiles(spec *models.EvalSpec, specPath string) ([]*models.T
 	return testCases, nil
 }
 
-func loadTestCasesFromCSV(spec *models.EvalSpec, specPath string) ([]*models.TestCase, error) {
+func loadTestCasesFromCSV(spec *models.EvalSpec, specPath string) ([]*models.TaskSpec, error) {
 	specDir := filepath.Dir(specPath)
 	csvPath := spec.TasksFrom
 	if !filepath.IsAbs(csvPath) {
@@ -568,7 +568,7 @@ func loadTestCasesFromCSV(spec *models.EvalSpec, specPath string) ([]*models.Tes
 		baseCtx.Vars[k] = v
 	}
 
-	testCases := make([]*models.TestCase, 0, len(rows))
+	testCases := make([]*models.TaskSpec, 0, len(rows))
 	for i, row := range rows {
 		rowNum := i + 1
 		testID := fmt.Sprintf("row-%d", rowNum)
@@ -606,10 +606,10 @@ func loadTestCasesFromCSV(spec *models.EvalSpec, specPath string) ([]*models.Tes
 			}
 		}
 
-		testCases = append(testCases, &models.TestCase{
+		testCases = append(testCases, &models.TaskSpec{
 			TestID:      testID,
 			DisplayName: displayName,
-			Stimulus: models.TestStimulus{
+			Inputs: models.TaskInputs{
 				Message: prompt,
 			},
 		})

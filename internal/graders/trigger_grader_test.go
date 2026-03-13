@@ -52,8 +52,8 @@ func TestTriggerHeuristicGrader_PositiveAndNegativeModes(t *testing.T) {
 		require.Equal(t, models.GraderKindTrigger, g.Kind())
 
 		result, err := g.Grade(context.Background(), &Context{
-			TestCase: &models.TestCase{
-				Stimulus: models.TestStimulus{
+			TestCase: &models.TaskSpec{
+				Inputs: models.TaskInputs{
 					Message: "Please deploy this API to Azure and publish it.",
 				},
 			},
@@ -71,8 +71,8 @@ func TestTriggerHeuristicGrader_PositiveAndNegativeModes(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := g.Grade(context.Background(), &Context{
-			TestCase: &models.TestCase{
-				Stimulus: models.TestStimulus{
+			TestCase: &models.TaskSpec{
+				Inputs: models.TaskInputs{
 					Message: "Write unit tests for my Go package.",
 				},
 			},
@@ -90,8 +90,8 @@ func TestTriggerHeuristicGrader_PositiveAndNegativeModes(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := g.Grade(context.Background(), &Context{
-			TestCase: &models.TestCase{
-				Stimulus: models.TestStimulus{
+			TestCase: &models.TaskSpec{
+				Inputs: models.TaskInputs{
 					Message: "Write unit tests for my Go package.",
 				},
 			},
@@ -108,8 +108,8 @@ func TestTriggerHeuristicGrader_PositiveAndNegativeModes(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := g.Grade(context.Background(), &Context{
-			TestCase: &models.TestCase{
-				Stimulus: models.TestStimulus{
+			TestCase: &models.TaskSpec{
+				Inputs: models.TaskInputs{
 					Message: "Can you deploy this app to Azure?",
 				},
 			},
@@ -131,8 +131,8 @@ func TestTriggerHeuristicGrader_ThresholdBoundary(t *testing.T) {
 	require.NoError(t, err)
 
 	result, err := g.Grade(context.Background(), &Context{
-		TestCase: &models.TestCase{
-			Stimulus: models.TestStimulus{
+		TestCase: &models.TaskSpec{
+			Inputs: models.TaskInputs{
 				Message: "deploy azure",
 			},
 		},
@@ -205,7 +205,7 @@ func TestTriggerHeuristicGrader_DuplicateTokensDoNotDiluteScore(t *testing.T) {
 	// With unique-token normalization: 1 match / 1 unique token = 1.0
 	// Without normalization: 1 match / 3 tokens = 0.33 (artificially low)
 	result, err := g.Grade(context.Background(), &Context{
-		TestCase: &models.TestCase{Stimulus: models.TestStimulus{Message: "deploy deploy deploy"}},
+		TestCase: &models.TaskSpec{Inputs: models.TaskInputs{Message: "deploy deploy deploy"}},
 	})
 	require.NoError(t, err)
 	assert.True(t, result.Passed, "repeated keyword prompt should pass")
@@ -224,7 +224,7 @@ func TestTriggerHeuristicGrader_SkillPathDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	result, err := g.Grade(context.Background(), &Context{
-		TestCase: &models.TestCase{Stimulus: models.TestStimulus{Message: "deploy to azure"}},
+		TestCase: &models.TaskSpec{Inputs: models.TaskInputs{Message: "deploy to azure"}},
 	})
 	require.NoError(t, err)
 	assert.True(t, result.Passed)

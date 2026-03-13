@@ -16,7 +16,7 @@ type Grader interface {
 	Name() string
 
 	// Category returns the validator type
-	Kind() models.GraderKind
+	Kind() models.GraderType
 
 	// Validate performs validation and returns a result
 	Grade(ctx context.Context, gradingContext *Context) (*models.GraderResults, error)
@@ -24,7 +24,7 @@ type Grader interface {
 
 // Context provides context for validation
 type Context struct {
-	TestCase   *models.TestCase
+	TestCase   *models.TaskSpec
 	Transcript []models.TranscriptEvent
 	Output     string
 	Outcome    map[string]any

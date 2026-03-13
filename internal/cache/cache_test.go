@@ -28,10 +28,10 @@ func TestCacheKey(t *testing.T) {
 		},
 	}
 
-	task := &models.TestCase{
+	task := &models.TaskSpec{
 		TestID:      "test-1",
 		DisplayName: "Test Task",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Do something",
 			Resources: []models.ResourceRef{
 				{Location: "file1.txt"},
@@ -81,10 +81,10 @@ func TestCacheKey_DifferentModelChangesKey(t *testing.T) {
 		},
 	}
 
-	task := &models.TestCase{
+	task := &models.TaskSpec{
 		TestID:      "test-1",
 		DisplayName: "Test",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Test",
 		},
 	}
@@ -121,10 +121,10 @@ func TestCacheKey_DifferentSkillPathsChangesKey(t *testing.T) {
 		},
 	}
 
-	task := &models.TestCase{
+	task := &models.TaskSpec{
 		TestID:      "test-1",
 		DisplayName: "Test",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Test",
 		},
 	}
@@ -149,10 +149,10 @@ func TestCacheKey_DifferentFixturesChangesKey(t *testing.T) {
 		},
 	}
 
-	task := &models.TestCase{
+	task := &models.TaskSpec{
 		TestID:      "test-1",
 		DisplayName: "Test",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Test",
 			Resources: []models.ResourceRef{
 				{Location: "file1.txt"},
@@ -336,9 +336,9 @@ func TestCacheKey_FixtureOrdering(t *testing.T) {
 
 	// Different fixture order in task definition will produce different keys
 	// because the task structure itself is different. This is acceptable.
-	task1 := &models.TestCase{
+	task1 := &models.TaskSpec{
 		TestID: "test-1",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Test",
 			Resources: []models.ResourceRef{
 				{Location: "b.txt"},
@@ -348,9 +348,9 @@ func TestCacheKey_FixtureOrdering(t *testing.T) {
 		},
 	}
 
-	task2 := &models.TestCase{
+	task2 := &models.TaskSpec{
 		TestID: "test-1",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Test",
 			Resources: []models.ResourceRef{
 				{Location: "a.txt"},
@@ -386,9 +386,9 @@ func TestCacheKey_MissingFixtures(t *testing.T) {
 		},
 	}
 
-	task := &models.TestCase{
+	task := &models.TaskSpec{
 		TestID: "test-1",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Test",
 			Resources: []models.ResourceRef{
 				{Location: "nonexistent.txt"},
@@ -427,9 +427,9 @@ func TestCacheKey_DifferentRunsPerTaskChangesKey(t *testing.T) {
 		},
 	}
 
-	task := &models.TestCase{
+	task := &models.TaskSpec{
 		TestID: "test-1",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Test",
 		},
 	}
@@ -467,9 +467,9 @@ func TestCacheKey_NoHashCollision(t *testing.T) {
 		},
 	}
 
-	task := &models.TestCase{
+	task := &models.TaskSpec{
 		TestID: "test-1",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Test",
 		},
 	}

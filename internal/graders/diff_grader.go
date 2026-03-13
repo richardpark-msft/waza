@@ -60,7 +60,7 @@ func NewDiffGrader(name string, args models.DiffGraderParameters) (*diffGrader, 
 }
 
 func (dg *diffGrader) Name() string            { return dg.name }
-func (dg *diffGrader) Kind() models.GraderKind { return models.GraderKindDiff }
+func (dg *diffGrader) Kind() models.GraderType { return models.GraderKindDiff }
 
 func (dg *diffGrader) Grade(ctx context.Context, gradingContext *Context) (*models.GraderResults, error) {
 	return measureTime(func() (*models.GraderResults, error) {

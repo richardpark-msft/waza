@@ -84,7 +84,7 @@ func resolvePythonBin() string {
 }
 
 func (isg *InlineScriptGrader) Name() string            { return isg.name }
-func (isg *InlineScriptGrader) Kind() models.GraderKind { return models.GraderKindInlineScript }
+func (isg *InlineScriptGrader) Kind() models.GraderType { return models.GraderKindInlineScript }
 
 func (isg *InlineScriptGrader) Grade(ctx context.Context, gradingContext *Context) (*models.GraderResults, error) {
 	return measureTime(func() (*models.GraderResults, error) {

@@ -49,7 +49,7 @@ type EvalConfig struct {
 
 // GraderConfig defines a validator/grader
 type GraderConfig struct {
-	Kind       GraderKind       `yaml:"type" json:"kind"`
+	Kind       GraderType       `yaml:"type" json:"kind"`
 	Identifier string           `yaml:"name" json:"identifier"`
 	ScriptPath string           `yaml:"script,omitempty" json:"script_path,omitempty"`
 	Rubric     string           `yaml:"rubric,omitempty" json:"rubric,omitempty"`
@@ -60,7 +60,7 @@ type GraderConfig struct {
 
 func (g *GraderConfig) UnmarshalYAML(node *yaml.Node) error {
 	type rawGraderConfig struct {
-		Kind       GraderKind `yaml:"type"`
+		Kind       GraderType `yaml:"type"`
 		Identifier string     `yaml:"name"`
 		ScriptPath string     `yaml:"script,omitempty"`
 		Rubric     string     `yaml:"rubric,omitempty"`

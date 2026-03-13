@@ -51,7 +51,7 @@ func NewSkillInvocationGrader(name string, params models.SkillInvocationGraderPa
 }
 
 func (g *skillInvocationGrader) Name() string            { return g.name }
-func (g *skillInvocationGrader) Kind() models.GraderKind { return models.GraderKindSkillInvocation }
+func (g *skillInvocationGrader) Kind() models.GraderType { return models.GraderKindSkillInvocation }
 
 func (g *skillInvocationGrader) Grade(ctx context.Context, gradingContext *Context) (*models.GraderResults, error) {
 	return measureTime(func() (*models.GraderResults, error) {

@@ -63,7 +63,7 @@ func BuildFromSessionEvents(events []copilot.SessionEvent) []models.TranscriptEv
 }
 
 // BuildTaskTranscript constructs a TaskTranscript from run results.
-func BuildTaskTranscript(tc *models.TestCase, outcome models.TestOutcome, startTime time.Time) *models.TaskTranscript {
+func BuildTaskTranscript(tc *models.TaskSpec, outcome models.TestOutcome, startTime time.Time) *models.TaskTranscript {
 	var totalDurationMs int64
 	var allEntries []models.TranscriptEvent
 	allValidations := make(map[string]models.GraderResults)
@@ -93,7 +93,7 @@ func BuildTaskTranscript(tc *models.TestCase, outcome models.TestOutcome, startT
 		StartedAt:   startTime,
 		CompletedAt: endTime,
 		DurationMs:  totalDurationMs,
-		Prompt:      tc.Stimulus.Message,
+		Prompt:      tc.Inputs.Message,
 		FinalOutput: finalOutput,
 		Transcript:  allEntries,
 		Validations: allValidations,

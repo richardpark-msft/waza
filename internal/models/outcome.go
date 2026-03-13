@@ -20,24 +20,24 @@ const (
 	StatusNA Status = "n/a"
 )
 
-// GraderKind identifies the type of grader (e.g. regex, file, code).
-type GraderKind string
+// GraderType identifies the type of grader (e.g. regex, file, code).
+type GraderType string
 
 const (
 	// NOTE: if you add more, make sure you add them to [AllGraderKinds], below.
 
-	GraderKindInlineScript    GraderKind = "code"
-	GraderKindPrompt          GraderKind = "prompt"
-	GraderKindText            GraderKind = "text"
-	GraderKindFile            GraderKind = "file"
-	GraderKindJSONSchema      GraderKind = "json_schema"
-	GraderKindProgram         GraderKind = "program"
-	GraderKindBehavior        GraderKind = "behavior"
-	GraderKindActionSequence  GraderKind = "action_sequence"
-	GraderKindSkillInvocation GraderKind = "skill_invocation"
-	GraderKindTrigger         GraderKind = "trigger"
-	GraderKindDiff            GraderKind = "diff"
-	GraderKindToolConstraint  GraderKind = "tool_constraint"
+	GraderKindInlineScript    GraderType = "code"
+	GraderKindPrompt          GraderType = "prompt"
+	GraderKindText            GraderType = "text"
+	GraderKindFile            GraderType = "file"
+	GraderKindJSONSchema      GraderType = "json_schema"
+	GraderKindProgram         GraderType = "program"
+	GraderKindBehavior        GraderType = "behavior"
+	GraderKindActionSequence  GraderType = "action_sequence"
+	GraderKindSkillInvocation GraderType = "skill_invocation"
+	GraderKindTrigger         GraderType = "trigger"
+	GraderKindDiff            GraderType = "diff"
+	GraderKindToolConstraint  GraderType = "tool_constraint"
 )
 
 func AllGraderKinds() []string {
@@ -158,7 +158,7 @@ type RunResult struct {
 
 type GraderResults struct {
 	Name       string         `json:"identifier"`
-	Type       GraderKind     `json:"type"`
+	Type       GraderType     `json:"type"`
 	Score      float64        `json:"score"`
 	Weight     float64        `json:"weight"`
 	Passed     bool           `json:"passed"`

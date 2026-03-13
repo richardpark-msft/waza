@@ -78,10 +78,10 @@ func TestBuildExecutionRequest_SkillPaths(t *testing.T) {
 			)
 
 			// Create a test case
-			tc := &models.TestCase{
+			tc := &models.TaskSpec{
 				TestID:      "test-001",
 				DisplayName: "Test Case",
-				Stimulus: models.TestStimulus{
+				Inputs: models.TaskInputs{
 					Message: "Test message",
 				},
 			}
@@ -125,10 +125,10 @@ func TestBuildExecutionRequest_BasicFields(t *testing.T) {
 	cfg := config.NewBenchmarkConfig(spec)
 
 	// Create a test case
-	tc := &models.TestCase{
+	tc := &models.TaskSpec{
 		TestID:      "test-001",
 		DisplayName: "Test Case",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Hello world",
 			Metadata: map[string]any{
 				"key": "value",
@@ -164,10 +164,10 @@ func TestBuildExecutionRequest_TimeoutOverride(t *testing.T) {
 
 	// Create a test case with custom timeout
 	customTimeout := 300
-	tc := &models.TestCase{
+	tc := &models.TaskSpec{
 		TestID:      "test-001",
 		DisplayName: "Test Case",
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "Hello world",
 		},
 		TimeoutSec: &customTimeout,

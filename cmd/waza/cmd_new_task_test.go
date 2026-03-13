@@ -278,17 +278,17 @@ func TestNewTaskFromPromptCommand_EndToEndCreatesTaskFile(t *testing.T) {
 	actual, err := models.LoadTestCase(outputPath)
 	require.NoError(t, err)
 
-	expected := &models.TestCase{
+	expected := &models.TaskSpec{
 		DisplayName: "auto-generated",
 		TestID:      "auto-generated",
 		Tags:        []string{"auto-generated"},
-		Stimulus: models.TestStimulus{
+		Inputs: models.TaskInputs{
 			Message: "use the example horn",
 		},
-		Validators: []models.ValidatorInline{
+		Graders: []models.Grader{
 			{
 				Identifier: "skills-check",
-				Kind:       models.GraderKindSkillInvocation,
+				Type:       models.GraderKindSkillInvocation,
 				Parameters: models.SkillInvocationGraderParameters{
 					RequiredSkills: []string{"example"},
 					Mode:           models.SkillMatchingModeAnyOrder,
@@ -296,7 +296,7 @@ func TestNewTaskFromPromptCommand_EndToEndCreatesTaskFile(t *testing.T) {
 			},
 			{
 				Identifier: "tools-check",
-				Kind:       models.GraderKindToolConstraint,
+				Type:       models.GraderKindToolConstraint,
 				Parameters: models.ToolConstraintGraderParameters{
 					ExpectTools: []models.ToolSpecParameters{{
 						Tool:         "skill",
@@ -306,7 +306,7 @@ func TestNewTaskFromPromptCommand_EndToEndCreatesTaskFile(t *testing.T) {
 			},
 			{
 				Identifier: "check-response",
-				Kind:       models.GraderKindText,
+				Type:       models.GraderKindText,
 				Parameters: models.TextGraderParameters{
 					ContainsCS: []string{"yesyes"},
 				},

@@ -99,17 +99,17 @@ graders:
 		t.Fatalf("LoadTestCase: %v", err)
 	}
 
-	inlineParams, ok := tc.Validators[0].Parameters.(InlineScriptGraderParameters)
+	inlineParams, ok := tc.Graders[0].Parameters.(InlineScriptGraderParameters)
 	if !ok {
-		t.Fatalf("expected InlineScriptGraderParameters, got %T", tc.Validators[0].Parameters)
+		t.Fatalf("expected InlineScriptGraderParameters, got %T", tc.Graders[0].Parameters)
 	}
 	if inlineParams.Language != "javascript" || len(inlineParams.Assertions) != 1 {
 		t.Fatalf("unexpected inline params: %#v", inlineParams)
 	}
 
-	schemaParams, ok := tc.Validators[1].Parameters.(JSONSchemaGraderParameters)
+	schemaParams, ok := tc.Graders[1].Parameters.(JSONSchemaGraderParameters)
 	if !ok {
-		t.Fatalf("expected JSONSchemaGraderParameters, got %T", tc.Validators[1].Parameters)
+		t.Fatalf("expected JSONSchemaGraderParameters, got %T", tc.Graders[1].Parameters)
 	}
 	typeVal, ok := schemaParams.Schema["type"].(string)
 	if !ok || typeVal != "object" {

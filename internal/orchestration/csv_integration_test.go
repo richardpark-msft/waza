@@ -33,9 +33,9 @@ func TestLoadTestCasesFromCSV_BasicLoading(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, cases, 3)
 	assert.Equal(t, "A", cases[0].TestID)
-	assert.Equal(t, "hello", cases[0].Stimulus.Message)
+	assert.Equal(t, "hello", cases[0].Inputs.Message)
 	assert.Equal(t, "B", cases[1].TestID)
-	assert.Equal(t, "world", cases[1].Stimulus.Message)
+	assert.Equal(t, "world", cases[1].Inputs.Message)
 }
 
 func TestLoadTestCasesFromCSV_TemplateResolution(t *testing.T) {
@@ -52,8 +52,8 @@ func TestLoadTestCasesFromCSV_TemplateResolution(t *testing.T) {
 	cases, err := runner.loadTestCasesFromCSV()
 	require.NoError(t, err)
 	assert.Len(t, cases, 2)
-	assert.Equal(t, "Explain Go", cases[0].Stimulus.Message)
-	assert.Equal(t, "Explain Rust", cases[1].Stimulus.Message)
+	assert.Equal(t, "Explain Go", cases[0].Inputs.Message)
+	assert.Equal(t, "Explain Rust", cases[1].Inputs.Message)
 }
 
 func TestLoadTestCasesFromCSV_RangeFiltering(t *testing.T) {
