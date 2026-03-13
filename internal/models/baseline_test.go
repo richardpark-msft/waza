@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestBenchmarkSpec_BaselineYAMLSerialization(t *testing.T) {
+func TestEvalSpec_BaselineYAMLSerialization(t *testing.T) {
 	tests := []struct {
 		name           string
 		yamlContent    string
