@@ -7,34 +7,34 @@ import (
 	"github.com/microsoft/waza/internal/models"
 )
 
-// FilterTestCases returns the subset of testCases based on whether it matches tags or task display name, or task id glob patterns.
+// FilterTaskSpecs returns the subset of taskSpecs based on whether it matches tags or task display name, or task id glob patterns.
 // - taskPatterns - matches either the task display name or the task ID.
 // - tagPatterns - matches tags.
 //
 // If taskPatterns and tagPatterns are specified the result is the intersection of the matches between them.
 // If both taskPatterns and tagPatterns are empty, all test cases are returned.
-func FilterTestCases(testCases []*models.TaskSpec, taskPatterns []string, tagPatterns []string) ([]*models.TaskSpec, error) {
+func FilterTaskSpecs(taskSpecs []*models.TaskSpec, taskPatterns []string, tagPatterns []string) ([]*models.TaskSpec, error) {
 	if len(taskPatterns) == 0 && len(tagPatterns) == 0 {
-		return testCases, nil
+		return taskSpecs, nil
 	}
 
 	var matched []*models.TaskSpec
 
-	for _, tc := range testCases {
-		taskNameMatch, err := matchesTaskOrDisplayName(tc, taskPatterns)
+	for _, taskSpec := range taskSpecs {
+		taskNameMatch, err := matchesTaskOrDisplayName(taskSpec, taskPatterns)
 
 		if err != nil {
 			return nil, err
 		}
 
-		tagNameMatch, err := matchesTags(tc, tagPatterns)
+		tagNameMatch, err := matchesTags(taskSpec, tagPatterns)
 
 		if err != nil {
 			return nil, err
 		}
 
 		if taskNameMatch && tagNameMatch {
-			matched = append(matched, tc)
+			matched = append(matched, taskSpec)
 		}
 	}
 

@@ -17,69 +17,69 @@ func sampleCases() []*models.TaskSpec {
 	}
 }
 
-func TestFilterTestCases_NoPatterns(t *testing.T) {
+func TestFilterTaskSpecs_NoPatterns(t *testing.T) {
 	cases := sampleCases()
-	result, err := FilterTestCases(cases, nil, nil)
+	result, err := FilterTaskSpecs(cases, nil, nil)
 	require.NoError(t, err)
 	assert.Len(t, result, 4, "empty patterns should return all cases")
 }
 
-func TestFilterTestCases_ExactName(t *testing.T) {
+func TestFilterTaskSpecs_ExactName(t *testing.T) {
 	cases := sampleCases()
-	result, err := FilterTestCases(cases, []string{"Fix login bug"}, nil)
+	result, err := FilterTaskSpecs(cases, []string{"Fix login bug"}, nil)
 	require.NoError(t, err)
 	require.Len(t, result, 1)
 	assert.Equal(t, "tc-002", result[0].TestID)
 }
 
-func TestFilterTestCases_ExactID(t *testing.T) {
+func TestFilterTaskSpecs_ExactID(t *testing.T) {
 	cases := sampleCases()
-	result, err := FilterTestCases(cases, []string{"tc-003"}, nil)
+	result, err := FilterTaskSpecs(cases, []string{"tc-003"}, nil)
 	require.NoError(t, err)
 	require.Len(t, result, 1)
 	assert.Equal(t, "Create a CLI tool", result[0].DisplayName)
 }
 
-func TestFilterTestCases_GlobPattern(t *testing.T) {
+func TestFilterTaskSpecs_GlobPattern(t *testing.T) {
 	cases := sampleCases()
-	result, err := FilterTestCases(cases, []string{"Create*"}, nil)
+	result, err := FilterTaskSpecs(cases, []string{"Create*"}, nil)
 	require.NoError(t, err)
 	require.Len(t, result, 2)
 	assert.Equal(t, "tc-001", result[0].TestID)
 	assert.Equal(t, "tc-003", result[1].TestID)
 }
 
-func TestFilterTestCases_MultiplePatterns(t *testing.T) {
+func TestFilterTaskSpecs_MultiplePatterns(t *testing.T) {
 	cases := sampleCases()
-	result, err := FilterTestCases(cases, []string{"tc-001", "Optimize*"}, nil)
+	result, err := FilterTaskSpecs(cases, []string{"tc-001", "Optimize*"}, nil)
 	require.NoError(t, err)
 	require.Len(t, result, 2)
 	assert.Equal(t, "tc-001", result[0].TestID)
 	assert.Equal(t, "tc-004", result[1].TestID)
 }
 
-func TestFilterTestCases_NoMatch(t *testing.T) {
+func TestFilterTaskSpecs_NoMatch(t *testing.T) {
 	cases := sampleCases()
-	result, err := FilterTestCases(cases, []string{"nonexistent"}, nil)
+	result, err := FilterTaskSpecs(cases, []string{"nonexistent"}, nil)
 	require.NoError(t, err)
 	assert.Len(t, result, 0)
 }
 
-func TestFilterTestCases_InvalidPattern(t *testing.T) {
+func TestFilterTaskSpecs_InvalidPattern(t *testing.T) {
 	cases := sampleCases()
-	_, err := FilterTestCases(cases, []string{"["}, nil)
+	_, err := FilterTaskSpecs(cases, []string{"["}, nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid task filter pattern")
 }
 
-func TestFilterTestCases_IDGlob(t *testing.T) {
+func TestFilterTaskSpecs_IDGlob(t *testing.T) {
 	cases := sampleCases()
-	result, err := FilterTestCases(cases, []string{"tc-00?"}, nil)
+	result, err := FilterTaskSpecs(cases, []string{"tc-00?"}, nil)
 	require.NoError(t, err)
 	assert.Len(t, result, 4, "? should match single character in IDs")
 }
 
-func TestFilterTestCases_Tags(t *testing.T) {
+func TestFilterTaskSpecs_Tags(t *testing.T) {
 	tt := []struct {
 		Name       string
 		Patterns   []string
@@ -107,18 +107,18 @@ func TestFilterTestCases_Tags(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tt {
-		t.Run(tc.Name, func(t *testing.T) {
+	for _, taskSpec := range tt {
+		t.Run(taskSpec.Name, func(t *testing.T) {
 			cases := sampleCases()
-			result, err := FilterTestCases(cases, nil, tc.Patterns)
+			result, err := FilterTaskSpecs(cases, nil, taskSpec.Patterns)
 			require.NoError(t, err)
 
-			require.Equal(t, tc.MatchedIDs, testCaseIDs(result))
+			require.Equal(t, taskSpec.MatchedIDs, taskSpecIDs(result))
 		})
 	}
 }
 
-func TestFilterTestCases_TagsAndTasks_Intersection(t *testing.T) {
+func TestFilterTaskSpecs_TagsAndTasks_Intersection(t *testing.T) {
 	tt := []struct {
 		Name         string
 		TagPatterns  []string
@@ -148,18 +148,18 @@ func TestFilterTestCases_TagsAndTasks_Intersection(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
 			cases := sampleCases()
-			result, err := FilterTestCases(cases, tc.TaskPatterns, tc.TagPatterns)
+			result, err := FilterTaskSpecs(cases, tc.TaskPatterns, tc.TagPatterns)
 			require.NoError(t, err)
 
-			require.Equal(t, tc.MatchedIDs, testCaseIDs(result))
+			require.Equal(t, tc.MatchedIDs, taskSpecIDs(result))
 		})
 	}
 }
 
-func testCaseIDs(testCases []*models.TaskSpec) []string {
+func taskSpecIDs(taskSpecs []*models.TaskSpec) []string {
 	var ids []string
-	for _, tc := range testCases {
-		ids = append(ids, tc.TestID)
+	for _, ts := range taskSpecs {
+		ids = append(ids, ts.TestID)
 	}
 	return ids
 }

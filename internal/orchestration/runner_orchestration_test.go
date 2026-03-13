@@ -275,7 +275,7 @@ func TestRunGraders_WeightsAndErrors(t *testing.T) {
 	runner := NewTestRunner(config.NewBenchmarkConfig(spec), nil)
 	graderCtx := &graders.Context{Output: "Mock response"}
 
-	testCase := &models.TaskSpec{
+	taskSpec := &models.TaskSpec{
 		Graders: []models.Grader{
 			{
 				Identifier: "task-default-weight",
@@ -291,7 +291,7 @@ func TestRunGraders_WeightsAndErrors(t *testing.T) {
 		},
 	}
 
-	results, err := runner.runGraders(context.Background(), testCase, graderCtx)
+	results, err := runner.runGraders(context.Background(), taskSpec, graderCtx)
 	require.NoError(t, err)
 	assert.Equal(t, 3.0, results["global"].Weight)
 	assert.Equal(t, 1.0, results["task-default-weight"].Weight)
@@ -349,7 +349,7 @@ func TestLoadResources_PathValidation(t *testing.T) {
 	cfg := config.NewBenchmarkConfig(spec, config.WithFixtureDir(fixtureDir))
 	runner := NewTestRunner(cfg, nil)
 
-	testCase := &models.TaskSpec{
+	taskSpec := &models.TaskSpec{
 		Inputs: models.TaskInputs{
 			Resources: []models.ResourceRef{
 				{Location: "inline.txt", Body: "inline"},
@@ -361,7 +361,7 @@ func TestLoadResources_PathValidation(t *testing.T) {
 		},
 	}
 
-	resources := runner.loadResources(testCase)
+	resources := runner.loadResources(taskSpec)
 	require.Len(t, resources, 2)
 	assert.Equal(t, "inline.txt", resources[0].Path)
 	assert.Equal(t, []byte("inline"), resources[0].Content)
@@ -477,7 +477,7 @@ func TestRunTest_CacheHitAndTranscriptWrite(t *testing.T) {
 	)
 	runner := NewTestRunner(cfg, execution.NewMockEngine("mock-model"), WithCache(cache.New(cacheDir)))
 
-	testCase := &models.TaskSpec{
+	taskSpec := &models.TaskSpec{
 		TestID:      "cache-task",
 		DisplayName: "Cache Task",
 		Inputs: models.TaskInputs{
@@ -488,15 +488,15 @@ func TestRunTest_CacheHitAndTranscriptWrite(t *testing.T) {
 	err := runner.engine.Initialize(context.Background())
 	require.NoError(t, err)
 
-	outcome, wasCached := runner.runTest(context.Background(), testCase, 1, 1)
+	outcome, wasCached := runner.runTest(context.Background(), taskSpec, 1, 1)
 	assert.False(t, wasCached)
-	runner.writeTaskTranscript(testCase, outcome, time.Now())
+	runner.writeTaskTranscript(taskSpec, outcome, time.Now())
 
 	entries, err := os.ReadDir(transcriptDir)
 	require.NoError(t, err)
 	require.NotEmpty(t, entries)
 
-	cachedOutcome, wasCached := runner.runTest(context.Background(), testCase, 1, 1)
+	cachedOutcome, wasCached := runner.runTest(context.Background(), taskSpec, 1, 1)
 	assert.True(t, wasCached)
 	assert.Equal(t, outcome.TestID, cachedOutcome.TestID)
 	assert.Equal(t, outcome.Status, cachedOutcome.Status)

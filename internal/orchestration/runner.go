@@ -217,31 +217,31 @@ func (r *TestRunner) runNormalBenchmark(ctx context.Context) (*models.Evaluation
 	}
 
 	// Load test cases
-	testCases, err := r.loadTestCases()
+	taskSpecs, err := r.loadTaskSpecs()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load test cases: %w", err)
 	}
 
 	// Apply task/tag filters
 	if len(r.taskFilters) > 0 || len(r.tagFilters) > 0 {
-		testCases, err = FilterTestCases(testCases, r.taskFilters, r.tagFilters)
+		taskSpecs, err = FilterTaskSpecs(taskSpecs, r.taskFilters, r.tagFilters)
 		if err != nil {
 			return nil, fmt.Errorf("task/tag filter error: %w", err)
 		}
-		fmt.Printf("Task and tag filters matched %d test(s):\n", len(testCases))
-		for _, tc := range testCases {
+		fmt.Printf("Task and tag filters matched %d test(s):\n", len(taskSpecs))
+		for _, tc := range taskSpecs {
 			fmt.Printf("  • %s (%s)\n", tc.DisplayName, tc.TestID)
 		}
 		fmt.Println()
 	}
 
-	if len(testCases) == 0 {
+	if len(taskSpecs) == 0 {
 		return nil, fmt.Errorf("no test cases found")
 	}
 
 	r.notifyProgress(ProgressEvent{
 		EventType:  EventBenchmarkStart,
-		TotalTests: len(testCases),
+		TotalTests: len(taskSpecs),
 	})
 
 	// Execute tests
@@ -250,9 +250,9 @@ func (r *TestRunner) runNormalBenchmark(ctx context.Context) (*models.Evaluation
 	// Now that CopilotEngine is concurrency-safe (protected by mutex),
 	// we can safely use concurrent execution when configured
 	if spec.Config.Concurrent {
-		testOutcomes = r.runConcurrent(ctx, testCases)
+		testOutcomes = r.runConcurrent(ctx, taskSpecs)
 	} else {
-		testOutcomes = r.runSequential(ctx, testCases)
+		testOutcomes = r.runSequential(ctx, taskSpecs)
 	}
 
 	// Compute statistics
@@ -473,20 +473,20 @@ func (r *TestRunner) printSkillImpactReport(withSkills, withoutSkills *models.Ev
 	fmt.Println("════════════════════════════════════════════════════════════════")
 }
 
-func (r *TestRunner) loadTestCases() ([]*models.TaskSpec, error) {
+func (r *TestRunner) loadTaskSpecs() ([]*models.TaskSpec, error) {
 	spec := r.cfg.Spec()
 
 	// CSV dataset path: generate tasks from CSV rows
 	if spec.TasksFrom != "" {
-		return r.loadTestCasesFromCSV()
+		return r.loadTaskSpecsFromCSV()
 	}
 
 	// Fall through to existing Tasks []string behavior
-	return r.loadTestCasesFromFiles()
+	return r.loadTaskSpecsFromFiles()
 }
 
-// loadTestCasesFromCSV generates in-memory TestCases from CSV rows.
-func (r *TestRunner) loadTestCasesFromCSV() ([]*models.TaskSpec, error) {
+// loadTaskSpecsFromCSV generates in-memory TaskSpecs from CSV rows.
+func (r *TestRunner) loadTaskSpecsFromCSV() ([]*models.TaskSpec, error) {
 	spec := r.cfg.Spec()
 
 	// Resolve CSV path relative to spec directory
@@ -542,7 +542,7 @@ func (r *TestRunner) loadTestCasesFromCSV() ([]*models.TaskSpec, error) {
 		baseCtx.Vars[k] = v
 	}
 
-	testCases := make([]*models.TaskSpec, 0, len(rows))
+	taskSpecs := make([]*models.TaskSpec, 0, len(rows))
 	for i, row := range rows {
 		rowNum := i + 1
 
@@ -592,14 +592,14 @@ func (r *TestRunner) loadTestCasesFromCSV() ([]*models.TaskSpec, error) {
 				Message: prompt,
 			},
 		}
-		testCases = append(testCases, tc)
+		taskSpecs = append(taskSpecs, tc)
 	}
 
-	return testCases, nil
+	return taskSpecs, nil
 }
 
-// loadTestCasesFromFiles loads test cases from YAML files via glob patterns.
-func (r *TestRunner) loadTestCasesFromFiles() ([]*models.TaskSpec, error) {
+// loadTaskSpecsFromFiles loads test cases from YAML files via glob patterns.
+func (r *TestRunner) loadTaskSpecsFromFiles() ([]*models.TaskSpec, error) {
 	spec := r.cfg.Spec()
 
 	// Get base directory for test file resolution (spec directory)
@@ -623,20 +623,20 @@ func (r *TestRunner) loadTestCasesFromFiles() ([]*models.TaskSpec, error) {
 		return nil, fmt.Errorf("no test files matched patterns: %v in directory: %s", spec.Tasks, baseDir)
 	}
 
-	var testCases []*models.TaskSpec
+	var taskSpecs []*models.TaskSpec
 	for _, path := range testFiles {
-		tc, err := models.LoadTestCase(path)
+		tc, err := models.LoadTaskSpec(path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load test case %s: %w", path, err)
 		}
 		// Only include active test cases
-		// LoadTestCase defaults Active to true (nil case), so include nil or explicitly true
+		// LoadTaskSpec defaults Active to true (nil case), so include nil or explicitly true
 		if tc.Active == nil || *tc.Active {
-			testCases = append(testCases, tc)
+			taskSpecs = append(taskSpecs, tc)
 		}
 	}
 
-	return testCases, nil
+	return taskSpecs, nil
 }
 
 // validateRequiredSkills performs preflight validation that all required skills are present.
@@ -681,11 +681,11 @@ func (r *TestRunner) validateRequiredSkills() error {
 	return nil
 }
 
-func (r *TestRunner) runSequential(ctx context.Context, testCases []*models.TaskSpec) []models.TestOutcome {
-	outcomes := make([]models.TestOutcome, 0, len(testCases))
+func (r *TestRunner) runSequential(ctx context.Context, taskSpecs []*models.TaskSpec) []models.TestOutcome {
+	outcomes := make([]models.TestOutcome, 0, len(taskSpecs))
 	spec := r.cfg.Spec()
 
-	for i, tc := range testCases {
+	for i, tc := range taskSpecs {
 		// Check if we should stop on error
 		if spec.Config.StopOnError && i > 0 {
 			// Check if any previous test failed or had an error
@@ -715,7 +715,7 @@ func (r *TestRunner) runSequential(ctx context.Context, testCases []*models.Task
 					EventType:  EventTestComplete,
 					TestName:   tc.DisplayName,
 					TestNum:    i + 1,
-					TotalTests: len(testCases),
+					TotalTests: len(taskSpecs),
 					Status:     models.StatusFailed,
 					Details:    map[string]any{"score": 0.0, "duration_ms": int64(0)},
 				})
@@ -727,11 +727,11 @@ func (r *TestRunner) runSequential(ctx context.Context, testCases []*models.Task
 			EventType:  EventTestStart,
 			TestName:   tc.DisplayName,
 			TestNum:    i + 1,
-			TotalTests: len(testCases),
+			TotalTests: len(taskSpecs),
 		})
 
 		taskStart := time.Now()
-		outcome, wasCached := r.runTest(ctx, tc, i+1, len(testCases))
+		outcome, wasCached := r.runTest(ctx, tc, i+1, len(taskSpecs))
 		r.writeTaskTranscript(tc, outcome, taskStart)
 		outcomes = append(outcomes, outcome)
 
@@ -748,7 +748,7 @@ func (r *TestRunner) runSequential(ctx context.Context, testCases []*models.Task
 				EventType:  EventTestCached,
 				TestName:   tc.DisplayName,
 				TestNum:    i + 1,
-				TotalTests: len(testCases),
+				TotalTests: len(taskSpecs),
 				Status:     outcome.Status,
 			})
 		} else {
@@ -756,7 +756,7 @@ func (r *TestRunner) runSequential(ctx context.Context, testCases []*models.Task
 				EventType:  EventTestComplete,
 				TestName:   tc.DisplayName,
 				TestNum:    i + 1,
-				TotalTests: len(testCases),
+				TotalTests: len(taskSpecs),
 				Status:     outcome.Status,
 				Details:    testOutcomeDetails(&outcome),
 			})
@@ -766,7 +766,7 @@ func (r *TestRunner) runSequential(ctx context.Context, testCases []*models.Task
 	return outcomes
 }
 
-func (r *TestRunner) runConcurrent(ctx context.Context, testCases []*models.TaskSpec) []models.TestOutcome {
+func (r *TestRunner) runConcurrent(ctx context.Context, taskSpecs []*models.TaskSpec) []models.TestOutcome {
 	// Simple concurrent implementation
 	spec := r.cfg.Spec()
 	workers := spec.Config.Workers
@@ -779,12 +779,12 @@ func (r *TestRunner) runConcurrent(ctx context.Context, testCases []*models.Task
 		outcome models.TestOutcome
 	}
 
-	resultChan := make(chan result, len(testCases))
+	resultChan := make(chan result, len(taskSpecs))
 	semaphore := make(chan struct{}, workers)
 
 	var wg sync.WaitGroup
 
-	for i, tc := range testCases {
+	for i, tc := range taskSpecs {
 		wg.Add(1)
 		go func(idx int, test *models.TaskSpec) {
 			defer wg.Done()
@@ -805,7 +805,7 @@ func (r *TestRunner) runConcurrent(ctx context.Context, testCases []*models.Task
 						EventType:  EventTestComplete,
 						TestName:   test.DisplayName,
 						TestNum:    idx + 1,
-						TotalTests: len(testCases),
+						TotalTests: len(taskSpecs),
 						Status:     models.StatusFailed,
 						Details:    map[string]any{"score": 0.0, "duration_ms": int64(0)},
 					})
@@ -817,11 +817,11 @@ func (r *TestRunner) runConcurrent(ctx context.Context, testCases []*models.Task
 				EventType:  EventTestStart,
 				TestName:   test.DisplayName,
 				TestNum:    idx + 1,
-				TotalTests: len(testCases),
+				TotalTests: len(taskSpecs),
 			})
 
 			taskStart := time.Now()
-			outcome, wasCached := r.runTest(ctx, test, idx+1, len(testCases))
+			outcome, wasCached := r.runTest(ctx, test, idx+1, len(taskSpecs))
 			r.writeTaskTranscript(test, outcome, taskStart)
 			resultChan <- result{index: idx, outcome: outcome}
 
@@ -837,7 +837,7 @@ func (r *TestRunner) runConcurrent(ctx context.Context, testCases []*models.Task
 					EventType:  EventTestCached,
 					TestName:   test.DisplayName,
 					TestNum:    idx + 1,
-					TotalTests: len(testCases),
+					TotalTests: len(taskSpecs),
 					Status:     outcome.Status,
 				})
 			} else {
@@ -845,7 +845,7 @@ func (r *TestRunner) runConcurrent(ctx context.Context, testCases []*models.Task
 					EventType:  EventTestComplete,
 					TestName:   test.DisplayName,
 					TestNum:    idx + 1,
-					TotalTests: len(testCases),
+					TotalTests: len(taskSpecs),
 					Status:     outcome.Status,
 					Details:    testOutcomeDetails(&outcome),
 				})
@@ -859,7 +859,7 @@ func (r *TestRunner) runConcurrent(ctx context.Context, testCases []*models.Task
 	}()
 
 	// Collect results
-	results := make([]models.TestOutcome, len(testCases))
+	results := make([]models.TestOutcome, len(taskSpecs))
 	for res := range resultChan {
 		results[res.index] = res.outcome
 	}
@@ -1216,7 +1216,7 @@ func (r *TestRunner) buildGraderContext(tc *models.TaskSpec, resp *execution.Exe
 	sessionDigest := r.buildSessionDigest(resp)
 
 	return &graders.Context{
-		TestCase:         tc,
+		TaskSpec:         tc,
 		Transcript:       transcript,
 		Output:           resp.FinalOutput,
 		Outcome:          make(map[string]any),

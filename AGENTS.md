@@ -28,7 +28,7 @@ waza-go/
 │   │   └── copilot.go     # Copilot SDK integration
 │   ├── models/            # Data structures
 │   │   ├── spec.go        # EvalSpec (eval configuration)
-│   │   ├── testcase.go    # TestCase (task definition)
+│   │   ├── taskspec.go    # TaskSpec (task definition)
 │   │   └── outcome.go     # EvaluationOutcome (results)
 │   ├── orchestration/     # TestRunner for coordinating execution
 │   │   └── runner.go      # Benchmark orchestration
@@ -50,7 +50,7 @@ The Go implementation uses idiomatic Go naming:
 | Eval configuration | `BenchmarkSpec` | `EvalSpec` |
 | Executor | `AgentEngine` | `BaseExecutor` |
 | Grader | `Validator` | `Grader` |
-| Task | `TestCase` | `Task` |
+| Task | `TaskSpec` | `Task` |
 | Result | `EvaluationOutcome` | `EvalResult` |
 
 ## Key Go Patterns

@@ -18,7 +18,7 @@ func writeCSV(t *testing.T, dir, name, content string) string {
 	return p
 }
 
-func TestLoadTestCasesFromCSV_BasicLoading(t *testing.T) {
+func TestLoadTaskSpecsFromCSV_BasicLoading(t *testing.T) {
 	tmpDir := t.TempDir()
 	writeCSV(t, tmpDir, "data.csv", "id,prompt\nA,hello\nB,world\nC,foo\n")
 
@@ -29,7 +29,7 @@ func TestLoadTestCasesFromCSV_BasicLoading(t *testing.T) {
 	cfg := config.NewBenchmarkConfig(spec, config.WithSpecDir(tmpDir))
 	runner := NewTestRunner(cfg, nil)
 
-	cases, err := runner.loadTestCasesFromCSV()
+	cases, err := runner.loadTaskSpecsFromCSV()
 	require.NoError(t, err)
 	assert.Len(t, cases, 3)
 	assert.Equal(t, "A", cases[0].TestID)
@@ -38,7 +38,7 @@ func TestLoadTestCasesFromCSV_BasicLoading(t *testing.T) {
 	assert.Equal(t, "world", cases[1].Inputs.Message)
 }
 
-func TestLoadTestCasesFromCSV_TemplateResolution(t *testing.T) {
+func TestLoadTaskSpecsFromCSV_TemplateResolution(t *testing.T) {
 	tmpDir := t.TempDir()
 	writeCSV(t, tmpDir, "data.csv", "id,lang,prompt\n1,Go,Explain {{.Vars.lang}}\n2,Rust,Explain {{.Vars.lang}}\n")
 
@@ -49,14 +49,14 @@ func TestLoadTestCasesFromCSV_TemplateResolution(t *testing.T) {
 	cfg := config.NewBenchmarkConfig(spec, config.WithSpecDir(tmpDir))
 	runner := NewTestRunner(cfg, nil)
 
-	cases, err := runner.loadTestCasesFromCSV()
+	cases, err := runner.loadTaskSpecsFromCSV()
 	require.NoError(t, err)
 	assert.Len(t, cases, 2)
 	assert.Equal(t, "Explain Go", cases[0].Inputs.Message)
 	assert.Equal(t, "Explain Rust", cases[1].Inputs.Message)
 }
 
-func TestLoadTestCasesFromCSV_RangeFiltering(t *testing.T) {
+func TestLoadTaskSpecsFromCSV_RangeFiltering(t *testing.T) {
 	tmpDir := t.TempDir()
 	writeCSV(t, tmpDir, "data.csv", "id,prompt\nA,one\nB,two\nC,three\nD,four\nE,five\n")
 
@@ -68,14 +68,14 @@ func TestLoadTestCasesFromCSV_RangeFiltering(t *testing.T) {
 	cfg := config.NewBenchmarkConfig(spec, config.WithSpecDir(tmpDir))
 	runner := NewTestRunner(cfg, nil)
 
-	cases, err := runner.loadTestCasesFromCSV()
+	cases, err := runner.loadTaskSpecsFromCSV()
 	require.NoError(t, err)
 	assert.Len(t, cases, 3)
 	assert.Equal(t, "B", cases[0].TestID)
 	assert.Equal(t, "D", cases[2].TestID)
 }
 
-func TestLoadTestCasesFromCSV_InvalidRange(t *testing.T) {
+func TestLoadTaskSpecsFromCSV_InvalidRange(t *testing.T) {
 	tmpDir := t.TempDir()
 	writeCSV(t, tmpDir, "data.csv", "id,prompt\nA,one\n")
 
@@ -99,14 +99,14 @@ func TestLoadTestCasesFromCSV_InvalidRange(t *testing.T) {
 			cfg := config.NewBenchmarkConfig(spec, config.WithSpecDir(tmpDir))
 			runner := NewTestRunner(cfg, nil)
 
-			_, err := runner.loadTestCasesFromCSV()
+			_, err := runner.loadTaskSpecsFromCSV()
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.errAt)
 		})
 	}
 }
 
-func TestLoadTestCasesFromCSV_PathTraversal(t *testing.T) {
+func TestLoadTaskSpecsFromCSV_PathTraversal(t *testing.T) {
 	tmpDir := t.TempDir()
 	// Create a CSV outside the spec directory
 	parentDir := filepath.Dir(tmpDir)
@@ -119,7 +119,7 @@ func TestLoadTestCasesFromCSV_PathTraversal(t *testing.T) {
 	cfg := config.NewBenchmarkConfig(spec, config.WithSpecDir(tmpDir))
 	runner := NewTestRunner(cfg, nil)
 
-	_, err := runner.loadTestCasesFromCSV()
+	_, err := runner.loadTaskSpecsFromCSV()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "escapes spec directory")
 }

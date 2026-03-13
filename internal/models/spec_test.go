@@ -42,7 +42,7 @@ config:
 	}
 }
 
-func TestTestCase_LoadFromYAML(t *testing.T) {
+func TestTaskSpec_LoadFromYAML(t *testing.T) {
 	tempDir := t.TempDir()
 	yamlContent := `id: test-001
 name: Test Case
@@ -62,7 +62,7 @@ enabled: true
 	}
 
 	// Load test case
-	tc, err := LoadTestCase(testPath)
+	tc, err := LoadTaskSpec(testPath)
 	if err != nil {
 		t.Fatalf("Failed to load test case: %v", err)
 	}

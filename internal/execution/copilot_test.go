@@ -194,14 +194,14 @@ func TestCopilotExecute_RequiredFields(t *testing.T) {
 	})
 	engine := builder.Build()
 
-	testCases := []struct {
+	taskSpecs := []struct {
 		ER    ExecutionRequest
 		Error string
 	}{
 		{ER: ExecutionRequest{Timeout: 0}, Error: "positive Timeout is required"},
 	}
 
-	for _, td := range testCases {
+	for _, td := range taskSpecs {
 		t.Run("error: "+td.Error, func(t *testing.T) {
 			resp, err := engine.Execute(context.Background(), &td.ER)
 			require.ErrorContains(t, err, td.Error)

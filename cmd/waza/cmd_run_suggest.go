@@ -465,36 +465,36 @@ func selectFailedTriggerResults(results []models.TriggerResult) []models.Trigger
 }
 
 func loadTestDefinitionYAML(spec *models.EvalSpec, specPath string) (map[string]string, error) {
-	testCases, err := loadTestCases(spec, specPath)
+	taskSpecs, err := loadTaskSpecs(spec, specPath)
 	if err != nil {
 		return nil, err
 	}
 
-	defs := make(map[string]string, len(testCases))
-	for _, tc := range testCases {
-		if tc == nil || tc.TestID == "" {
+	defs := make(map[string]string, len(taskSpecs))
+	for _, taskSpec := range taskSpecs {
+		if taskSpec == nil || taskSpec.TestID == "" {
 			continue
 		}
-		if _, exists := defs[tc.TestID]; exists {
+		if _, exists := defs[taskSpec.TestID]; exists {
 			continue
 		}
-		yml, err := yaml.Marshal(tc)
+		yml, err := yaml.Marshal(taskSpec)
 		if err != nil {
-			return nil, fmt.Errorf("marshaling test case %s: %w", tc.TestID, err)
+			return nil, fmt.Errorf("marshaling test case %s: %w", taskSpec.TestID, err)
 		}
-		defs[tc.TestID] = strings.TrimSpace(string(yml))
+		defs[taskSpec.TestID] = strings.TrimSpace(string(yml))
 	}
 	return defs, nil
 }
 
-func loadTestCases(spec *models.EvalSpec, specPath string) ([]*models.TaskSpec, error) {
+func loadTaskSpecs(spec *models.EvalSpec, specPath string) ([]*models.TaskSpec, error) {
 	if spec.TasksFrom != "" {
-		return loadTestCasesFromCSV(spec, specPath)
+		return loadTaskSpecsFromCSV(spec, specPath)
 	}
-	return loadTestCasesFromFiles(spec, specPath)
+	return loadTaskSpecsFromFiles(spec, specPath)
 }
 
-func loadTestCasesFromFiles(spec *models.EvalSpec, specPath string) ([]*models.TaskSpec, error) {
+func loadTaskSpecsFromFiles(spec *models.EvalSpec, specPath string) ([]*models.TaskSpec, error) {
 	specDir := filepath.Dir(specPath)
 	testFiles := make([]string, 0)
 	for _, pattern := range spec.Tasks {
@@ -510,20 +510,20 @@ func loadTestCasesFromFiles(spec *models.EvalSpec, specPath string) ([]*models.T
 		return nil, fmt.Errorf("no test files matched patterns: %v in directory: %s", spec.Tasks, specDir)
 	}
 
-	testCases := make([]*models.TaskSpec, 0, len(testFiles))
+	taskSpecs := make([]*models.TaskSpec, 0, len(testFiles))
 	for _, path := range testFiles {
-		tc, err := models.LoadTestCase(path)
+		tc, err := models.LoadTaskSpec(path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load test case %s: %w", path, err)
 		}
 		if tc.Active == nil || *tc.Active {
-			testCases = append(testCases, tc)
+			taskSpecs = append(taskSpecs, tc)
 		}
 	}
-	return testCases, nil
+	return taskSpecs, nil
 }
 
-func loadTestCasesFromCSV(spec *models.EvalSpec, specPath string) ([]*models.TaskSpec, error) {
+func loadTaskSpecsFromCSV(spec *models.EvalSpec, specPath string) ([]*models.TaskSpec, error) {
 	specDir := filepath.Dir(specPath)
 	csvPath := spec.TasksFrom
 	if !filepath.IsAbs(csvPath) {
@@ -568,7 +568,7 @@ func loadTestCasesFromCSV(spec *models.EvalSpec, specPath string) ([]*models.Tas
 		baseCtx.Vars[k] = v
 	}
 
-	testCases := make([]*models.TaskSpec, 0, len(rows))
+	taskSpecs := make([]*models.TaskSpec, 0, len(rows))
 	for i, row := range rows {
 		rowNum := i + 1
 		testID := fmt.Sprintf("row-%d", rowNum)
@@ -606,7 +606,7 @@ func loadTestCasesFromCSV(spec *models.EvalSpec, specPath string) ([]*models.Tas
 			}
 		}
 
-		testCases = append(testCases, &models.TaskSpec{
+		taskSpecs = append(taskSpecs, &models.TaskSpec{
 			TestID:      testID,
 			DisplayName: displayName,
 			Inputs: models.TaskInputs{
@@ -614,7 +614,7 @@ func loadTestCasesFromCSV(spec *models.EvalSpec, specPath string) ([]*models.Tas
 			},
 		})
 	}
-	return testCases, nil
+	return taskSpecs, nil
 }
 
 func extractCopilotTrace(transcript []models.TranscriptEvent) []string {

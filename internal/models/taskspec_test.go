@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestLoadTestCase_ShouldTriggerField(t *testing.T) {
+func TestLoadTaskSpec_ShouldTriggerField(t *testing.T) {
 	tests := []struct {
 		name    string
 		yaml    string
@@ -56,9 +56,9 @@ inputs:
 				t.Fatalf("write file: %v", err)
 			}
 
-			tc, err := LoadTestCase(p)
+			tc, err := LoadTaskSpec(p)
 			if err != nil {
-				t.Fatalf("LoadTestCase: %v", err)
+				t.Fatalf("LoadTaskSpec: %v", err)
 			}
 
 			if tt.wantNil {

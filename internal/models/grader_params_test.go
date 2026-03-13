@@ -94,9 +94,9 @@ graders:
 		t.Fatalf("write test case file: %v", err)
 	}
 
-	tc, err := LoadTestCase(testPath)
+	tc, err := LoadTaskSpec(testPath)
 	if err != nil {
-		t.Fatalf("LoadTestCase: %v", err)
+		t.Fatalf("LoadTaskSpec: %v", err)
 	}
 
 	inlineParams, ok := tc.Graders[0].Parameters.(InlineScriptGraderParameters)

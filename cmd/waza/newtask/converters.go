@@ -47,15 +47,15 @@ type skill struct {
 	Path string
 }
 
-type CreateTestCaseFromCopilotLogOptions struct {
+type CreateTaskSpecFromCopilotLogOptions struct {
 	DisplayName string
 	TestID      string
 	Tags        []string
 }
 
-func CreateTestCaseFromCopilotLog(copilotLog string, options *CreateTestCaseFromCopilotLogOptions) (*models.TaskSpec, error) {
+func CreateTaskSpecFromCopilotLog(copilotLog string, options *CreateTaskSpecFromCopilotLogOptions) (*models.TaskSpec, error) {
 	if options == nil {
-		options = &CreateTestCaseFromCopilotLogOptions{}
+		options = &CreateTaskSpecFromCopilotLogOptions{}
 	}
 
 	toolsInOrder := []string{}

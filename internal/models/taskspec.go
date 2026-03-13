@@ -106,8 +106,8 @@ func (v *Grader) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
-// LoadTestCase loads a test case from YAML
-func LoadTestCase(path string) (*TaskSpec, error) {
+// LoadTaskSpec loads a test case from YAML
+func LoadTaskSpec(path string) (*TaskSpec, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err

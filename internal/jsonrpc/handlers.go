@@ -324,7 +324,7 @@ func (h *HandlerContext) handleTaskList(_ context.Context, params json.RawMessag
 
 	var tasks []TaskSummary
 	for _, tf := range taskFiles {
-		tc, loadErr := models.LoadTestCase(tf)
+		tc, loadErr := models.LoadTaskSpec(tf)
 		if loadErr != nil {
 			tasks = append(tasks, TaskSummary{ID: tf, Name: filepath.Base(tf)})
 			continue
@@ -370,7 +370,7 @@ func (h *HandlerContext) handleTaskGet(_ context.Context, params json.RawMessage
 	}
 
 	for _, tf := range taskFiles {
-		tc, loadErr := models.LoadTestCase(tf)
+		tc, loadErr := models.LoadTaskSpec(tf)
 		if loadErr != nil {
 			continue
 		}

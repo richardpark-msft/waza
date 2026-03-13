@@ -275,7 +275,7 @@ func TestNewTaskFromPromptCommand_EndToEndCreatesTaskFile(t *testing.T) {
 
 	require.NoError(t, cmd.Execute())
 
-	actual, err := models.LoadTestCase(outputPath)
+	actual, err := models.LoadTaskSpec(outputPath)
 	require.NoError(t, err)
 
 	expected := &models.TaskSpec{

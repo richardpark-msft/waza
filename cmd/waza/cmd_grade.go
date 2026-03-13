@@ -191,7 +191,7 @@ func runGrade(ctx context.Context, w, errW io.Writer, specPath, taskID, resultsF
 }
 
 func loadGradeTasks(spec *models.EvalSpec, specPath, taskID string) ([]*models.TaskSpec, error) {
-	all, err := loadTestCases(spec, specPath)
+	all, err := loadTaskSpecs(spec, specPath)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +249,7 @@ func gradeTaskRuns(ctx context.Context, spec *models.EvalSpec, tc *models.TaskSp
 	}, gradedRuns, nil
 }
 
-func gradeRun(ctx context.Context, spec *models.EvalSpec, tc *models.TaskSpec, run *models.RunResult, workspace, judgeModel string, errW io.Writer, verbose bool) (*models.RunResult, error) {
+func gradeRun(ctx context.Context, spec *models.EvalSpec, taskSpec *models.TaskSpec, run *models.RunResult, workspace, judgeModel string, errW io.Writer, verbose bool) (*models.RunResult, error) {
 	gradedRun := *run
 	if gradedRun.ErrorMsg != "" || gradedRun.Status == models.StatusError {
 		gradedRun.Validations = map[string]models.GraderResults{}
@@ -263,7 +263,7 @@ func gradeRun(ctx context.Context, spec *models.EvalSpec, tc *models.TaskSpec, r
 	}
 
 	gradingCtx := &graders.Context{
-		TestCase:         tc,
+		TaskSpec:         taskSpec,
 		Output:           run.FinalOutput,
 		Transcript:       run.Transcript,
 		Session:          &run.SessionDigest,
@@ -277,12 +277,12 @@ func gradeRun(ctx context.Context, spec *models.EvalSpec, tc *models.TaskSpec, r
 
 	if verbose {
 		if _, err := fmt.Fprintf(errW, "grading %s: %d transcript events, duration=%dms, session=%s\n",
-			tc.TestID, len(run.Transcript), run.DurationMs, run.SessionDigest.SessionID); err != nil {
+			taskSpec.TestID, len(run.Transcript), run.DurationMs, run.SessionDigest.SessionID); err != nil {
 			return nil, fmt.Errorf("failed to write verbose output: %w", err)
 		}
 	}
 
-	graderResults, err := graders.RunAll(ctx, spec.Graders, tc, gradingCtx, judgeModel, false)
+	graderResults, err := graders.RunAll(ctx, spec.Graders, taskSpec, gradingCtx, judgeModel, false)
 	if err != nil {
 		return nil, err
 	}

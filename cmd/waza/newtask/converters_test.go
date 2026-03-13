@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateTestCaseFromCopilotLog_UsingSkillFixture(t *testing.T) {
+func TestCreateTaskSpecFromCopilotLog_UsingSkillFixture(t *testing.T) {
 	testCopilotLog := filepath.Join("..", "..", "..", "internal", "testdata", "copilot_events_using_skill.json")
 
-	tc, err := CreateTestCaseFromCopilotLog(testCopilotLog, &CreateTestCaseFromCopilotLogOptions{
+	tc, err := CreateTaskSpecFromCopilotLog(testCopilotLog, &CreateTaskSpecFromCopilotLogOptions{
 		DisplayName: "fixture-case",
 		TestID:      "fixture-id",
 		Tags:        []string{"from-fixture"},
