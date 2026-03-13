@@ -79,7 +79,7 @@ enabled: true
 	}
 }
 
-func TestBenchmarkEvaltsDeserialization(t *testing.T) {
+func TestEvalSpec_InputsDeserialization(t *testing.T) {
 	tempDir := t.TempDir()
 	yamlContent := `name: inputs-test
 skill: test-skill
@@ -118,7 +118,7 @@ inputs:
 	}
 }
 
-func TestBenchmarkSEvalsOmittedWhenEmpty(t *testing.T) {
+func TestEvalSpec_InputsOmittedWhenEmpty(t *testing.T) {
 	tempDir := t.TempDir()
 	yamlContent := `name: no-inputs
 skill: test-skill
@@ -142,7 +142,7 @@ config:
 	}
 }
 
-func TestBEvalpec_DefaultValues(t *testing.T) {
+func TestEvalSpec_DefaultValues(t *testing.T) {
 	tempDir := t.TempDir()
 	// Minimal YAML - defaults need to be set by loader
 	yamlContent := `name: minimal
@@ -246,7 +246,7 @@ graders:
 	}
 }
 
-func TeEvalrkSpec_JudgeModel(t *testing.T) {
+func TestEvalSpec_JudgeModel(t *testing.T) {
 	tempDir := t.TempDir()
 
 	t.Run("parses judge_model from YAML", func(t *testing.T) {
