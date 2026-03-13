@@ -30,7 +30,7 @@ func RunAll(ctx context.Context, specGraders []models.GraderConfig, tc *models.T
 
 	for _, vCfg := range tc.Graders {
 		if vCfg.Type == "" {
-			return nil, fmt.Errorf("no kind associated with grader %s", vCfg.Identifier)
+			return nil, fmt.Errorf("no type associated with grader %s", vCfg.Identifier)
 		}
 
 		params := applyDefaults(vCfg.Parameters, judgeModel, updateSnapshots)
