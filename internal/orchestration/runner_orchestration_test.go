@@ -298,10 +298,10 @@ func TestRunGraders_WeightsAndErrors(t *testing.T) {
 	assert.Equal(t, 0.5, results["task-explicit-weight"].Weight)
 
 	_, err = runner.runGraders(context.Background(), &models.TaskSpec{
-		Graders: []models.Grader{{Identifier: "missing-kind"}},
+		Graders: []models.Grader{{Identifier: "missing-type"}},
 	}, graderCtx)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "no kind associated with grader missing-kind")
+	assert.Contains(t, err.Error(), "no type associated with grader missing-type")
 }
 
 func TestRunGraders_DiffSnapshotUpdateOption(t *testing.T) {
