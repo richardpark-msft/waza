@@ -251,7 +251,7 @@ func TestRunBenchmark_BaselineNoSkills(t *testing.T) {
 		Config: models.Config{
 			EngineType:  "mock",
 			ModelID:     "gpt-4",
-			RunsPerTest: 1,
+			TrialsPerTask: 1,
 			TimeoutSec:  60,
 		},
 		Tasks: []string{"task-001.yaml"},
@@ -289,7 +289,7 @@ func TestRunBenchmark_BaselineWithSkills(t *testing.T) {
 		Config: models.Config{
 			EngineType:  "mock",
 			ModelID:     "gpt-4",
-			RunsPerTest: 1,
+			TrialsPerTask: 1,
 			TimeoutSec:  60,
 			SkillPaths:  []string{tmpSkillDir},
 		},
@@ -333,7 +333,7 @@ func TestRunBenchmark_BaselineEmptyTasks(t *testing.T) {
 		Config: models.Config{
 			EngineType:  "mock",
 			ModelID:     "gpt-4",
-			RunsPerTest: 1,
+			TrialsPerTask: 1,
 			TimeoutSec:  60,
 			SkillPaths:  []string{tmpSkillDir},
 		},
@@ -364,7 +364,7 @@ func TestMergeBaselineOutcomes_TaskMismatch(t *testing.T) {
 		Config: models.Config{
 			EngineType:  "mock",
 			ModelID:     "gpt-4",
-			RunsPerTest: 1,
+			TrialsPerTask: 1,
 			TimeoutSec:  60,
 		},
 	}
@@ -402,7 +402,7 @@ func TestMergeBaselineOutcomes_ExtraTaskInBaseline(t *testing.T) {
 		Config: models.Config{
 			EngineType:  "mock",
 			ModelID:     "gpt-4",
-			RunsPerTest: 1,
+			TrialsPerTask: 1,
 			TimeoutSec:  60,
 		},
 	}
@@ -440,7 +440,7 @@ func TestMergeBaselineOutcomes_Success(t *testing.T) {
 		Config: models.Config{
 			EngineType:  "mock",
 			ModelID:     "gpt-4",
-			RunsPerTest: 3,
+			TrialsPerTask: 3,
 			TimeoutSec:  60,
 		},
 	}

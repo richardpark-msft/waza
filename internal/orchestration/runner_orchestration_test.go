@@ -65,7 +65,7 @@ graders:
 		SpecIdentity: models.SpecIdentity{Name: "orchestration-sequential"},
 		SkillName:    "test-skill",
 		Config: models.Config{
-			RunsPerTest: 2,
+			TrialsPerTask: 2,
 			TimeoutSec:  30,
 			EngineType:  "mock",
 			ModelID:     "mock-model",
@@ -161,7 +161,7 @@ inputs:
 		SpecIdentity: models.SpecIdentity{Name: "orchestration-concurrent"},
 		SkillName:    "test-skill",
 		Config: models.Config{
-			RunsPerTest: 1,
+			TrialsPerTask: 1,
 			TimeoutSec:  30,
 			EngineType:  "mock",
 			ModelID:     "mock-model",
@@ -203,7 +203,7 @@ inputs:
 		SpecIdentity: models.SpecIdentity{Name: "skip-graders"},
 		SkillName:    "test-skill",
 		Config: models.Config{
-			RunsPerTest: 2,
+			TrialsPerTask: 2,
 			TimeoutSec:  30,
 			EngineType:  "mock",
 			ModelID:     "mock-model",
@@ -370,7 +370,7 @@ func TestLoadResources_PathValidation(t *testing.T) {
 }
 
 func TestBuildGraderContextAndScoreHelpers(t *testing.T) {
-	spec := &models.BenchmarkSpec{Config: models.Config{RunsPerTest: 2}}
+	spec := &models.BenchmarkSpec{Config: models.Config{TrialsPerTask: 2}}
 	runner := NewTestRunner(config.NewBenchmarkConfig(spec), nil)
 
 	content := "hi"
@@ -455,7 +455,7 @@ func TestRunTest_CacheHitAndTranscriptWrite(t *testing.T) {
 	spec := &models.BenchmarkSpec{
 		SkillName: "cache-skill",
 		Config: models.Config{
-			RunsPerTest: 1,
+			TrialsPerTask: 1,
 			TimeoutSec:  30,
 			EngineType:  "mock",
 			ModelID:     "mock-model",

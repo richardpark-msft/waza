@@ -14,6 +14,10 @@ func configDetectOptions() []workspace.DetectOption {
 	if err != nil {
 		return nil
 	}
+
+	// TODO: I think we're supposed to end up with the actual folders to look at
+	// here, but because the paths don't come back absolute, the  relative paths in .Skills
+	// and .Evals are incorrect.
 	cfg, err := projectconfig.Load(wd)
 	if err != nil {
 		return nil
@@ -34,9 +38,11 @@ func configDetectOptions() []workspace.DetectOption {
 //   - No workspace detected → returns error
 func resolveWorkspace(args []string) (*workspace.WorkspaceContext, error) {
 	wd, err := os.Getwd()
+
 	if err != nil {
 		return nil, fmt.Errorf("getting working directory: %w", err)
 	}
+
 	ctx, err := workspace.DetectContext(wd, configDetectOptions()...)
 	if err != nil {
 		return nil, fmt.Errorf("detecting workspace: %w", err)
@@ -72,22 +78,22 @@ func resolveEvalPath(si *workspace.SkillInfo) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("getting working directory: %w", err)
 	}
-	ctx, err := workspace.DetectContext(wd, configDetectOptions()...)
+	wsCtx, err := workspace.DetectContext(wd, configDetectOptions()...)
 	if err != nil {
 		return "", fmt.Errorf("detecting workspace: %w", err)
 	}
 	// Ensure the skill is in the context so FindEval can locate it
 	found := false
-	for _, s := range ctx.Skills {
+	for _, s := range wsCtx.Skills {
 		if s.Name == si.Name {
 			found = true
 			break
 		}
 	}
 	if !found {
-		ctx.Skills = append(ctx.Skills, *si)
+		wsCtx.Skills = append(wsCtx.Skills, *si)
 	}
-	evalPath, err := workspace.FindEval(ctx, si.Name)
+	evalPath, err := workspace.FindEval(wsCtx, si.Name)
 	if err != nil {
 		return "", err
 	}

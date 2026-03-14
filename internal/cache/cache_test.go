@@ -412,7 +412,7 @@ func TestCacheKey_DifferentRunsPerTaskChangesKey(t *testing.T) {
 			ModelID:     "gpt-4",
 			EngineType:  "copilot-sdk",
 			TimeoutSec:  300,
-			RunsPerTest: 3,
+			TrialsPerTask: 3,
 		},
 	}
 
@@ -423,7 +423,7 @@ func TestCacheKey_DifferentRunsPerTaskChangesKey(t *testing.T) {
 			ModelID:     "gpt-4",
 			EngineType:  "copilot-sdk",
 			TimeoutSec:  300,
-			RunsPerTest: 5, // Different runs
+			TrialsPerTask: 5, // Different runs
 		},
 	}
 
@@ -452,7 +452,7 @@ func TestCacheKey_NoHashCollision(t *testing.T) {
 			ModelID:     "gpt-4",
 			EngineType:  "copilot-sdk",
 			TimeoutSec:  300,
-			RunsPerTest: 1,
+			TrialsPerTask: 1,
 		},
 	}
 
@@ -463,7 +463,7 @@ func TestCacheKey_NoHashCollision(t *testing.T) {
 			ModelID:     "gpt-4",
 			EngineType:  "copilot-sdk",
 			TimeoutSec:  300,
-			RunsPerTest: 1,
+			TrialsPerTask: 1,
 		},
 	}
 

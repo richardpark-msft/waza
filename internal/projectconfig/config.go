@@ -106,14 +106,14 @@ type StorageConfig struct {
 
 // ProjectConfig is the top-level configuration loaded from .waza.yaml.
 type ProjectConfig struct {
-	Paths    PathsConfig    `yaml:"paths,omitempty"`
-	Defaults DefaultsConfig `yaml:"defaults,omitempty"`
-	Cache    CacheConfig    `yaml:"cache,omitempty"`
-	Server   ServerConfig   `yaml:"server,omitempty"`
-	Dev      DevConfig      `yaml:"dev,omitempty"`
-	Tokens   TokensConfig   `yaml:"tokens,omitempty"`
-	Graders  GradersConfig  `yaml:"graders,omitempty"`
-	Storage  StorageConfig  `yaml:"storage,omitempty"`
+	Paths      PathsConfig    `yaml:"paths,omitempty"`
+	Defaults   DefaultsConfig `yaml:"defaults,omitempty"`
+	Cache      CacheConfig    `yaml:"cache,omitempty"`
+	Server     ServerConfig   `yaml:"server,omitempty"`
+	Dev        DevConfig      `yaml:"dev,omitempty"`
+	Tokens     TokensConfig   `yaml:"tokens,omitempty"`
+	Graders    GradersConfig  `yaml:"graders,omitempty"`
+	Storage    StorageConfig  `yaml:"storage,omitempty"`
 }
 
 // New returns a ProjectConfig with all hard-coded defaults populated.
@@ -167,7 +167,8 @@ func New() *ProjectConfig {
 func Load(startDir string) (*ProjectConfig, error) {
 	cfg := New()
 
-	data, err := findConfigFile(startDir)
+	configPath, data, err := findConfigFile(startDir)
+
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return cfg, nil // no file found → return defaults
@@ -182,17 +183,23 @@ func Load(startDir string) (*ProjectConfig, error) {
 
 	// Merge file values onto defaults.
 	mergeConfig(cfg, &fileCfg)
+
+	// make the paths absolute, most places that are using it from here don't know
+	// where the files are relative to.
+	cfg.Paths.Skills = filepath.Join(filepath.Dir(configPath), cfg.Paths.Skills)
+	cfg.Paths.Evals = filepath.Join(filepath.Dir(configPath), cfg.Paths.Evals)
+	cfg.Paths.Results = filepath.Join(filepath.Dir(configPath), cfg.Paths.Results)
+
 	return cfg, nil
 }
 
 // findConfigFile walks up from dir looking for .waza.yaml (max 10 levels).
 // Returns os.ErrNotExist if no config file is found. Propagates real I/O
 // errors (e.g. permission denied) instead of silently swallowing them.
-func findConfigFile(dir string) ([]byte, error) {
-	// Convert to absolute path so filepath.Dir(".") walks correctly.
+func findConfigFile(dir string) (string, []byte, error) { // Convert to absolute path so filepath.Dir(".") walks correctly.
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
-		return nil, fmt.Errorf("resolving path %q: %w", dir, err)
+		return "", nil, fmt.Errorf("resolving path %q: %w", dir, err)
 	}
 	dir = absDir
 
@@ -200,10 +207,10 @@ func findConfigFile(dir string) ([]byte, error) {
 		p := filepath.Join(dir, ".waza.yaml")
 		data, err := os.ReadFile(p)
 		if err == nil {
-			return data, nil
+			return p, data, nil
 		}
 		if !errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("reading %q: %w", p, err)
+			return "", nil, fmt.Errorf("reading %q: %w", p, err)
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
@@ -211,7 +218,7 @@ func findConfigFile(dir string) ([]byte, error) {
 		}
 		dir = parent
 	}
-	return nil, os.ErrNotExist
+	return "", nil, os.ErrNotExist
 }
 
 // mergeConfig overlays non-zero values from src onto dst.
