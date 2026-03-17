@@ -124,15 +124,6 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 	// Build skill directories list: start with CWD, then add any from request
 	skillDirs := e.getSkillDirs(sourceDir, req)
 
-	// Load skill definitions from directories and build system message
-	var systemMessage *copilot.SystemMessageConfig
-	if msg := buildSkillSystemMessage(skillDirs); msg != "" {
-		systemMessage = &copilot.SystemMessageConfig{
-			Mode:    "append",
-			Content: msg,
-		}
-	}
-
 	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, req.Timeout)
@@ -156,7 +147,6 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 
 			SkillDirectories: skillDirs,
 			WorkingDirectory: workspaceDir,
-			SystemMessage:    systemMessage,
 		})
 
 		if err != nil {
@@ -171,7 +161,6 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 			// these are the directory for the skill itself.
 			SkillDirectories: skillDirs,
 			WorkingDirectory: workspaceDir,
-			SystemMessage:    systemMessage,
 		})
 
 		if err != nil {
