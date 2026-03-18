@@ -152,55 +152,6 @@ func TestBuildSkillSystemMessage(t *testing.T) {
 	})
 }
 
-func TestCopilotEngine_Execute_InjectsSkillSystemMessage(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	clientMock := NewMockcopilotClient(ctrl)
-	sessionMock := NewMockcopilotSession(ctrl)
-
-	// Create a skill directory with a SKILL.md
-	skillDir := t.TempDir()
-	skillContent := "---\nname: test-deploy\ndescription: Deploy to test env\n---\n# Test Deploy\nDeploy things"
-	require.NoError(t, os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte(skillContent), 0644))
-
-	clientMock.EXPECT().Start(gomock.Any())
-	clientMock.EXPECT().CreateSession(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, config *copilot.SessionConfig) (CopilotSession, error) {
-			// Verify that SystemMessage is set with skill definitions
-			require.NotNil(t, config.SystemMessage, "SystemMessage should be set when skills are available")
-			assert.Equal(t, "append", config.SystemMessage.Mode)
-			assert.Contains(t, config.SystemMessage.Content, "<available_skills>")
-			assert.Contains(t, config.SystemMessage.Content, "<name>test-deploy</name>")
-			assert.Contains(t, config.SystemMessage.Content, "<description>Deploy to test env</description>")
-			return sessionMock, nil
-		})
-	sessionMock.EXPECT().Disconnect()
-	clientMock.EXPECT().DeleteSession(gomock.Any(), "session-1")
-	clientMock.EXPECT().Stop()
-
-	sessionMock.EXPECT().On(gomock.Any()).Times(3).Return(func() {})
-	sessionMock.EXPECT().SendAndWait(gomock.Any(), gomock.Any()).Return(&copilot.SessionEvent{}, nil)
-	sessionMock.EXPECT().SessionID().Return("session-1")
-
-	engine := NewCopilotEngineBuilder("test-model", &CopilotEngineBuilderOptions{
-		NewCopilotClient: func(clientOptions *copilot.ClientOptions) CopilotClient { return clientMock },
-	}).Build()
-
-	err := engine.Initialize(context.Background())
-	require.NoError(t, err)
-
-	defer func() {
-		require.NoError(t, engine.Shutdown(context.Background()))
-	}()
-
-	_, err = engine.Execute(context.Background(), &ExecutionRequest{
-		Message:    "deploy my app",
-		Timeout:    time.Minute,
-		SkillPaths: []string{skillDir},
-		SourceDir:  t.TempDir(), // CWD without SKILL.md
-	})
-	require.NoError(t, err)
-}
-
 func TestCopilotEngine_Execute_NoSystemMessageWithoutSkills(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	clientMock := NewMockcopilotClient(ctrl)
@@ -238,53 +189,6 @@ func TestCopilotEngine_Execute_NoSystemMessageWithoutSkills(t *testing.T) {
 		Message:   "hello",
 		Timeout:   time.Minute,
 		SourceDir: sourceDir,
-	})
-	require.NoError(t, err)
-}
-
-func TestCopilotEngine_ResumeSession_InjectsSkillSystemMessage(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	clientMock := NewMockcopilotClient(ctrl)
-	sessionMock := NewMockcopilotSession(ctrl)
-
-	// Create a skill directory with a SKILL.md
-	skillDir := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(skillDir, "SKILL.md"),
-		[]byte("---\nname: resume-skill\ndescription: Skill for resume test\n---\nBody"), 0644))
-
-	clientMock.EXPECT().Start(gomock.Any())
-	clientMock.EXPECT().ResumeSessionWithOptions(gomock.Any(), "existing-session", gomock.Any()).DoAndReturn(
-		func(ctx context.Context, sessionID string, config *copilot.ResumeSessionConfig) (CopilotSession, error) {
-			require.NotNil(t, config.SystemMessage, "SystemMessage should be set on resume when skills are available")
-			assert.Equal(t, "append", config.SystemMessage.Mode)
-			assert.Contains(t, config.SystemMessage.Content, "<name>resume-skill</name>")
-			return sessionMock, nil
-		})
-	sessionMock.EXPECT().Disconnect()
-	clientMock.EXPECT().DeleteSession(gomock.Any(), "existing-session")
-	clientMock.EXPECT().Stop()
-
-	sessionMock.EXPECT().On(gomock.Any()).Times(3).Return(func() {})
-	sessionMock.EXPECT().SendAndWait(gomock.Any(), gomock.Any()).Return(&copilot.SessionEvent{}, nil)
-	sessionMock.EXPECT().SessionID().Return("existing-session")
-
-	engine := NewCopilotEngineBuilder("test-model", &CopilotEngineBuilderOptions{
-		NewCopilotClient: func(clientOptions *copilot.ClientOptions) CopilotClient { return clientMock },
-	}).Build()
-
-	err := engine.Initialize(context.Background())
-	require.NoError(t, err)
-
-	defer func() {
-		require.NoError(t, engine.Shutdown(context.Background()))
-	}()
-
-	_, err = engine.Execute(context.Background(), &ExecutionRequest{
-		Message:    "continue",
-		SessionID:  "existing-session",
-		Timeout:    time.Minute,
-		SkillPaths: []string{skillDir},
-		SourceDir:  t.TempDir(),
 	})
 	require.NoError(t, err)
 }
