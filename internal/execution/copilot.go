@@ -12,6 +12,9 @@ import (
 	copilot "github.com/github/copilot-sdk/go"
 	"github.com/microsoft/waza/internal/models"
 	"github.com/microsoft/waza/internal/utils"
+
+	// auto-loads the embedded copilot CLI, over using the copilot CLI on the machine.
+	_ "github.com/microsoft/waza/internal/embedded"
 )
 
 // CopilotEngine integrates with GitHub Copilot SDK
@@ -91,6 +94,26 @@ func (e *CopilotEngine) Initialize(ctx context.Context) error {
 		// it'll kill the copilot process.
 		// Tracking here: https://github.com/github/copilot-sdk/issues/668
 		startErr = e.client.Start(context.Background())
+
+		if startErr != nil {
+			return
+		}
+
+		authStatusResp, err := e.client.GetAuthStatus(ctx)
+
+		if err != nil {
+			_ = e.client.Stop()
+
+			startErr = fmt.Errorf("failed to get copilot authentication status. Use any installed instance of copilot CLI and run \"copilot login\" before using this command: %w", err)
+			return
+		}
+
+		if !authStatusResp.IsAuthenticated {
+			_ = e.client.Stop()
+
+			startErr = fmt.Errorf("copilot is not authenticated. Use any installed instance of copilot CLI and run \"copilot login\" before using this command")
+			return
+		}
 	})
 
 	if startErr != nil {
