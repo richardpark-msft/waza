@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	copilot "github.com/github/copilot-sdk/go"
 )
@@ -14,28 +15,25 @@ func NewSessionToSlog() copilot.SessionEventHandler {
 		return func(copilot.SessionEvent) {}
 	}
 
-	intentCalls := map[string]bool{}
+	intentCalls := sync.Map{}
 
 	return func(event copilot.SessionEvent) {
-		if event.Type == copilot.PendingMessagesModified {
+		switch event.Type {
+		case copilot.PendingMessagesModified, copilot.HookEnd, copilot.HookStart:
+			// we just drop these from logging, they're mostly noise, or have other events (like tool calls)
+			// that are more informative.
 			return
-		}
-
-		if event.Data.ToolName != nil && *event.Data.ToolName == "report_intent" {
-			if event.Data.ToolCallID != nil {
-				intentCalls[*event.Data.ToolCallID] = true
+		case copilot.ToolExecutionStart:
+			if event.Data.ToolName != nil && *event.Data.ToolName == "report_intent" && event.Data.ToolCallID != nil {
+				// store this off, we'll ignore the complete event when it comes in as well.
+				intentCalls.Store(*event.Data.ToolCallID, true)
+				return
 			}
-
-			return
-		}
-
-		if event.Data.ToolCallID != nil && intentCalls[*event.Data.ToolCallID] {
-			delete(intentCalls, *event.Data.ToolCallID)
-			return
-		}
-
-		if event.Type == copilot.HookEnd || event.Type == copilot.HookStart {
-			return
+		case copilot.ToolExecutionComplete:
+			if event.Data.ToolCallID != nil &&
+				intentCalls.CompareAndDelete(*event.Data.ToolCallID, true) {
+				return
+			}
 		}
 
 		sessionToSlog(event)
@@ -126,7 +124,6 @@ func appendMapOfStringAnyIf(attrs []any, mapOfStringAny any, fieldName string) [
 
 		var args []any
 
-		// NOTE: keys are unsorted here
 		for k, v := range asMap {
 			args = append(args, k, v)
 		}
