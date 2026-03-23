@@ -1,0 +1,8 @@
+id: tc-git-wt
+name: Git Worktree
+inputs:
+  prompt: "test prompt"
+  git:
+    source: "."     # use the current directory's git repo as the source
+    commit: "HEAD"      # ie, use HEAD
+    type: worktree  # use `git worktree` to do the clone  

@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -89,8 +90,11 @@ func TestBuildExecutionRequest_SkillPaths(t *testing.T) {
 			// Create runner (engine can be nil for this test)
 			runner := NewTestRunner(cfg, nil)
 
+			rtc, err := NewRunnableTestCase(context.Background(), tc, cfg.FixtureDir())
+			require.NoError(t, err)
+
 			// Build execution request
-			req := runner.buildExecutionRequest(tc)
+			req := runner.buildExecutionRequest(rtc)
 
 			// Verify skill paths
 			require.NotNil(t, req, "execution request should not be nil")
@@ -136,8 +140,11 @@ func TestBuildExecutionRequest_BasicFields(t *testing.T) {
 		},
 	}
 
+	rtc, err := NewRunnableTestCase(context.Background(), tc, cfg.FixtureDir())
+	require.NoError(t, err)
+
 	runner := NewTestRunner(cfg, nil)
-	req := runner.buildExecutionRequest(tc)
+	req := runner.buildExecutionRequest(rtc)
 
 	// Verify basic fields
 	assert.Equal(t, "Hello world", req.Message)
@@ -174,7 +181,11 @@ func TestBuildExecutionRequest_TimeoutOverride(t *testing.T) {
 	}
 
 	runner := NewTestRunner(cfg, nil)
-	req := runner.buildExecutionRequest(tc)
+
+	rtc, err := NewRunnableTestCase(context.Background(), tc, cfg.FixtureDir())
+	require.NoError(t, err)
+
+	req := runner.buildExecutionRequest(rtc)
 
 	// Verify timeout is overridden
 	assert.Equal(t, float64(300), req.Timeout.Seconds(), "test case timeout should override spec timeout")

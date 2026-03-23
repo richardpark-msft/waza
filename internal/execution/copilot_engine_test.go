@@ -27,12 +27,15 @@ func TestCopilotEngine_Initialize(t *testing.T) {
 }
 
 func TestCopilotEngine_SetupResources(t *testing.T) {
-	workspaceDir := t.TempDir()
-
-	err := setupWorkspaceResources(workspaceDir, []ResourceFile{{Path: "data.txt", Content: []byte("value")}})
+	resp, err := setupWorkspaceResources(context.Background(), []ResourceFile{{Path: "data.txt", Content: []byte("value")}}, nil)
 	require.NoError(t, err)
 
-	content, err := os.ReadFile(filepath.Join(workspaceDir, "data.txt"))
+	defer func() {
+		err := resp.CleanupFunc(context.Background())
+		require.NoError(t, err)
+	}()
+
+	content, err := os.ReadFile(filepath.Join(resp.Dir, "data.txt"))
 	require.NoError(t, err)
 	assert.Equal(t, "value", string(content))
 }
@@ -145,7 +148,7 @@ func TestCopilotEngine_Shutdown_StopsClientAndCleansWorkspaces(t *testing.T) {
 	}).Build()
 
 	workspaceDir := t.TempDir()
-	engine.workspaces = append(engine.workspaces, workspaceDir)
+	engine.cleanupFuncs = append(engine.cleanupFuncs, newCleanupDirFunc(workspaceDir))
 
 	clientMock.EXPECT().Stop().Times(1)
 	err := engine.Shutdown(context.Background())

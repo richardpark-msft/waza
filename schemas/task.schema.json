@@ -81,6 +81,10 @@
           },
           "description": "File references or inline content provided to the agent."
         },
+        "git": {
+          "$ref": "#/$defs/gitResource",
+          "description": "Git repository provided to the agent workspace."
+        },
         "environment": {
           "type": "object",
           "additionalProperties": {
@@ -92,7 +96,7 @@
     },
     "resourceRef": {
       "type": "object",
-      "description": "A file reference by path or inline content.",
+      "description": "A file resource reference by path and/or inline content.",
       "properties": {
         "path": {
           "type": "string",
@@ -102,7 +106,19 @@
           "type": "string",
           "description": "Inline file content."
         }
-      }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "path"
+          ]
+        },
+        {
+          "required": [
+            "content"
+          ]
+        }
+      ]
     },
     "expected": {
       "type": "object",
@@ -1062,6 +1078,30 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "gitResource": {
+      "type": "object",
+      "description": "A git repository checked out at a specific commit.",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "description": "Git commit SHA, branch, or tag to check out. Defaults to HEAD."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "worktree"
+          ],
+          "description": "Git resource type. Currently only 'worktree' is supported."
+        },
+        "source": {
+          "type": "string",
+          "description": "Type-specific source location. For 'worktree', this is the folder where the git repository resides. If omitted, the current directory is used."
         }
       }
     }

@@ -35,6 +35,11 @@ type ExecutionRequest struct {
 	Context   map[string]any
 	Resources []ResourceFile
 
+	// GitResource allows you use a worktree as the starting point
+	// for your workspace. Helpful if you're developing skills/material within
+	// your repo.
+	GitResource *models.GitResource
+
 	SessionID string
 	SkillName string
 

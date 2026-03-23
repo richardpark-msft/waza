@@ -347,7 +347,6 @@ func TestLoadResources_PathValidation(t *testing.T) {
 
 	spec := &models.BenchmarkSpec{}
 	cfg := config.NewBenchmarkConfig(spec, config.WithFixtureDir(fixtureDir))
-	runner := NewTestRunner(cfg, nil)
 
 	testCase := &models.TestCase{
 		Stimulus: models.TestStimulus{
@@ -361,12 +360,39 @@ func TestLoadResources_PathValidation(t *testing.T) {
 		},
 	}
 
-	resources := runner.loadResources(testCase)
+	// One of those interesting functions that returns an error and a result...
+	resources, gitResource, err := loadResources(context.Background(), testCase, cfg.FixtureDir())
+
+	require.Contains(t, err.Error(), "missing.txt: no such file or directory")
+	require.Contains(t, err.Error(), "absolute.txt\" cannot be absolute")
+
+	require.Empty(t, gitResource)
 	require.Len(t, resources, 2)
 	assert.Equal(t, "inline.txt", resources[0].Path)
 	assert.Equal(t, []byte("inline"), resources[0].Content)
 	assert.Equal(t, "ok.txt", resources[1].Path)
 	assert.Equal(t, []byte("ok"), resources[1].Content)
+}
+
+func TestLoadResources_GitResourcePathUpdated(t *testing.T) {
+	path, err := os.Getwd()
+	require.NoError(t, err)
+
+	rtc, err := NewRunnableTestCase(context.Background(), &models.TestCase{
+		Path: filepath.Join(path, "task.yaml"),
+		Stimulus: models.TestStimulus{
+			Git: &models.GitResource{
+				Commit: "HEAD",
+				Type:   models.GitTypeWorktree,
+				Source: "..",
+			},
+		},
+	}, "fixture dir ignored for this test")
+	require.NoError(t, err)
+
+	abs, err := filepath.Abs(filepath.Join(path, ".."))
+	require.NoError(t, err)
+	require.Equal(t, abs, rtc.GitResource.Source)
 }
 
 func TestBuildGraderContextAndScoreHelpers(t *testing.T) {
@@ -485,10 +511,13 @@ func TestRunTest_CacheHitAndTranscriptWrite(t *testing.T) {
 		},
 	}
 
-	err := runner.engine.Initialize(context.Background())
+	rtc, err := NewRunnableTestCase(context.Background(), testCase, cfg.FixtureDir())
 	require.NoError(t, err)
 
-	outcome, wasCached := runner.runTest(context.Background(), testCase, 1, 1)
+	err = runner.engine.Initialize(context.Background())
+	require.NoError(t, err)
+
+	outcome, wasCached := runner.runTest(context.Background(), rtc, 1, 1)
 	assert.False(t, wasCached)
 	runner.writeTaskTranscript(testCase, outcome, time.Now())
 
@@ -496,7 +525,7 @@ func TestRunTest_CacheHitAndTranscriptWrite(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, entries)
 
-	cachedOutcome, wasCached := runner.runTest(context.Background(), testCase, 1, 1)
+	cachedOutcome, wasCached := runner.runTest(context.Background(), rtc, 1, 1)
 	assert.True(t, wasCached)
 	assert.Equal(t, outcome.TestID, cachedOutcome.TestID)
 	assert.Equal(t, outcome.Status, cachedOutcome.Status)

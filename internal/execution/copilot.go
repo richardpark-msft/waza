@@ -25,8 +25,9 @@ type CopilotEngine struct {
 
 	startOnce sync.Once
 
-	workspacesMu sync.Mutex
-	workspaces   []string // workspaces to clean up at Shutdown
+	// cleanupMu protects workspaces and worktrees
+	cleanupMu    sync.Mutex
+	cleanupFuncs []CleanupFunc
 
 	// sessions maps session IDs to copilotSessions
 	sessions   map[string]CopilotSession
@@ -137,7 +138,7 @@ func (e *CopilotEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Ex
 
 	start := time.Now()
 
-	workspaceDir, err := e.setupWorkspace(req.Resources)
+	workspaceDir, err := e.setupWorkspace(ctx, req.Resources, req.GitResource)
 
 	if err != nil {
 		return nil, err
@@ -270,48 +271,6 @@ func (e *CopilotEngine) Shutdown(ctx context.Context) error {
 	return e.shutdownErr
 }
 
-func (e *CopilotEngine) doShutdown(ctx context.Context) error {
-	sessions := func() map[string]CopilotSession {
-		e.sessionsMu.Lock()
-		defer e.sessionsMu.Unlock()
-		s := e.sessions
-		e.sessions = nil
-		return s
-	}()
-
-	for id := range sessions {
-		if err := e.client.DeleteSession(ctx, id); err != nil {
-			slog.Debug("failed to delete session", "sessionID", id, "error", err)
-		}
-	}
-
-	if err := e.client.Stop(); err != nil {
-		return fmt.Errorf("failed to stop client: %w", err)
-	}
-
-	// remove the workspace folders - should be safe now that all the copilot sessions are shut down
-	// and the tests are complete.
-	workspaces := func() []string {
-		e.workspacesMu.Lock()
-		defer e.workspacesMu.Unlock()
-		workspaces := e.workspaces
-		e.workspaces = nil
-		return workspaces
-	}()
-
-	for _, ws := range workspaces {
-		if ws != "" {
-			if err := os.RemoveAll(ws); err != nil {
-				// errors here probably indicate some issue with our code continuing to lock files
-				// even after tests have completed...
-				slog.Warn("failed to cleanup stale workspace", "path", ws, "error", err)
-			}
-		}
-	}
-
-	return nil
-}
-
 // SessionUsage returns the final usage stats for a session. Call after Shutdown()
 // to get data from session.shutdown events (ModelMetrics, TotalPremiumRequests).
 func (e *CopilotEngine) SessionUsage(sessionID string) *models.UsageStats {
@@ -376,23 +335,49 @@ func (*CopilotEngine) getSkillDirs(cwd string, req *ExecutionRequest) []string {
 	return skillDirs
 }
 
-func (e *CopilotEngine) setupWorkspace(resources []ResourceFile) (string, error) {
-	workspaceDir, err := os.MkdirTemp("", "waza-*")
+func (e *CopilotEngine) setupWorkspace(ctx context.Context, resources []ResourceFile, gitResource *models.GitResource) (string, error) {
+	if resp, err := setupWorkspaceResources(ctx, resources, gitResource); err != nil {
+		return "", fmt.Errorf("failed to setup resources for workspace: %w", err)
+	} else {
+		e.cleanupMu.Lock()
+		e.cleanupFuncs = append(e.cleanupFuncs, resp.CleanupFunc)
+		e.cleanupMu.Unlock()
 
-	if err != nil {
-		return "", fmt.Errorf("failed to create temp workspace: %w", err)
+		return resp.Dir, nil
+	}
+}
+
+func (e *CopilotEngine) doShutdown(ctx context.Context) error {
+	sessions := func() map[string]CopilotSession {
+		e.sessionsMu.Lock()
+		defer e.sessionsMu.Unlock()
+		s := e.sessions
+		e.sessions = nil
+		return s
+	}()
+
+	for id := range sessions {
+		if err := e.client.DeleteSession(ctx, id); err != nil {
+			slog.Debug("failed to delete session", "sessionID", id, "error", err)
+		}
 	}
 
-	e.workspacesMu.Lock()
-	e.workspaces = append(e.workspaces, workspaceDir)
-	e.workspacesMu.Unlock()
-
-	// Write resource files to workspace
-	if err := setupWorkspaceResources(workspaceDir, resources); err != nil {
-		return "", fmt.Errorf("failed to setup resources at workspace %s: %w", workspaceDir, err)
+	if err := e.client.Stop(); err != nil {
+		return fmt.Errorf("failed to stop client: %w", err)
 	}
 
-	return workspaceDir, nil
+	e.cleanupMu.Lock()
+	cleanupFuncs := e.cleanupFuncs
+	e.cleanupFuncs = nil
+	e.cleanupMu.Unlock()
+
+	// Clean up worktrees before removing workspaces (worktrees may be inside workspace dirs)
+	for _, cleanupFunc := range cleanupFuncs {
+		if err := cleanupFunc(ctx); err != nil {
+			slog.Warn("failed to cleanup workspace", "error", err)
+		}
+	}
+	return nil
 }
 
 func joinStrings(parts []string) string {

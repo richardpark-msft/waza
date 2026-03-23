@@ -1,62 +1,106 @@
 package models
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-func TestLoadTestCase_ShouldTriggerField(t *testing.T) {
+func TestLoadTestCase_InputResources(t *testing.T) {
+	t.Run("git resource with worktree", func(t *testing.T) {
+		testCase, err := LoadTestCase(filepath.Join("testdata", "git-resources-task-example.yaml"))
+		require.NoError(t, err)
+
+		require.Equal(t, *testCase.Stimulus.Git, GitResource{
+			Commit: "HEAD",
+			Source: ".",
+			Type:   GitTypeWorktree,
+		})
+	})
+
+	t.Run("files only", func(t *testing.T) {
+		testCase, err := LoadTestCase(filepath.Join("testdata", "file-resources-task-example.yaml"))
+		require.NoError(t, err)
+
+		require.Nil(t, testCase.Stimulus.Git)
+
+		require.Equal(t, []ResourceRef{
+			{
+				Location: "helpers.js",
+				Body:     "",
+			},
+		}, testCase.Stimulus.Resources)
+	})
+}
+
+func TestResourceRef_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
-		yaml    string
-		wantNil bool
-		wantVal bool
+		ref     ResourceRef
+		wantErr bool
 	}{
 		{
-			name: "should_trigger true",
-			yaml: `id: tc-trigger-true
-name: Trigger True
-inputs:
-  prompt: "test prompt"
-expected:
-  should_trigger: true
-`,
-			wantNil: false,
-			wantVal: true,
+			name: "valid path",
+			ref:  ResourceRef{Location: "file.txt"},
 		},
 		{
-			name: "should_trigger false",
-			yaml: `id: tc-trigger-false
-name: Trigger False
-inputs:
-  prompt: "test prompt"
-expected:
-  should_trigger: false
-`,
-			wantNil: false,
-			wantVal: false,
+			name: "valid content",
+			ref:  ResourceRef{Body: "inline"},
 		},
 		{
-			name: "should_trigger omitted",
-			yaml: `id: tc-trigger-omit
-name: Trigger Omitted
-inputs:
-  prompt: "test prompt"
-`,
-			wantNil: true,
+			name:    "empty resource",
+			ref:     ResourceRef{},
+			wantErr: true,
+		},
+		{
+			name: "path and content",
+			ref:  ResourceRef{Location: "f.txt", Body: "inline"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir := t.TempDir()
-			p := filepath.Join(dir, "tc.yaml")
-			if err := os.WriteFile(p, []byte(tt.yaml), 0o644); err != nil {
-				t.Fatalf("write file: %v", err)
+			err := tt.ref.Validate()
+			if tt.wantErr && err == nil {
+				t.Error("expected error, got nil")
 			}
+			if !tt.wantErr && err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		})
+	}
+}
 
-			tc, err := LoadTestCase(p)
+func TestLoadTestCase_ShouldTriggerField(t *testing.T) {
+	tests := []struct {
+		name     string
+		yamlFile string
+		wantNil  bool
+		wantVal  bool
+	}{
+		{
+			name:     "should_trigger true",
+			yamlFile: filepath.Join("testdata", "trigger-true-task-example.yaml"),
+			wantNil:  false,
+			wantVal:  true,
+		},
+		{
+			name:     "should_trigger false",
+			yamlFile: filepath.Join("testdata", "trigger-false-task-example.yaml"),
+			wantNil:  false,
+			wantVal:  false,
+		},
+		{
+			name:     "should_trigger omitted",
+			yamlFile: filepath.Join("testdata", "trigger-omit-task-example.yaml"),
+			wantNil:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tc, err := LoadTestCase(tt.yamlFile)
 			if err != nil {
 				t.Fatalf("LoadTestCase: %v", err)
 			}

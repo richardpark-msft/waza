@@ -897,6 +897,52 @@ config:
   max_attempts: 3  # Retry failed graders up to 3 times (default: 1, no retries)
 ```
 
+### Git Resources
+
+Task inputs can reference git repositories as resources, checked out at a specific commit. This is useful for testing against real codebases without manually preparing fixture directories.
+
+```yaml
+# Task YAML
+inputs:
+  prompt: "Fix the bug in server.go"
+  files:
+    # Existing resource types still work:
+    - path: helpers/utils.js              # file from context_dir
+    - content: "package main\n..."        # inline content
+
+  git:    # Git resource
+    type: worktree                 # required (currently only worktree is supported)
+    source: .                      # a path to a folder within a git repo to use as the source.
+    commit: abc123def              # a specific git commit to use for the created repo. Can be left empty, to use HEAD.
+```
+
+**Types:**
+
+| Type | Use Case | Mechanism |
+|---|---|---|
+| `worktree` | Already inside the target repo; very cheap, no network | `git worktree add` |
+
+**Fields:**
+
+| Field | Required | Description |
+|---|---|---|
+| `type` | Yes | Currently only `worktree` |
+| `source` | Yes | Local folder where the git repository resides |
+| `commit` | No | Commit SHA, branch, or tag. Defaults to HEAD |
+| `dest` | No | Subdirectory name in workspace. Omit to use workspace root |
+
+**Examples:**
+
+```yaml
+# Worktree strategy — cheap checkout from local repo
+- type: worktree
+  source: /path/to/local/repo
+  commit: feature-branch
+  dest: feature
+```
+
+Worktrees are automatically cleaned up after each task via `git worktree remove`.
+
 When a grader fails, waza will retry the task execution up to `max_attempts` times. The evaluation outcome includes an `attempts` field showing how many executions were needed to pass. This is useful for handling transient failures in external services or non-deterministic grader behavior.
 
 **Output:** JSON results include `attempts` per task showing the number of executions performed.

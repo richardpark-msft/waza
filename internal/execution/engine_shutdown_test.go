@@ -9,6 +9,7 @@ import (
 	"github.com/microsoft/waza/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // SpyEngine wraps an AgentEngine and tracks Shutdown calls.
@@ -172,21 +173,23 @@ func TestCopilotEngine_Shutdown_Idempotent(t *testing.T) {
 }
 
 func TestCopilotEngine_Shutdown_CleansWorkspace(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	gr := NewMockGitResource(ctrl)
+	gr.EXPECT().Cleanup(gomock.Any())
+
 	engine := NewCopilotEngineBuilder("test-model", nil).Build()
 
-	// Simulate a workspace existing (without running the full SDK)
-	tmpDir := t.TempDir()
-	engine.workspacesMu.Lock()
-	engine.workspaces = append(engine.workspaces, tmpDir)
-	engine.workspacesMu.Unlock()
+	engine.cleanupMu.Lock()
+	engine.cleanupFuncs = append(engine.cleanupFuncs, gr.Cleanup)
+	engine.cleanupMu.Unlock()
 
 	err := engine.Shutdown(context.Background())
 	require.NoError(t, err)
 
 	// After shutdown, workspace should be cleared
-	engine.workspacesMu.Lock()
-	defer engine.workspacesMu.Unlock()
-	require.Empty(t, engine.workspaces)
+	engine.cleanupMu.Lock()
+	defer engine.cleanupMu.Unlock()
+	require.Empty(t, engine.cleanupFuncs)
 }
 
 func TestCopilotEngine_Shutdown_WithCancelledContext(t *testing.T) {

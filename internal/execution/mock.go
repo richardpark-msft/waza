@@ -14,10 +14,12 @@ import (
 
 // MockEngine is a simple mock implementation for testing
 type MockEngine struct {
-	modelID    string
-	workspace  string
-	mtx        *sync.Mutex
-	initCalled atomic.Bool
+	modelID     string
+	workspace   string
+	cleanupFunc CleanupFunc
+	gitResource *models.GitResource
+	mtx         *sync.Mutex
+	initCalled  atomic.Bool
 }
 
 // NewMockEngine creates a new mock engine
@@ -51,17 +53,13 @@ func (m *MockEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Execu
 		m.workspace = ""
 	}
 
-	// Create a temp workspace so graders that inspect files (e.g. FileGrader) have
-	// a directory to work with, mirroring CopilotEngine behavior.
-	tmpDir, err := os.MkdirTemp("", "waza-mock-*")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create mock workspace: %w", err)
-	}
-	m.workspace = tmpDir
+	setupResp, err := setupWorkspaceResources(ctx, req.Resources, m.gitResource)
 
-	// Write request resources into the workspace
-	if err := setupWorkspaceResources(m.workspace, req.Resources); err != nil {
+	if err != nil {
 		return nil, fmt.Errorf("failed to setup mock workspace resources: %w", err)
+	} else {
+		m.workspace = setupResp.Dir
+		m.cleanupFunc = setupResp.CleanupFunc
 	}
 
 	// Simple mock response
@@ -86,11 +84,11 @@ func (m *MockEngine) Execute(ctx context.Context, req *ExecutionRequest) (*Execu
 }
 
 func (m *MockEngine) Shutdown(ctx context.Context) error {
-	if m.workspace != "" {
-		if err := os.RemoveAll(m.workspace); err != nil {
-			return fmt.Errorf("failed to remove mock workspace %s: %w", m.workspace, err)
+	if m.cleanupFunc != nil {
+		if err := m.cleanupFunc(ctx); err != nil {
+			return fmt.Errorf("failed to remove mock workspace: %w", err)
 		}
-		m.workspace = ""
+		m.cleanupFunc = nil
 	}
 	return nil
 }
